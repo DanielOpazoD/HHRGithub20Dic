@@ -47,13 +47,14 @@ function App() {
   // Calculate existing days
   const existingDaysInMonth = useExistingDays(selectedYear, selectedMonth, record);
 
-  // Nurse signature for email
+  // Nurse signature for email (night shift nurses names only)
   const nurseSignature = React.useMemo(() => {
     if (!record) return '';
     const nightShift = record.nursesNightShift?.filter(n => n && n.trim()) || [];
     if (nightShift.length > 0) {
-      return `Enfermería turno noche – ${nightShift.join(' / ')}`;
+      return nightShift.join(' / ');
     }
+    // Fallback to legacy nurses array
     return (record.nurses?.filter(n => n && n.trim()) || []).join(' / ');
   }, [record]);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useConfirmDialog } from '../context/ConfirmDialogContext';
 import { DailyRecord } from '../types';
 import { buildCensusEmailBody, CENSUS_DEFAULT_RECIPIENTS } from '../constants/email';
 import { formatDate, getMonthRecordsFromFirestore, triggerCensusEmail } from '../services';
@@ -50,6 +51,8 @@ export const useCensusEmail = ({
   user,
   role,
 }: UseCensusEmailParams): UseCensusEmailReturn => {
+  const { confirm, alert } = useConfirmDialog();
+
   // ========== RECIPIENTS STATE ==========
   const [recipients, setRecipients] = useState<string[]>(() => {
     if (typeof window === 'undefined') return CENSUS_DEFAULT_RECIPIENTS;
@@ -116,7 +119,7 @@ export const useCensusEmail = ({
       return;
     }
 
-    if (status === 'loading') return;
+    if (status === 'loading' || status === 'success') return;
 
     const resolvedRecipients = recipients.filter(r => r.trim()).length > 0
       ? recipients.map(r => r.trim()).filter(Boolean)
@@ -129,7 +132,13 @@ export const useCensusEmail = ({
       '¿Confirmas el envío?'
     ].join('\n');
 
-    const confirmed = window.confirm(confirmationText);
+    const confirmed = await confirm({
+      title: 'Confirmar Envío de Censo',
+      message: confirmationText,
+      confirmText: 'Aceptar',
+      cancelText: 'Cancelar',
+      variant: 'info'
+    });
     if (!confirmed) return;
 
     setError(null);
@@ -163,13 +172,13 @@ export const useCensusEmail = ({
         userRole: (user as any)?.role || role
       });
       setStatus('success');
-      setTimeout(() => setStatus('idle'), 3000);
+      // Button stays in 'success' state (disabled) for this date session
     } catch (err: any) {
       console.error('Error enviando correo de censo', err);
       const errorMessage = err?.message || 'No se pudo enviar el correo.';
       setError(errorMessage);
       setStatus('error');
-      alert(errorMessage);
+      alert(errorMessage, 'Error al enviar');
     }
   }, [record, status, recipients, currentDateString, message, nurseSignature, selectedYear, selectedMonth, selectedDay, user, role]);
 

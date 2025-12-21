@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { useDailyRecordContext } from '../../context/DailyRecordContext';
 import { useStaffContext } from '../../context/StaffContext';
 import { BEDS } from '../../constants';
-import { MessageSquare, Stethoscope, Sun, Moon, Share2, CheckCircle, Send, RefreshCw, UserMinus, ArrowRightLeft, Clock } from 'lucide-react';
+import { MessageSquare, Stethoscope, Sun, Moon, Share2, CheckCircle, Send, RefreshCw, UserMinus, ArrowRightLeft, Clock, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx';
 import { getShiftSchedule } from '../../utils/dateUtils';
 
@@ -138,7 +138,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                             onClick={handleSendWhatsApp}
                             disabled={whatsappSending || whatsappSent || !!record.medicalSignature}
                             className={clsx(
-                                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors",
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                                 (whatsappSent || record.medicalSignature)
                                     ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                                     : "bg-green-500 text-white hover:bg-green-600"
@@ -146,21 +146,38 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                             title="Enviar entrega por WhatsApp"
                         >
                             {whatsappSending ? (
-                                <><RefreshCw size={16} className="animate-spin" /> Enviando...</>
+                                <><RefreshCw size={14} className="animate-spin" /> Enviando...</>
                             ) : whatsappSent ? (
-                                <><CheckCircle size={16} /> Enviado</>
+                                <><CheckCircle size={14} /> Enviado</>
                             ) : (
-                                <><Send size={16} /> Enviar WhatsApp</>
+                                <><Send size={14} /> Enviar WhatsApp</>
                             )}
                         </button>
                         <button
                             onClick={handleShareLink}
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-bold"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-xs font-bold"
                             title="Generar link para firma del médico"
                         >
-                            <Share2 size={16} />
+                            <Share2 size={14} />
                             Link Firma
                         </button>
+                        {!record.medicalHandoffSentAt && !record.medicalSignature && (
+                            <button
+                                onClick={() => {
+                                    if (record.medicalHandoffDoctor) {
+                                        markMedicalHandoffAsSent(record.medicalHandoffDoctor);
+                                    } else {
+                                        const name = prompt('Ingrese su nombre para firmar la entrega:');
+                                        if (name) markMedicalHandoffAsSent(name);
+                                    }
+                                }}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-bold"
+                                title="Firmar entrega de turno"
+                            >
+                                <ShieldCheck size={14} />
+                                Firmar
+                            </button>
+                        )}
                     </div>
                 )}
             </header>
@@ -194,8 +211,8 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                     {/* Sent Timestamp (Signature of Sender) */}
                                     {record.medicalHandoffSentAt && (
                                         <div className="mt-1 flex items-center gap-1.5 text-xs text-blue-600">
-                                            <CheckCircle size={12} />
-                                            <span className="font-medium">Enviado: {new Date(record.medicalHandoffSentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <ShieldCheck size={12} />
+                                            <span className="font-medium">Entregado y firmado: {new Date(record.medicalHandoffSentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                     )}
                                 </div>

@@ -3,7 +3,7 @@ import { DailyRecord, PatientData, DischargeData, TransferData, CMAData } from '
 import { BEDS, MONTH_NAMES } from '../../constants';
 import { calculateStats, CensusStatistics } from '../calculations/statsCalculator';
 
-const BORDER_THIN: ExcelJS.Border = {
+const BORDER_THIN: Partial<ExcelJS.Borders> = {
     top: { style: 'thin' },
     left: { style: 'thin' },
     bottom: { style: 'thin' },
@@ -63,7 +63,7 @@ export const getCensusMasterFilename = (date: string): string => {
     const monthIndex = Math.max(0, Math.min(11, Number(monthStr) - 1));
     const year = Number(yearStr);
     const monthName = MONTH_NAMES[monthIndex] || monthStr;
-    return `Censo_Maestro_${monthName}_${year}.xlsx`;
+    return `Censo Diario - ${monthName} ${year} - Hospital Hanga Roa.xlsx`;
 };
 
 // ============================================================================

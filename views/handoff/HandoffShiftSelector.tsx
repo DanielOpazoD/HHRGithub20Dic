@@ -26,7 +26,7 @@ export const HandoffShiftSelector: React.FC<HandoffShiftSelectorProps> = ({
                 className={clsx(
                     "flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-wide transition-all shadow-md",
                     selectedShift === 'day'
-                        ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white scale-105 shadow-lg shadow-orange-200"
+                        ? "bg-gradient-to-br from-medical-500 to-medical-700 text-white scale-105 shadow-lg shadow-medical-200"
                         : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
                 )}
             >

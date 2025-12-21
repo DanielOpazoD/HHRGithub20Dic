@@ -216,7 +216,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {visibleModules.includes('CENSUS') && <NavTab module="CENSUS" label="Censo Diario" icon={LayoutList} />}
           {visibleModules.includes('CUDYR') && <NavTab module="CUDYR" label="CUDYR" icon={ClipboardList} />}
           {visibleModules.includes('NURSING_HANDOFF') && <NavTab module="NURSING_HANDOFF" label="Entrega Turno Enfermería" icon={MessageSquare} />}
-          {visibleModules.includes('MEDICAL_HANDOFF') && <NavTab module="MEDICAL_HANDOFF" label="Entrega Turno médicos" icon={Stethoscope} />}
+          {visibleModules.includes('MEDICAL_HANDOFF') && <NavTab module="MEDICAL_HANDOFF" label="Entrega Turno Médicos" icon={Stethoscope} />}
         </div>
 
         {/* User & Logout - Simplified */}

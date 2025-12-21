@@ -38,8 +38,8 @@ const buildMimeMessage = (params: SendCensusEmailParams) => {
     const boundary = '----=_Part_0_123456789.123456789';
     const mailSubject = subject || buildCensusEmailSubject(date);
     const baseBody = body || buildCensusEmailBody(date, nursesSignature);
-    const auditLine = requestedBy ? `\n\n---\nEnviado por: ${requestedBy} (sesión Firebase)` : '';
-    const mailBody = `${baseBody}${auditLine}`;
+    // Audit line removed per user request
+    const mailBody = baseBody;
     const attachmentBase64 = Buffer.isBuffer(attachmentBuffer)
         ? attachmentBuffer.toString('base64')
         : Buffer.from(attachmentBuffer).toString('base64');

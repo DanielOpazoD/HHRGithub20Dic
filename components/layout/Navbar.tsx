@@ -212,7 +212,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Main Navigation Tabs */}
-        <div className="flex gap-1 overflow-x-auto self-end">
+        <div className="flex gap-1 self-end">
           {visibleModules.includes('CENSUS') && <NavTab module="CENSUS" label="Censo Diario" icon={LayoutList} />}
           {visibleModules.includes('CUDYR') && <NavTab module="CUDYR" label="CUDYR" icon={ClipboardList} />}
           {visibleModules.includes('NURSING_HANDOFF') && <NavTab module="NURSING_HANDOFF" label="Entrega Turno Enfermería" icon={MessageSquare} />}

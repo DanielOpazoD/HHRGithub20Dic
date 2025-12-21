@@ -66,20 +66,14 @@ export const useCensusEmail = ({
   });
 
   // ========== MESSAGE STATE ==========
+  // Message is always generated dynamically based on date and nurses
+  // No localStorage persistence to ensure it always reflects current data
   const [message, setMessage] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem('censusEmailMessage');
-      if (stored) return stored;
-    }
     return buildCensusEmailBody(currentDateString, nurseSignature);
   });
 
-  const [messageEdited, setMessageEdited] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return Boolean(window.localStorage.getItem('censusEmailMessage'));
-    }
-    return false;
-  });
+  // Track if user has manually edited the message in this session
+  const [messageEdited, setMessageEdited] = useState(false);
 
   // ========== UI STATE ==========
   const [showEmailConfig, setShowEmailConfig] = useState(false);
@@ -93,18 +87,17 @@ export const useCensusEmail = ({
     }
   }, [recipients]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('censusEmailMessage', message);
-    }
-  }, [message]);
-
-  // Auto-update message when date/signature changes (if not manually edited)
+  // Auto-update message when date/signature changes (if not manually edited in this session)
   useEffect(() => {
     if (!messageEdited) {
       setMessage(buildCensusEmailBody(currentDateString, nurseSignature));
     }
   }, [currentDateString, nurseSignature, messageEdited]);
+
+  // Reset messageEdited when date changes (so new date gets fresh message)
+  useEffect(() => {
+    setMessageEdited(false);
+  }, [currentDateString]);
 
   // ========== HANDLERS ==========
   const onMessageChange = useCallback((value: string) => {

@@ -1,48 +1,34 @@
-import React, { useState, Suspense, lazy } from 'react';
-import { useDailyRecord, useAuthState, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail } from './hooks';
+import React, { useState, Suspense } from 'react';
+import { useDailyRecord, useAuthState, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail, useSignatureMode } from './hooks';
 import { useStorageMigration } from './hooks/useStorageMigration';
 import { DailyRecordProvider, RoleProvider, StaffProvider } from './context';
 import { Navbar, DateStrip, SettingsModal, TestAgent, SyncWatcher, DemoModePanel, LoginPage, ErrorBoundary } from './components';
 import { GlobalErrorBoundary } from './components/shared/GlobalErrorBoundary';
+import { ViewLoader } from './components/ui/ViewLoader';
 import type { ModuleType } from './components';
 import { canEditModule } from './utils/permissions';
 import { generateCensusMasterExcel } from './services';
 import { CensusEmailConfigModal } from './components/census/CensusEmailConfigModal';
 
-// ========== LAZY LOADED VIEWS ==========
-// These views are loaded on-demand when the user navigates to them
-// Using webpackPrefetch to load modules in idle time
-const CensusView = lazy(() => import(/* webpackPrefetch: true */ './views/census/CensusView').then(m => ({ default: m.CensusView })));
-const CudyrView = lazy(() => import(/* webpackPrefetch: true */ './views/cudyr/CudyrView').then(m => ({ default: m.CudyrView })));
-const HandoffView = lazy(() => import(/* webpackPrefetch: true */ './views/handoff/HandoffView').then(m => ({ default: m.HandoffView })));
-const ReportsView = lazy(() => import(/* webpackChunkName: "reports" */ './views/reports/ReportsView').then(m => ({ default: m.ReportsView })));
-const AuditView = lazy(() => import(/* webpackChunkName: "audit" */ './views/admin/AuditView').then(m => ({ default: m.AuditView })));
-const MedicalSignatureView = lazy(() => import(/* webpackChunkName: "signature" */ './views/admin/MedicalSignatureView').then(m => ({ default: m.MedicalSignatureView })));
-const WhatsAppIntegrationView = lazy(() => import(/* webpackChunkName: "whatsapp" */ './views/whatsapp/WhatsAppIntegrationView').then(m => ({ default: m.WhatsAppIntegrationView })));
-
-// ========== AUTH IMPORTS ==========
-import { signInAnonymously } from 'firebase/auth';
-import { auth } from './firebaseConfig';
-
-// ==========LOADING FALLBACK ==========
-// Optimized loading indicator with skeleton
-const ViewLoader = () => (
-  <div className="flex items-center justify-center min-h-[400px] py-20">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-12 h-12 border-4 border-medical-200 border-t-medical-600 rounded-full animate-spin" />
-      <span className="text-slate-500 text-sm font-medium">Cargando módulo...</span>
-    </div>
-  </div>
-);
+// Lazy-loaded views
+import {
+  CensusView,
+  CudyrView,
+  HandoffView,
+  ReportsView,
+  AuditView,
+  MedicalSignatureView,
+  WhatsAppIntegrationView
+} from './views/LazyViews';
 
 function App() {
   // ========== STORAGE MIGRATION (runs once on startup) ==========
   useStorageMigration();
 
-  // ========== AUTH STATE (extracted to hook) ==========
+  // ========== AUTH STATE ==========
   const { user, authLoading, isFirebaseConnected, handleLogout, role, canEdit, isEditor, isViewer } = useAuthState();
 
-  // ========== DATE NAVIGATION (extracted to hook) ==========
+  // ========== DATE NAVIGATION ==========
   const {
     selectedYear, setSelectedYear,
     selectedMonth, setSelectedMonth,
@@ -51,39 +37,27 @@ function App() {
     currentDateString: navDateString
   } = useDateNavigation();
 
-  // ========== URL ROUTING (SIGNATURE MODE) ==========
-  const urlParams = new URLSearchParams(window.location.search);
-  const isSignatureMode = urlParams.get('mode') === 'signature';
-  const signatureDate = urlParams.get('date');
-
-  // Helper effect: Anonymous Login for Signature Mode
-  React.useEffect(() => {
-    if (isSignatureMode && !user && !authLoading) {
-      signInAnonymously(auth).catch((err) => console.error("Anonymous auth failed", err));
-    }
-  }, [isSignatureMode, user, authLoading]);
-
-  // Determine effective date
-  const currentDateString = (isSignatureMode && signatureDate) ? signatureDate : navDateString;
+  // ========== SIGNATURE MODE ==========
+  const { isSignatureMode, currentDateString } = useSignatureMode(navDateString, user, authLoading);
 
   // ========== DAILY RECORD HOOK ==========
   const dailyRecordHook = useDailyRecord(currentDateString);
   const { record, refresh, syncStatus, lastSyncTime } = dailyRecordHook;
 
-  // Calculate existing days (depends on record changes)
+  // Calculate existing days
   const existingDaysInMonth = useExistingDays(selectedYear, selectedMonth, record);
 
+  // Nurse signature for email
   const nurseSignature = React.useMemo(() => {
     if (!record) return '';
     const nightShift = record.nursesNightShift?.filter(n => n && n.trim()) || [];
     if (nightShift.length > 0) {
       return `Enfermería turno noche – ${nightShift.join(' / ')}`;
     }
-    const nurses = record.nurses?.filter(n => n && n.trim()) || [];
-    return nurses.join(' / ');
+    return (record.nurses?.filter(n => n && n.trim()) || []).join(' / ');
   }, [record]);
 
-  // ========== CENSUS EMAIL (extracted to hook) ==========
+  // ========== CENSUS EMAIL ==========
   const censusEmail = useCensusEmail({
     record,
     currentDateString,
@@ -95,7 +69,7 @@ function App() {
     role,
   });
 
-  // ========== FILE OPERATIONS (extracted to hook) ==========
+  // ========== FILE OPERATIONS ==========
   const { handleExportJSON, handleExportCSV, handleImportJSON } = useFileOperations(record, refresh);
 
   // ========== UI STATE ==========
@@ -117,7 +91,6 @@ function App() {
     );
   }
 
-  // ========== AUTH REQUIRED ==========
   // ========== AUTH REQUIRED ==========
   if (!user && !isSignatureMode) {
     return <LoginPage onLoginSuccess={() => { }} />;
@@ -169,7 +142,7 @@ function App() {
               />
             )}
 
-            {/* Main Content Area with Lazy Loading */}
+            {/* Main Content Area */}
             <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 flex-1 w-full print:p-0 print:pb-0 print:max-w-none">
               <ErrorBoundary>
                 <Suspense fallback={<ViewLoader />}>
@@ -189,7 +162,6 @@ function App() {
                           readOnly={!canEditModule(role, 'CENSUS')}
                         />
                       )}
-
                       {currentModule === 'CUDYR' && <CudyrView readOnly={!canEditModule(role, 'CUDYR')} />}
                       {currentModule === 'NURSING_HANDOFF' && <HandoffView type="nursing" readOnly={!canEditModule(role, 'NURSING_HANDOFF')} />}
                       {currentModule === 'MEDICAL_HANDOFF' && <HandoffView type="medical" readOnly={!canEditModule(role, 'MEDICAL_HANDOFF')} />}

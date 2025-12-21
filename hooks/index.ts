@@ -20,6 +20,7 @@ export { useCMA } from './useCMA';
 // Date Navigation
 export { useDateNavigation } from './useDateNavigation';
 export { useExistingDays } from './useExistingDays';
+export { useSignatureMode } from './useSignatureMode';
 
 // File Operations
 export { useFileOperations } from './useFileOperations';

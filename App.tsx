@@ -1,14 +1,14 @@
 import React, { useState, Suspense } from 'react';
-import { useDailyRecord, useAuthState, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail, useSignatureMode } from './hooks';
-import { useStorageMigration } from './hooks/useStorageMigration';
-import { DailyRecordProvider, StaffProvider } from './context';
-import { Navbar, DateStrip, SettingsModal, TestAgent, SyncWatcher, DemoModePanel, LoginPage, ErrorBoundary } from './components';
-import { GlobalErrorBoundary } from './components/shared/GlobalErrorBoundary';
-import { ViewLoader } from './components/ui/ViewLoader';
-import type { ModuleType } from './components';
-import { canEditModule } from './utils/permissions';
-import { generateCensusMasterExcel } from './services';
-import { CensusEmailConfigModal } from './components/census/CensusEmailConfigModal';
+import { useDailyRecord, useAuthState, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail, useSignatureMode } from '@/hooks';
+import { useStorageMigration } from '@/hooks/useStorageMigration';
+import { DailyRecordProvider, StaffProvider } from '@/context';
+import { Navbar, DateStrip, SettingsModal, TestAgent, SyncWatcher, DemoModePanel, LoginPage, ErrorBoundary } from '@/components';
+import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
+import { ViewLoader } from '@/components/ui/ViewLoader';
+import type { ModuleType } from '@/components';
+import { canEditModule } from '@/utils/permissions';
+import { generateCensusMasterExcel } from '@/services';
+import { CensusEmailConfigModal } from '@/components/census/CensusEmailConfigModal';
 
 // Lazy-loaded views
 import {

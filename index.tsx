@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import { NotificationProvider } from './context/NotificationContext';
-import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
-import { DemoModeProvider } from './context/DemoModeContext';
-import { AuthProvider } from './context/AuthContext';
-import { firebaseReady, mountConfigWarning } from './firebaseConfig';
+import App from '@/App';
+import { NotificationProvider } from '@/context/NotificationContext';
+import { ConfirmDialogProvider } from '@/context/ConfirmDialogContext';
+import { DemoModeProvider } from '@/context/DemoModeContext';
+import { AuthProvider } from '@/context/AuthContext';
+import { firebaseReady, mountConfigWarning } from '@/firebaseConfig';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

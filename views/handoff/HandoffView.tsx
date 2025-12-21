@@ -13,16 +13,16 @@ import { HandoffChecklistNight } from './HandoffChecklistNight';
 import { HandoffNovedades } from './HandoffNovedades';
 import { HandoffStaffSelector } from './HandoffStaffSelector';
 import { CudyrView } from '../cudyr/CudyrView';
+import { HandoffPrintHeader } from './HandoffPrintHeader';
+import { HandoffShiftSelector } from './HandoffShiftSelector';
 
-import { useNotification } from '../../context/NotificationContext';
-import { getWhatsAppConfig, getMessageTemplates } from '../../services/integrations/whatsapp/whatsappService';
+import { useNotification } from '@/context/NotificationContext';
+import { useHandoffLogic } from '@/hooks';
 
 interface HandoffViewProps {
     type?: 'nursing' | 'medical';
     readOnly?: boolean;
 }
-
-type NursingShift = 'day' | 'night';
 
 export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', readOnly = false }) => {
     const {
@@ -41,118 +41,33 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
     const { nursesList } = useStaffContext();
     const { success } = useNotification();
 
-    // Shift selector state (only for nursing)
-    const [selectedShift, setSelectedShift] = useState<NursingShift>('day');
-
-    // WhatsApp send state
-    const [whatsappSending, setWhatsappSending] = useState(false);
-    const [whatsappSent, setWhatsappSent] = useState(false);
-
-
-    const visibleBeds = useMemo(() => {
-        if (!record) return [];
-        const activeExtras = record.activeExtraBeds || [];
-        return BEDS.filter(bed => !bed.isExtra || activeExtras.includes(bed.id));
-    }, [record]);
-
-    const hasAnyPatients = useMemo(() => {
-        if (!record) return false;
-        return visibleBeds.some(b => record.beds[b.id].patientName || record.beds[b.id].isBlocked);
-    }, [visibleBeds, record]);
-
-    // Format date for print header
-    const formatPrintDate = () => {
-        if (!record) return '';
-        const [year, month, day] = record.date.split('-');
-        return `${day}-${month}-${year}`;
-    };
-
-    // Calculate shift schedule (Dynamic based on Holiday/Weekend)
-    const schedule = useMemo(() => {
-        if (!record) return { dayStart: '08:00', dayEnd: '20:00', nightStart: '20:00', nightEnd: '08:00', description: '' };
-        return getShiftSchedule(record.date);
-    }, [record]);
-
-    const isMedical = type === 'medical';
-
-    // Determine the note field based on type and shift
-    const getNoteField = (): keyof typeof record.beds[string] => {
-        if (!record || isMedical) return 'medicalHandoffNote';
-        return selectedShift === 'day' ? 'handoffNoteDayShift' : 'handoffNoteNightShift';
-    };
-
-    const noteField = getNoteField();
-
-    // Handler for nursing note changes with Day→Night sync
-    const handleNursingNoteChange = useCallback((bedId: string, value: string, isNested: boolean = false) => {
-        if (isMedical) {
-            // Medical: just update the single field
-            if (isNested) {
-                updateClinicalCrib(bedId, 'medicalHandoffNote', value);
-            } else {
-                updatePatient(bedId, 'medicalHandoffNote', value);
-            }
-        } else {
-            // Nursing: sync Day → Night
-            if (selectedShift === 'day') {
-                // Update both Day and Night when editing Day
-                if (isNested) {
-                    // Use multiple update to prevent race condition
-                    updateClinicalCribMultiple(bedId, {
-                        handoffNoteDayShift: value,
-                        handoffNoteNightShift: value
-                    });
-                } else {
-                    updatePatientMultiple(bedId, {
-                        handoffNoteDayShift: value,
-                        handoffNoteNightShift: value
-                    });
-                }
-            } else {
-                // Night shift: only update Night (independent edit)
-                if (isNested) {
-                    updateClinicalCrib(bedId, 'handoffNoteNightShift', value);
-                } else {
-                    updatePatient(bedId, 'handoffNoteNightShift', value);
-                }
-            }
-        }
-    }, [isMedical, selectedShift, updatePatient, updatePatientMultiple, updateClinicalCrib, updateClinicalCribMultiple]);
-
-    const handleShareLink = () => {
-        if (!record) return;
-        const url = `${window.location.origin}?mode=signature&date=${record.date}`;
-        navigator.clipboard.writeText(url);
-        success('Enlace copiado', 'El link para firma médica ha sido copiado al portapapeles.');
-    };
-
-    const handleSendWhatsApp = useCallback(async () => {
-        if (!record) return;
-        setWhatsappSending(true);
-        try {
-            // Get WhatsApp config and template
-            const config = await getWhatsAppConfig();
-            const templates = await getMessageTemplates();
-
-            if (!config || !config.handoffNotifications?.targetGroupId) {
-                throw new Error('WhatsApp no configurado. Configure el grupo destino en ajustes.');
-            }
-
-            const handoffTemplate = templates.find(t => t.type === 'handoff');
-            if (!handoffTemplate) {
-                throw new Error('No se encontró template de entrega médica');
-            }
-
-            await sendMedicalHandoff(handoffTemplate.content, config.handoffNotifications.targetGroupId);
-            setWhatsappSent(true);
-            success('Entrega enviada a WhatsApp correctamente');
-        } catch (error: any) {
-            console.error('Error sending WhatsApp:', error);
-            success(error.message || 'Error al enviar a WhatsApp');
-        } finally {
-            setWhatsappSending(false);
-        }
-    }, [record, sendMedicalHandoff, success]);
+    const {
+        selectedShift,
+        setSelectedShift,
+        whatsappSending,
+        whatsappSent,
+        isMedical,
+        visibleBeds,
+        hasAnyPatients,
+        schedule,
+        noteField,
+        deliversList,
+        receivesList,
+        tensList,
+        handleNursingNoteChange,
+        handleShareLink,
+        handleSendWhatsApp,
+        formatPrintDate,
+    } = useHandoffLogic({
+        record,
+        type,
+        updatePatient,
+        updatePatientMultiple,
+        updateClinicalCrib,
+        updateClinicalCribMultiple,
+        sendMedicalHandoff,
+        onSuccess: success,
+    });
 
     const title = isMedical
         ? 'Entrega Turno Médicos'
@@ -165,36 +80,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
             ? "bg-medical-50 text-medical-900 text-xs uppercase tracking-wider font-semibold border-b border-medical-100"
             : "bg-slate-100 text-slate-800 text-xs uppercase tracking-wider font-semibold border-b border-slate-200";
 
-    // Staff lists - Auto-populate from census if handoff-specific lists are empty
-    const deliversList = useMemo(() => {
-        if (!record) return [];
-        if (selectedShift === 'day') {
-            // Day shift: delivers = day nurses from census
-            const handoffList = record.handoffDayDelivers || [];
-            return handoffList.length > 0 ? handoffList : (record.nursesDayShift || []);
-        } else {
-            // Night shift: delivers = night nurses from census
-            const handoffList = record.handoffNightDelivers || [];
-            return handoffList.length > 0 ? handoffList : (record.nursesNightShift || []);
-        }
-    }, [record, selectedShift]);
-
-    const receivesList = useMemo(() => {
-        if (!record) return [];
-        if (selectedShift === 'day') {
-            // Day shift: receives = night nurses from census
-            const handoffList = record.handoffDayReceives || [];
-            return handoffList.length > 0 ? handoffList : (record.nursesNightShift || []);
-        } else {
-            // Night shift: receives = unknown (next day's staff)
-            return record.handoffNightReceives || [];
-        }
-    }, [record, selectedShift]);
-
-    const tensList = record
-        ? (selectedShift === 'day' ? (record.tensDayShift || []) : (record.tensNightShift || []))
-        : [];
-
     if (!record) {
         return <div className="p-8 text-center text-slate-500 font-sans">Seleccione una fecha para ver la Entrega de Turno.</div>;
     }
@@ -202,55 +87,17 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
     return (
         <div className="space-y-4 animate-fade-in pb-20 font-sans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:w-full print:px-0">
             {/* Print-only Header */}
-            <div className="hidden print:block mb-4 pb-4 border-b-2 border-slate-800">
-                <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                            <Icon size={28} className="text-slate-900" />
-                            {title}
-                        </h1>
-                        <p className="text-sm text-slate-600 font-medium mt-1 uppercase tracking-wide">
-                            Servicio Hospitalizados Hanga Roa
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <div className="text-xl font-bold text-slate-900">{formatPrintDate()}</div>
-                        {/* Hide shift info for medical print, show only hours for nursing */}
-                        {!isMedical && (
-                            <div className="text-sm text-slate-600">
-                                {selectedShift === 'day'
-                                    ? `${schedule.dayStart} - ${schedule.dayEnd} `
-                                    : `${schedule.nightStart} - ${schedule.nightEnd} `
-                                }
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Print: Show Responsible Nurses & TENS */}
-                {!isMedical && (
-                    <div className="grid grid-cols-3 gap-6 text-sm border-t border-slate-300 pt-3">
-                        <div>
-                            <span className="block font-bold text-slate-900 uppercase text-xs mb-1">Enfermero(a) Entrega:</span>
-                            <div className="text-slate-800">
-                                {deliversList.length > 0 ? deliversList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin especificar</span>}
-                            </div>
-                        </div>
-                        <div>
-                            <span className="block font-bold text-slate-900 uppercase text-xs mb-1">Enfermero(a) Recibe:</span>
-                            <div className="text-slate-800">
-                                {receivesList.length > 0 ? receivesList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin especificar</span>}
-                            </div>
-                        </div>
-                        <div>
-                            <span className="block font-bold text-slate-900 uppercase text-xs mb-1">TENS de Turno:</span>
-                            <div className="text-slate-800">
-                                {tensList.length > 0 ? tensList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin registro</span>}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
+            <HandoffPrintHeader
+                title={title}
+                dateString={formatPrintDate()}
+                Icon={Icon}
+                isMedical={isMedical}
+                schedule={schedule}
+                selectedShift={selectedShift}
+                deliversList={deliversList}
+                receivesList={receivesList}
+                tensList={tensList}
+            />
 
             {/* Main Header (Visible) with integrated Shift Switcher */}
             <header className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-4 print:hidden">
@@ -275,31 +122,12 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
                 {/* Shift Switcher - Only Nursing */}
                 {!isMedical && (
-                    <div className="flex bg-slate-100 p-1 rounded-lg md:mx-auto">
-                        <button
-                            onClick={() => setSelectedShift('day')}
-                            className={clsx(
-                                "flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all",
-                                selectedShift === 'day'
-                                    ? "bg-white text-indigo-600 shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700"
-                            )}
-                        >
-                            <Sun size={16} />
-                            Turno Largo
-                        </button>
-                        <button
-                            onClick={() => setSelectedShift('night')}
-                            className={clsx(
-                                "flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all",
-                                selectedShift === 'night'
-                                    ? "bg-white text-slate-800 shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700"
-                            )}
-                        >
-                            <Moon size={16} />
-                            Turno Noche
-                        </button>
+                    <div className="md:mx-auto">
+                        <HandoffShiftSelector
+                            selectedShift={selectedShift}
+                            onShiftChange={setSelectedShift}
+                            schedule={schedule}
+                        />
                     </div>
                 )}
 

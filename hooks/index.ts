@@ -27,6 +27,7 @@ export { useFileOperations } from './useFileOperations';
 
 // Email
 export { useCensusEmail } from './useCensusEmail';
+export { useHandoffLogic } from './useHandoffLogic';
 
 // Re-export types from hooks that define them
 export type { DailyRecordContextType } from './useDailyRecordTypes';

@@ -13,6 +13,9 @@ interface HandoffPrintHeaderProps {
     };
     selectedShift?: 'day' | 'night';
     isMedical: boolean;
+    deliversList?: string[];
+    receivesList?: string[];
+    tensList?: string[];
 }
 
 export const HandoffPrintHeader: React.FC<HandoffPrintHeaderProps> = ({
@@ -21,7 +24,10 @@ export const HandoffPrintHeader: React.FC<HandoffPrintHeaderProps> = ({
     Icon,
     schedule,
     selectedShift,
-    isMedical
+    isMedical,
+    deliversList = [],
+    receivesList = [],
+    tensList = []
 }) => {
     return (
         <div className="hidden print:block mb-4 pb-4 border-b-2 border-slate-800">
@@ -47,6 +53,30 @@ export const HandoffPrintHeader: React.FC<HandoffPrintHeaderProps> = ({
                     )}
                 </div>
             </div>
+
+            {/* Print: Show Responsible Nurses & TENS */}
+            {!isMedical && (
+                <div className="grid grid-cols-3 gap-6 text-sm border-t border-slate-300 pt-3">
+                    <div>
+                        <span className="block font-bold text-slate-900 uppercase text-[10px] mb-1">Enfermero(a) Entrega:</span>
+                        <div className="text-slate-800">
+                            {deliversList.length > 0 ? deliversList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin especificar</span>}
+                        </div>
+                    </div>
+                    <div>
+                        <span className="block font-bold text-slate-900 uppercase text-[10px] mb-1">Enfermero(a) Recibe:</span>
+                        <div className="text-slate-800">
+                            {receivesList.length > 0 ? receivesList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin especificar</span>}
+                        </div>
+                    </div>
+                    <div>
+                        <span className="block font-bold text-slate-900 uppercase text-[10px] mb-1">TENS de Turno:</span>
+                        <div className="text-slate-800">
+                            {tensList.length > 0 ? tensList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin registro</span>}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

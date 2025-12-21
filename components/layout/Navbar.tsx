@@ -78,9 +78,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     <button
       onClick={() => handleModuleChange(module)}
       className={clsx(
-        "flex items-center gap-2 px-4 py-3 border-b-2 transition-colors font-medium text-sm",
+        "flex items-center gap-2 px-4 py-3 border-b-2 transition-all duration-300 font-medium text-sm tracking-tight",
         currentModule === module
-          ? "border-white text-white"
+          ? "border-white text-white drop-shadow-sm scale-105"
           : "border-transparent text-medical-200 hover:text-white hover:border-medical-400"
       )}
     >
@@ -105,14 +105,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   // Module Color Map
   const getNavColor = () => {
     switch (currentModule) {
-      case 'CENSUS': return 'bg-medical-900'; // Default Blue
-      case 'CUDYR': return 'bg-teal-700';
-      case 'NURSING_HANDOFF': return 'bg-indigo-700';
-      case 'MEDICAL_HANDOFF': return 'bg-purple-700';
-      case 'REPORTS': return 'bg-slate-700';
-      case 'AUDIT': return 'bg-slate-800';
-      case 'WHATSAPP': return 'bg-green-700';
-      default: return 'bg-medical-900';
+      case 'CENSUS': return 'bg-medical-900 shadow-medical-900/20'; // Default Blue
+      case 'CUDYR': return 'bg-clinical-teal shadow-clinical-teal/20';
+      case 'NURSING_HANDOFF': return 'bg-indigo-700 shadow-indigo-700/20';
+      case 'MEDICAL_HANDOFF': return 'bg-purple-700 shadow-purple-700/20';
+      case 'REPORTS': return 'bg-slate-700 shadow-slate-700/20';
+      case 'AUDIT': return 'bg-slate-800 shadow-slate-800/20';
+      case 'WHATSAPP': return 'bg-green-700 shadow-green-700/20';
+      default: return 'bg-medical-900 shadow-medical-900/20';
     }
   };
 
@@ -126,12 +126,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex items-center gap-2 py-2 hover:opacity-90 transition-opacity"
           >
-            <div className="bg-white/10 p-2 rounded-lg">
-              <LayoutList size={24} className="text-medical-100" />
+            <div className="bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10">
+              <LayoutList size={22} className="text-medical-100" />
             </div>
             <div className="text-left">
-              <h1 className="text-lg font-bold leading-tight">Hospital Hanga Roa</h1>
-              <p className="text-xs text-medical-200">Gestión de Camas</p>
+              <h1 className="text-lg font-display font-bold leading-tight tracking-tight">Hospital Hanga Roa</h1>
+              <p className="text-[10px] font-bold text-medical-200 uppercase tracking-[0.15em] opacity-80">Gestión de Camas</p>
             </div>
             <ChevronDown size={16} className={clsx("text-medical-300 transition-transform ml-1", isMenuOpen && "rotate-180")} />
           </button>

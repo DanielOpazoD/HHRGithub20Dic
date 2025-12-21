@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { MoreHorizontal, Trash2, Copy, ArrowRightLeft, LogOut, Ambulance, User } from 'lucide-react';
+import clsx from 'clsx';
 
 interface PatientActionMenuProps {
     isBlocked: boolean;
     onAction: (action: 'clear' | 'copy' | 'move' | 'discharge' | 'transfer') => void;
     onViewDemographics: () => void;
     readOnly?: boolean;
+    align?: 'top' | 'bottom';
 }
 
 export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
     isBlocked,
     onAction,
     onViewDemographics,
-    readOnly = false
+    readOnly = false,
+    align = 'top'
 }) => {
     const [showMenu, setShowMenu] = useState(false);
 
@@ -47,7 +50,10 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
             {showMenu && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)}></div>
-                    <div className="absolute left-10 top-0 z-50 bg-white shadow-lg rounded-lg border border-slate-200 w-48 text-left py-1 animate-fade-in print:hidden">
+                    <div className={clsx(
+                        "absolute left-10 z-50 bg-white shadow-lg rounded-2xl border border-slate-200 w-48 text-left py-2 animate-fade-in print:hidden",
+                        align === 'top' ? "top-0" : "bottom-0"
+                    )}>
                         <button onClick={() => handleMenuAction('clear')} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2">
                             <Trash2 size={14} /> Limpiar Datos
                         </button>

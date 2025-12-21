@@ -18,9 +18,10 @@ interface PatientRowProps {
     onAction: (action: 'clear' | 'copy' | 'move' | 'discharge' | 'transfer', bedId: string) => void;
     showCribControls: boolean;
     readOnly?: boolean;
+    actionMenuAlign?: 'top' | 'bottom';
 }
 
-const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDateString, onAction, showCribControls, readOnly = false }) => {
+const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDateString, onAction, showCribControls, readOnly = false, actionMenuAlign = 'top' }) => {
     const { updatePatient, updatePatientMultiple, updateClinicalCrib, updateClinicalCribMultiple } = useDailyRecordContext();
     const { confirm, alert } = useConfirmDialog();
     const isBlocked = data.isBlocked;
@@ -145,8 +146,10 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
         <>
             {/* MAIN ROW */}
             <tr className={clsx(
-                "hover:bg-slate-50 transition-colors border-b border-slate-200 text-[12px] leading-tight group/row relative",
-                isBlocked ? "bg-slate-100" : ""
+                "group/row relative border-b border-slate-100 transition-all duration-200 ease-in-out",
+                "hover:bg-slate-50 hover:shadow-sm hover:z-10",
+                isBlocked ? "bg-slate-50/50" : "bg-white",
+                "text-[12px] leading-tight"
             )}>
                 {/* Action Menu */}
                 <td className="p-1 text-center border-r border-slate-200 relative w-10 print:hidden">
@@ -155,6 +158,7 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                         onAction={handleAction}
                         onViewDemographics={() => setShowDemographics(true)}
                         readOnly={readOnly}
+                        align={actionMenuAlign}
                     />
                 </td>
 
@@ -178,10 +182,12 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                 />
 
                 {/* Bed Type */}
-                <td className="p-1.5 border-r border-slate-200 text-center w-16">
+                <td className="p-1 border-r border-slate-100 text-center w-16">
                     <span className={clsx(
-                        "text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full border block",
-                        bed.type === 'UTI' ? "bg-purple-100 text-purple-700 border-purple-200" : "bg-blue-50 text-blue-600 border-blue-200"
+                        "text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border block tracking-tighter",
+                        bed.type === 'UTI'
+                            ? "bg-purple-50 text-purple-600 border-purple-100"
+                            : "bg-blue-50 text-blue-600 border-blue-100"
                     )}>
                         {bed.type}
                     </span>
@@ -189,11 +195,11 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
 
                 {/* Data Cells - Always render PatientInputCells to preserve focus */}
                 {isBlocked ? (
-                    <td colSpan={10} className="p-2 bg-slate-100 text-center">
-                        <div className="text-slate-500 text-sm flex items-center justify-center gap-2">
-                            <AlertCircle size={14} />
-                            <span className="font-medium">Bloqueada</span>
-                            {data.blockedReason && <span className="text-xs text-slate-400">({data.blockedReason})</span>}
+                    <td colSpan={10} className="p-2 bg-slate-50/50 text-center">
+                        <div className="text-slate-400 text-sm flex items-center justify-center gap-2 italic">
+                            <AlertCircle size={14} className="text-slate-300" />
+                            <span>Cama Bloqueada</span>
+                            {data.blockedReason && <span className="text-xs opacity-70">({data.blockedReason})</span>}
                         </div>
                     </td>
                 ) : (

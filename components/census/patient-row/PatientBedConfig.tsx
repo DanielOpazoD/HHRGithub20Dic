@@ -59,9 +59,9 @@ export const PatientBedConfig: React.FC<PatientBedConfigProps> = ({
         <td className="p-1 border-r border-slate-200 text-center w-24 relative">
             <div className="flex flex-col items-center gap-0.5">
                 {/* BED NAME */}
-                <div className="font-bold text-lg text-slate-700 flex items-center gap-1 leading-none">
+                <div className="font-display font-bold text-lg text-slate-800 flex items-center gap-1.5 leading-none tracking-tight">
                     {bed.name}
-                    {isCunaMode && <Baby size={16} className="text-pink-500" />}
+                    {isCunaMode && <Baby size={16} className="text-pink-500 drop-shadow-sm" />}
                 </div>
 
                 {/* Days Hospitalized Counter */}
@@ -82,26 +82,26 @@ export const PatientBedConfig: React.FC<PatientBedConfigProps> = ({
                         <button
                             onClick={onToggleMode}
                             className={clsx(
-                                "text-[9px] px-1 py-0.5 rounded border transition-colors w-full",
+                                "text-[9px] font-bold uppercase tracking-tight px-1 py-0.5 rounded border transition-all duration-200 w-full shadow-sm",
                                 isCunaMode
-                                    ? "bg-pink-50 border-pink-200 text-pink-700"
-                                    : "bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200"
+                                    ? "bg-pink-50 border-pink-200 text-pink-700 shadow-pink-100/50"
+                                    : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
                             )}
                         >
-                            {isCunaMode ? "Cuna clínica" : "Cama"}
+                            {isCunaMode ? "Cuna" : "Cama"}
                         </button>
 
                         {/* Companion Toggle */}
                         <button
                             onClick={onToggleCompanion}
                             className={clsx(
-                                "text-[9px] px-1 py-0.5 rounded border transition-colors w-full",
+                                "text-[9px] font-bold uppercase tracking-tight px-1 py-0.5 rounded border transition-all duration-200 w-full shadow-sm",
                                 hasCompanion
-                                    ? "bg-green-50 border-green-200 text-green-700 font-bold"
-                                    : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-green-50 hover:text-green-600"
+                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-emerald-100/50"
+                                    : "bg-white border-slate-200 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
                             )}
                         >
-                            {hasCompanion ? "RN Sano: SI" : "+ RN Sano"}
+                            {hasCompanion ? "RN Sano" : "+ RN Sano"}
                         </button>
 
                         {/* Clinical Crib Toggle */}
@@ -109,29 +109,29 @@ export const PatientBedConfig: React.FC<PatientBedConfigProps> = ({
                             <button
                                 onClick={onToggleClinicalCrib}
                                 className={clsx(
-                                    "text-[9px] px-1 py-0.5 rounded border transition-colors w-full flex items-center justify-center gap-1",
+                                    "text-[9px] font-bold uppercase tracking-tight px-1 py-0.5 rounded border transition-all duration-200 w-full shadow-sm flex items-center justify-center gap-1",
                                     hasClinicalCrib
-                                        ? "bg-purple-50 border-purple-200 text-purple-700 font-bold"
-                                        : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-purple-50 hover:text-purple-600"
+                                        ? "bg-purple-50 border-purple-200 text-purple-700 shadow-purple-100/50"
+                                        : "bg-white border-slate-200 text-slate-400 hover:bg-purple-50 hover:text-purple-600"
                                 )}
                             >
-                                {hasClinicalCrib ? "+ Cuna clínica" : "+ Cuna clínica"}
+                                {hasClinicalCrib ? "Cuna Cli" : "+ Cuna Cli"}
                             </button>
                         )}
 
                         {/* Additional Clinical Crib Controls (Delete/Edit) */}
                         {hasClinicalCrib && (
-                            <div className="flex gap-1 mt-1">
+                            <div className="flex gap-1 mt-0.5">
                                 <button
                                     onClick={onShowCribDemographics}
-                                    className="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-700 p-1 rounded border border-purple-200"
+                                    className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-600 p-1 rounded border border-purple-200 transition-colors shadow-sm"
                                     title="Datos Personales Cuna Clínica"
                                 >
                                     <User size={12} className="mx-auto" />
                                 </button>
                                 <button
                                     onClick={() => onUpdateClinicalCrib('remove')}
-                                    className="flex-1 bg-red-100 hover:bg-red-200 text-red-600 p-1 rounded border border-red-200"
+                                    className="flex-1 bg-red-50 hover:bg-red-100 text-red-500 p-1 rounded border border-red-200 transition-colors shadow-sm"
                                     title="Eliminar Cuna Clínica Adicional"
                                 >
                                     <Trash2 size={12} className="mx-auto" />
@@ -155,7 +155,7 @@ export const PatientBedConfig: React.FC<PatientBedConfigProps> = ({
                 <input
                     type="text"
                     placeholder="Ubicación"
-                    className="w-full text-[10px] p-1 mt-1 border border-slate-300 rounded text-center bg-yellow-50 focus:ring-1 focus:ring-yellow-400 focus:outline-none"
+                    className="w-full text-[10px] p-1 mt-1.5 border border-amber-200 rounded text-center bg-amber-50/50 text-amber-900 placeholder:text-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 focus:outline-none transition-all duration-200"
                     value={data.location || ''}
                     onChange={onTextChange('location')}
                     disabled={readOnly}

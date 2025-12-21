@@ -56,8 +56,8 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                     <DebouncedInput
                         type="text"
                         className={clsx(
-                            "w-full p-0.5 h-9 border rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-[13px]",
-                            isSubRow ? "border-pink-200 bg-white text-xs h-8" : "border-slate-300"
+                            "w-full p-0.5 h-9 border rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-[13px] font-medium",
+                            isSubRow ? "border-pink-100 bg-white text-xs h-8" : "border-slate-200 bg-white"
                         )}
                         placeholder={isSubRow ? "Nombre RN / Niño" : (isEmpty ? "" : "Nombre Paciente")}
                         value={data.patientName || ''}
@@ -101,7 +101,7 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                     <DebouncedInput
                         type="text"
                         className={clsx(
-                            "w-full p-0.5 h-9 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none",
+                            "w-full p-0.5 h-9 border border-slate-200 rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-[13px]",
                             isSubRow && "text-xs h-8"
                         )}
                         placeholder="Diagnóstico"
@@ -119,7 +119,7 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                 ) : (
                     <select
                         className={clsx(
-                            "w-full p-0.5 h-9 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs",
+                            "w-full p-0.5 h-9 border border-slate-200 rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-xs bg-white cursor-pointer",
                             isSubRow && "h-8"
                         )}
                         value={data.specialty || ''}
@@ -141,10 +141,10 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                 ) : (
                     <select
                         className={clsx(
-                            "w-full p-0.5 h-9 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs font-medium",
-                            data.status === 'Grave' ? "text-red-600 bg-red-50" :
-                                data.status === 'De cuidado' ? "text-orange-600 bg-orange-50" :
-                                    "text-green-700",
+                            "w-full p-0.5 h-9 border border-slate-200 rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-xs font-bold uppercase tracking-tighter cursor-pointer",
+                            data.status === 'Grave' ? "text-red-600 bg-red-50/50" :
+                                data.status === 'De cuidado' ? "text-orange-600 bg-orange-50/50" :
+                                    "text-emerald-700 bg-emerald-50/30",
                             isSubRow && "h-8"
                         )}
                         value={data.status || ''}

@@ -94,7 +94,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {visibleBeds.map(bed => (
+                        {visibleBeds.map((bed, index) => (
                             <PatientRow
                                 key={bed.id}
                                 bed={bed}
@@ -103,6 +103,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
                                 onAction={handleRowAction}
                                 showCribControls={showCribConfig}
                                 readOnly={readOnly}
+                                actionMenuAlign={index >= visibleBeds.length - 4 ? 'bottom' : 'top'}
                             />
                         ))}
                     </tbody>

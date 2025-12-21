@@ -4,6 +4,7 @@ import App from './App';
 import { NotificationProvider } from './context/NotificationContext';
 import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
 import { DemoModeProvider } from './context/DemoModeContext';
+import { AuthProvider } from './context/AuthContext';
 import { firebaseReady, mountConfigWarning } from './firebaseConfig';
 
 const rootElement = document.getElementById('root');
@@ -16,13 +17,15 @@ const root = ReactDOM.createRoot(rootElement);
 const renderApp = () => {
   root.render(
     <React.StrictMode>
-      <NotificationProvider>
-        <ConfirmDialogProvider>
-          <DemoModeProvider>
-            <App />
-          </DemoModeProvider>
-        </ConfirmDialogProvider>
-      </NotificationProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <ConfirmDialogProvider>
+            <DemoModeProvider>
+              <App />
+            </DemoModeProvider>
+          </ConfirmDialogProvider>
+        </NotificationProvider>
+      </AuthProvider>
     </React.StrictMode>
   );
 };

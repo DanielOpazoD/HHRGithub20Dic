@@ -3,7 +3,7 @@ import { LayoutList, BarChart2, FileJson, Upload, Settings, ClipboardList, Messa
 import clsx from 'clsx';
 import { useDailyRecordContext } from '../../context/DailyRecordContext';
 import { useDemoMode } from '../../context/DemoModeContext';
-import { useRole } from '../../context/RoleContext';
+import { useAuth } from '../../context/AuthContext';
 import { getRoleDisplayName, getVisibleModules, isAdmin } from '../../utils/permissions';
 
 export type ModuleType = 'CENSUS' | 'CUDYR' | 'NURSING_HANDOFF' | 'MEDICAL_HANDOFF' | 'REPORTS' | 'AUDIT' | 'WHATSAPP';
@@ -42,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isFirebaseConnected
 }) => {
   const { record } = useDailyRecordContext();
-  const { role } = useRole();
+  const { role } = useAuth();
   const visibleModules = getVisibleModules(role);
   const isUserAdmin = isAdmin(role);
 

@@ -38,12 +38,7 @@ export {
 } from './AuthContext';
 export type { UserRole, AuthContextType } from './AuthContext';
 
-// Role Provider (for passing role down the tree)
-export {
-    RoleProvider,
-    useRole,
-    useCanEdit as useCanEditFromRole
-} from './RoleContext';
+// Note: RoleContext deprecated - use AuthContext instead
 
 // Audit Logging
 export {

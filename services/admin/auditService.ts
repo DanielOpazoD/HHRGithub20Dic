@@ -15,8 +15,8 @@ import {
     Timestamp,
     where
 } from 'firebase/firestore';
-import { db, auth } from '../firebaseConfig';
-import { AuditLogEntry, AuditAction, maskRut } from '../types/audit';
+import { db, auth } from '../../firebaseConfig';
+import { AuditLogEntry, AuditAction, maskRut } from '../../types/audit';
 
 // Get current user email from Firebase Auth
 const getCurrentUserEmail = (): string => {

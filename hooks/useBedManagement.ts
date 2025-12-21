@@ -13,7 +13,7 @@ import { formatRut, isValidRut, isPassportFormat } from '../utils/rutUtils';
 import {
     logPatientAdmission,
     logPatientCleared
-} from '../services/auditService';
+} from '../services/admin/auditService';
 
 // ============================================================================
 // Types

@@ -28,7 +28,7 @@ vi.mock('../../../services/storage/localStorageService', () => ({
     deleteRecordLocal: vi.fn(),
 }));
 
-vi.mock('../../../services/auditService', () => ({
+vi.mock('../../../services/admin/auditService', () => ({
     logDailyRecordCreated: vi.fn(),
     logDailyRecordDeleted: vi.fn(),
 }));

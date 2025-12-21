@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { onAuthChange, signOut, AuthUser } from '../services/authService';
+import { onAuthChange, signOut, AuthUser } from '../services/auth/authService';
 
 export type UserRole = 'viewer' | 'editor' | 'admin';
 

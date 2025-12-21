@@ -22,8 +22,8 @@ export {
     signOut,
     onAuthChange,
     getCurrentUser
-} from './authService';
-export type { AuthUser } from './authService';
+} from './auth/authService';
+export type { AuthUser } from './auth/authService';
 
 // ============================================================
 // DATA PERSISTENCE - Local Storage
@@ -67,7 +67,7 @@ export {
     getMonthRecordsFromFirestore,
     subscribeToRecord,
     isFirestoreAvailable
-} from './firestoreService';
+} from './storage/firestoreService';
 
 // ============================================================
 // REPOSITORY PATTERN
@@ -94,8 +94,8 @@ export {
     exportDataCSV,
     importDataJSON,
     importDataCSV
-} from './exportService';
-export { generateCensusMasterExcel } from './censusMasterExport';
+} from './exporters/exportService';
+export { generateCensusMasterExcel } from './exporters/censusMasterExport';
 
 // ============================================================
 // REPORTS
@@ -107,14 +107,14 @@ export {
     generateCensusDailyFormatted,
     generateCensusRangeFormatted,
     generateCudyrDailyRaw
-} from './reportService';
+} from './exporters/reportService';
 
 // ============================================================
 // AI (GEMINI)
 // ============================================================
 export {
     generateShiftReport
-} from './geminiService';
+} from './integrations/geminiService';
 
 // ============================================================
 // INTEGRATIONS

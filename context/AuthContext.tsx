@@ -5,7 +5,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AuthUser, onAuthChange, signOut as authSignOut } from '../services/authService';
+import { AuthUser, onAuthChange, signOut as authSignOut } from '../services/auth/authService';
 
 // ============================================================================
 // Types

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Users, X, Plus, Trash2, Cloud, AlertCircle, Pencil, Check } from 'lucide-react';
 import * as DataService from '../../services/dataService';
-import { saveNurseCatalogToFirestore } from '../../services/firestoreService';
+import { saveNurseCatalogToFirestore } from '../../services/storage/firestoreService';
 
 interface NurseManagerModalProps {
   isOpen: boolean;

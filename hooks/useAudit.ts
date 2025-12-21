@@ -5,7 +5,7 @@
  */
 
 import { useCallback } from 'react';
-import { logAuditEvent, getAuditLogs, AUDIT_ACTION_LABELS } from '../services/auditService';
+import { logAuditEvent, getAuditLogs, AUDIT_ACTION_LABELS } from '../services/admin/auditService';
 import { AuditAction, AuditLogEntry } from '../types/audit';
 
 interface UseAuditReturn {

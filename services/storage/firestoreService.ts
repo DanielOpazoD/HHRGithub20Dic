@@ -12,15 +12,15 @@ import {
     where,
     updateDoc
 } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import { DailyRecord } from '../types';
-import { DailyRecordSchema } from '../schemas/zodSchemas';
+import { db } from '../../firebaseConfig';
+import { DailyRecord } from '../../types';
+import { DailyRecordSchema } from '../../schemas/zodSchemas';
 import {
     HOSPITAL_ID,
     COLLECTIONS,
     HOSPITAL_COLLECTIONS,
     SETTINGS_DOCS
-} from '../constants/firestorePaths';
+} from '../../constants/firestorePaths';
 
 // Get collection reference using typed constants
 const getRecordsCollection = () => collection(

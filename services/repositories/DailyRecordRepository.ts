@@ -25,7 +25,7 @@ import {
     subscribeToRecord,
     deleteRecordFromFirestore,
     updateRecordPartial
-} from '../firestoreService';
+} from '../storage/firestoreService';
 import { createEmptyPatient, clonePatient } from '../factories/patientFactory';
 import { applyPatches } from '../../utils/patchUtils';
 
@@ -277,7 +277,7 @@ import {
     subscribeToTensCatalog,
     saveNurseCatalogToFirestore,
     saveTensCatalogToFirestore
-} from '../firestoreService';
+} from '../storage/firestoreService';
 
 const TENS_STORAGE_KEY = 'hanga_roa_tens_list';
 

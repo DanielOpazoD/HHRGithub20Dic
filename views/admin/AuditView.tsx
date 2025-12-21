@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ClipboardList, Search, RefreshCw, Clock, User, FileText, Filter } from 'lucide-react';
-import { getAuditLogs, AUDIT_ACTION_LABELS } from '../../services/auditService';
+import { getAuditLogs, AUDIT_ACTION_LABELS } from '../../services/admin/auditService';
 import { AuditLogEntry, AuditAction } from '../../types/audit';
 import clsx from 'clsx';
 

@@ -1,7 +1,7 @@
 import { DailyRecord, TransferData } from '../types';
 import { createEmptyPatient } from '../services/factories/patientFactory';
 import { BEDS } from '../constants';
-import { logPatientTransfer } from '../services/auditService';
+import { logPatientTransfer } from '../services/admin/auditService';
 
 export const usePatientTransfers = (
     record: DailyRecord | null,

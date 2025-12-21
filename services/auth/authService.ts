@@ -8,7 +8,7 @@ import {
     createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { auth, db } from '../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
 
 export interface AuthUser {
     uid: string;

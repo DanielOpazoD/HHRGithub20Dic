@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { DailyRecord } from "../types";
-import { calculateStats } from "./dataService";
+import { DailyRecord } from "../../types";
+import { calculateStats } from "../calculations/statsCalculator";
 
 const initializeGenAI = () => {
   if (!process.env.API_KEY) {
@@ -13,20 +13,20 @@ export const generateShiftReport = async (record: DailyRecord) => {
   try {
     const ai = initializeGenAI();
     const stats = calculateStats(record.beds);
-    
+
     // Filter only occupied beds for the prompt to save tokens
     const occupiedData = Object.values(record.beds)
-        .filter(b => b.patientName || b.isBlocked)
-        .map(b => ({
-            bed: b.bedId,
-            status: b.isBlocked ? 'BLOCKED' : 'OCCUPIED',
-            diagnosis: b.pathology,
-            specialty: b.specialty,
-            condition: b.status,
-            age: b.age,
-            devices: b.devices.join(', '),
-            daysAdmitted: b.admissionDate ? Math.floor((new Date(record.date).getTime() - new Date(b.admissionDate).getTime()) / (1000 * 3600 * 24)) : 0
-        }));
+      .filter(b => b.patientName || b.isBlocked)
+      .map(b => ({
+        bed: b.bedId,
+        status: b.isBlocked ? 'BLOCKED' : 'OCCUPIED',
+        diagnosis: b.pathology,
+        specialty: b.specialty,
+        condition: b.status,
+        age: b.age,
+        devices: b.devices.join(', '),
+        daysAdmitted: b.admissionDate ? Math.floor((new Date(record.date).getTime() - new Date(b.admissionDate).getTime()) / (1000 * 3600 * 24)) : 0
+      }));
 
     const prompt = `
       Actúa como una enfermera supervisora jefe experta en gestión clínica.

@@ -16,7 +16,7 @@ import { useNotification } from '../context/NotificationContext';
 import {
     logDailyRecordCreated,
     logDailyRecordDeleted
-} from '../services/auditService';
+} from '../services/admin/auditService';
 
 // Repository
 import {

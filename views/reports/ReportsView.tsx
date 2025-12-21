@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { FileDown, Calendar, Printer, FileSpreadsheet, Download } from 'lucide-react';
-import * as ReportService from '../../services/reportService';
+import * as ReportService from '../../services/exporters/reportService';
 import clsx from 'clsx';
 import { MONTH_NAMES } from '../../constants';
 

@@ -8,7 +8,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { DailyRecord } from '../types';
 import { useNotification } from '../context/NotificationContext';
 import { validateDailyRecord } from '../utils/validation';
-import { logFirebaseError, getUserFriendlyErrorMessage } from '../services/errorService';
+import { logFirebaseError, getUserFriendlyErrorMessage } from '../services/utils/errorService';
 
 import {
     getForDate,

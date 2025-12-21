@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signIn, signInWithGoogle } from '../../services/authService';
+import { signIn, signInWithGoogle } from '../../services/auth/authService';
 import { Hospital, Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
 
 interface LoginPageProps {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Users, X, Plus, Trash2, Cloud, AlertCircle, Pencil, Check } from 'lucide-react';
-import { saveTensCatalogToFirestore } from '../../services/firestoreService';
+import { saveTensCatalogToFirestore } from '../../services/storage/firestoreService';
 
 interface TensManagerModalProps {
     isOpen: boolean;

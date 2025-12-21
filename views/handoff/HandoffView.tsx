@@ -17,6 +17,7 @@ import { HandoffPrintHeader } from './HandoffPrintHeader';
 import { HandoffShiftSelector } from './HandoffShiftSelector';
 
 import { useNotification } from '@/context/NotificationContext';
+import { useConfirmDialog } from '@/context/ConfirmDialogContext';
 import { useHandoffLogic } from '@/hooks';
 
 interface HandoffViewProps {
@@ -57,6 +58,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
         handleNursingNoteChange,
         handleShareLink,
         handleSendWhatsApp,
+        handleSendWhatsAppManual,
         formatPrintDate,
     } = useHandoffLogic({
         record,
@@ -68,6 +70,8 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
         sendMedicalHandoff,
         onSuccess: success,
     });
+
+    const { confirm: showConfirm, alert: showAlert } = useConfirmDialog();
 
     const title = isMedical
         ? 'Entrega Turno Médicos'
@@ -141,17 +145,30 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                 "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                                 (whatsappSent || record.medicalSignature)
                                     ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                    : "bg-green-500 text-white hover:bg-green-600"
+                                    : "bg-green-600 text-white hover:bg-green-700"
                             )}
-                            title="Enviar entrega por WhatsApp"
+                            title="Enviar entrega por WhatsApp (Automático)"
                         >
                             {whatsappSending ? (
                                 <><RefreshCw size={14} className="animate-spin" /> Enviando...</>
                             ) : whatsappSent ? (
                                 <><CheckCircle size={14} /> Enviado</>
                             ) : (
-                                <><Send size={14} /> Enviar WhatsApp</>
+                                <><Send size={14} /> Enviar WhatsApp (Rail)</>
                             )}
+                        </button>
+                        <button
+                            onClick={handleSendWhatsAppManual}
+                            disabled={!!record.medicalSignature}
+                            className={clsx(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                                record.medicalSignature
+                                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                    : "bg-green-500 text-white hover:bg-green-600"
+                            )}
+                            title="Enviar entrega por WhatsApp (Manual)"
+                        >
+                            <Send size={14} /> Enviar por WhatsApp
                         </button>
                         <button
                             onClick={handleShareLink}
@@ -159,25 +176,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                             title="Generar link para firma del médico"
                         >
                             <Share2 size={14} />
-                            Link Firma
                         </button>
-                        {!record.medicalHandoffSentAt && !record.medicalSignature && (
-                            <button
-                                onClick={() => {
-                                    if (record.medicalHandoffDoctor) {
-                                        markMedicalHandoffAsSent(record.medicalHandoffDoctor);
-                                    } else {
-                                        const name = prompt('Ingrese su nombre para firmar la entrega:');
-                                        if (name) markMedicalHandoffAsSent(name);
-                                    }
-                                }}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-bold"
-                                title="Firmar entrega de turno"
-                            >
-                                <ShieldCheck size={14} />
-                                Firmar
-                            </button>
-                        )}
                     </div>
                 )}
             </header>
@@ -196,13 +195,43 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                 <div className="flex-1 min-w-[200px] max-w-xs">
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1 print:text-black">Entregado por (Dr.):</label>
                                     {!readOnly ? (
-                                        <input
-                                            type="text"
-                                            placeholder=""
-                                            value={record.medicalHandoffDoctor || ''}
-                                            onChange={(e) => updateMedicalHandoffDoctor(e.target.value)}
-                                            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none print:hidden text-sm"
-                                        />
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder=""
+                                                value={record.medicalHandoffDoctor || ''}
+                                                onChange={(e) => updateMedicalHandoffDoctor(e.target.value)}
+                                                className="flex-1 p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none print:hidden text-sm"
+                                            />
+                                            {!record.medicalHandoffSentAt && !record.medicalSignature && (
+                                                <button
+                                                    onClick={async () => {
+                                                        const doctorName = record.medicalHandoffDoctor?.trim();
+                                                        if (!doctorName) {
+                                                            showAlert('Debe escribir su nombre para firmar la entrega.', 'Falta nombre');
+                                                            return;
+                                                        }
+
+                                                        const confirmed = await showConfirm({
+                                                            title: 'Confirmar Firma de Entrega',
+                                                            message: `¿Estás seguro de que deseas firmar la entrega como "${doctorName}"?\nEsta acción quedará registrada con la hora actual.`,
+                                                            confirmText: 'Firmar ahora',
+                                                            cancelText: 'Cancelar',
+                                                            variant: 'info'
+                                                        });
+
+                                                        if (confirmed) {
+                                                            markMedicalHandoffAsSent(doctorName);
+                                                        }
+                                                    }}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap"
+                                                    title="Firmar entrega de turno"
+                                                >
+                                                    <ShieldCheck size={14} />
+                                                    Firmar
+                                                </button>
+                                            )}
+                                        </div>
                                     ) : null}
                                     <div className={clsx("text-base font-medium text-slate-800", !readOnly && "hidden print:block")}>
                                         {record.medicalHandoffDoctor || <span className="text-slate-400 italic">No especificado</span>}
@@ -218,7 +247,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                 </div>
 
                                 {/* Receives */}
-                                <div className="flex-1 min-w-[200px] max-w-xs">
+                                <div className="flex-1 min-w-[200px] max-w-xs sm:ml-8 md:ml-12 lg:ml-16">
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1 print:text-black">Recibido por (Dr.):</label>
                                     {record.medicalSignature ? (
                                         <div>

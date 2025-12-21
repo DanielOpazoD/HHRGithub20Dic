@@ -153,6 +153,44 @@ export const useHandoffLogic = ({
         }
     }, [record, sendMedicalHandoff, onSuccess]);
 
+    const handleSendWhatsAppManual = useCallback(async () => {
+        if (!record) return;
+        try {
+            const templates = await getMessageTemplates();
+            const handoffTemplate = templates.find(t => t.type === 'handoff');
+            if (!handoffTemplate) {
+                throw new Error('No se encontró template de entrega médica');
+            }
+
+            // Calculate Stats (Replica of server-side logic for consistency)
+            const hospitalized = visibleBeds.filter(b =>
+                record.beds[b.id].patientName && !record.beds[b.id].isBlocked
+            ).length;
+            const blockedBeds = visibleBeds.filter(b => record.beds[b.id].isBlocked).length;
+            const freeBeds = visibleBeds.length - hospitalized - blockedBeds;
+
+            const [year, month, day] = record.date.split('-');
+            const dateStr = `${day}-${month}-${year}`;
+            const handoffUrl = `${window.location.origin}?mode=signature&date=${record.date}`;
+
+            const message = handoffTemplate.content
+                .replace(/\{\{date\}\}/g, dateStr)
+                .replace(/\{\{signedBy\}\}/g, record.medicalHandoffDoctor || 'Sin especificar')
+                .replace(/\{\{signedAt\}\}/g, new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }))
+                .replace(/\{\{hospitalized\}\}/g, String(hospitalized))
+                .replace(/\{\{freeBeds\}\}/g, String(freeBeds))
+                .replace(/\{\{newAdmissions\}\}/g, '0') // Not easily available here, used 0/N/A
+                .replace(/\{\{discharges\}\}/g, '0')
+                .replace(/\{\{handoffUrl\}\}/g, handoffUrl);
+
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+        } catch (error: any) {
+            console.error('Error in manual WhatsApp:', error);
+            onSuccess(error.message || 'Error al preparar WhatsApp');
+        }
+    }, [record, visibleBeds, onSuccess]);
+
     // ========== FORMATTING ==========
     const formatPrintDate = useCallback(() => {
         if (!record) return '';
@@ -181,6 +219,7 @@ export const useHandoffLogic = ({
         handleNursingNoteChange,
         handleShareLink,
         handleSendWhatsApp,
+        handleSendWhatsAppManual,
         formatPrintDate,
     };
 };

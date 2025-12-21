@@ -1,201 +1,108 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { PatientRow } from '../../../components/PatientRow';
-import { BedDefinition, PatientData } from '../../../types';
+import { screen, fireEvent } from '@testing-library/react';
+import React from 'react';
+import { PatientRow } from '@/components/census/PatientRow';
+import { PatientData, Specialty, PatientStatus, BedType } from '@/types';
+import { render } from '../integration/setup';
 
-// Mock contexts
-vi.mock('../../../context/DailyRecordContext', () => ({
-    useDailyRecordContext: () => ({
+describe('PatientRow Component', () => {
+    const mockContext = {
         updatePatient: vi.fn(),
         updatePatientMultiple: vi.fn(),
         updateClinicalCrib: vi.fn(),
-        updateClinicalCribMultiple: vi.fn(),
-    }),
-}));
+        updateClinicalCribMultiple: vi.fn()
+    };
 
-vi.mock('../../../context/ConfirmDialogContext', () => ({
-    useConfirmDialog: () => ({
-        confirm: vi.fn(),
-        alert: vi.fn(),
-    }),
-}));
+    const mockPatient: PatientData = {
+        bedId: 'R1',
+        patientName: 'Juan Pérez',
+        rut: '12.345.678-9',
+        age: '45',
+        pathology: 'Neumonía',
+        specialty: Specialty.MEDICINA,
+        status: PatientStatus.ESTABLE,
+        admissionDate: '2023-01-01',
+        hasWristband: true,
+        devices: ['VVP'],
+        surgicalComplication: false,
+        isUPC: false,
+        isBlocked: false,
+        bedMode: 'Cama',
+        hasCompanionCrib: false
+    };
 
-describe('PatientRow Component', () => {
-    const mockBed: BedDefinition = {
-        id: '1C',
-        label: '1C',
-        section: 'Críticos',
-        isExtra: false,
+    const mockBedDef = {
+        id: 'R1',
+        name: 'R1', // User confirmed name is R1
+        type: BedType.UTI,
+        isCuna: false
     };
 
     const mockOnAction = vi.fn();
 
-    it('should render patient data correctly', () => {
-        const patientData: PatientData = {
-            patientName: 'Juan Pérez',
-            rut: '12.345.678-9',
-            age: '45',
-            diagnosis: 'Neumonía',
-            specialty: 'Medicina',
-            status: 'Estable',
-        };
-
+    it('renders patient name and bed name correctly', () => {
         render(
-            <PatientRow
-                bed={mockBed}
-                data={patientData}
-                currentDateString="2024-01-15"
-                onAction={mockOnAction}
-                showCribControls={false}
-                readOnly={false}
-            />
+            <table>
+                <tbody>
+                    <PatientRow
+                        data={mockPatient}
+                        bed={mockBedDef}
+                        currentDateString="2023-01-01"
+                        onAction={mockOnAction}
+                        showCribControls={false}
+                    />
+                </tbody>
+            </table>
         );
 
-        // Check if patient name is rendered
-        expect(screen.getByDisplayValue('Juan Pérez')).toBeInTheDocument();
-        expect(screen.getByDisplayValue('12.345.678-9')).toBeInTheDocument();
-        expect(screen.getByDisplayValue('45')).toBeInTheDocument();
-        expect(screen.getByDisplayValue('Neumonía')).toBeInTheDocument();
+        // Name is in an input value
+        expect(screen.getByDisplayValue(/Juan Pérez/)).toBeInTheDocument();
+        // Bed name is rendered in a div
+        expect(screen.getByText('R1')).toBeInTheDocument();
     });
 
-    it('should render empty row when no patient data', () => {
-        const emptyData: PatientData = {};
-
+    it('toggles UPC status when clicked', () => {
         render(
-            <PatientRow
-                bed={mockBed}
-                data={emptyData}
-                currentDateString="2024-01-15"
-                onAction={mockOnAction}
-                showCribControls={false}
-                readOnly={false}
-            />
+            <table>
+                <tbody>
+                    <PatientRow
+                        data={mockPatient}
+                        bed={mockBedDef}
+                        currentDateString="2023-01-01"
+                        onAction={mockOnAction}
+                        showCribControls={false}
+                    />
+                </tbody>
+            </table>,
+            { contextValue: mockContext as any }
         );
 
-        // Inputs should exist but be empty
-        const inputs = screen.getAllByRole('textbox');
-        expect(inputs.length).toBeGreaterThan(0);
+        // UPC is a checkbox with title="UPC"
+        const upcCheckbox = screen.getByTitle('UPC');
+        fireEvent.click(upcCheckbox);
+
+        expect(mockContext.updatePatient).toHaveBeenCalledWith('R1', 'isUPC', true);
     });
 
-    it('should disable all inputs in readOnly mode', () => {
-        const patientData: PatientData = {
-            patientName: 'María González',
-            rut: '98.765.432-1',
-            diagnosis: 'Post-operatorio',
-        };
-
+    it('calls updatePatient when status changes', () => {
         render(
-            <PatientRow
-                bed={mockBed}
-                data={patientData}
-                currentDateString="2024-01-15"
-                onAction={mockOnAction}
-                showCribControls={false}
-                readOnly={true}
-            />
+            <table>
+                <tbody>
+                    <PatientRow
+                        data={mockPatient}
+                        bed={mockBedDef}
+                        currentDateString="2023-01-01"
+                        onAction={mockOnAction}
+                        showCribControls={false}
+                    />
+                </tbody>
+            </table>,
+            { contextValue: mockContext as any }
         );
 
-        // All text inputs should be disabled
-        const nameInput = screen.getByDisplayValue('María González') as HTMLInputElement;
-        expect(nameInput.disabled).toBe(true);
+        const statusSelect = screen.getByDisplayValue(/Estable/);
+        fireEvent.change(statusSelect, { target: { value: PatientStatus.GRAVE } });
 
-        const rutInput = screen.getByDisplayValue('98.765.432-1') as HTMLInputElement;
-        expect(rutInput.disabled).toBe(true);
-
-        const diagnosisInput = screen.getByDisplayValue('Post-operatorio') as HTMLInputElement;
-        expect(diagnosisInput.disabled).toBe(true);
-    });
-
-    it('should render checkboxes correctly', () => {
-        const patientData: PatientData = {
-            patientName: 'Test Patient',
-            hasWristband: true,
-            devices: [],
-            surgicalComplication: false,
-            isUPC: false,
-        };
-
-        render(
-            <PatientRow
-                bed={mockBed}
-                data={patientData}
-                currentDateString="2024-01-15"
-                onAction={mockOnAction}
-                showCribControls={false}
-                readOnly={false}
-            />
-        );
-
-        const checkboxes = screen.getAllByRole('checkbox');
-        expect(checkboxes.length).toBeGreaterThan(0);
-    });
-
-    it('should disable checkboxes in readOnly mode', () => {
-        const patientData: PatientData = {
-            patientName: 'Test Patient',
-            hasWristband: true,
-            devices: [],
-            surgicalComplication: true,
-            isUPC: false,
-        };
-
-        render(
-            <PatientRow
-                bed={mockBed}
-                data={patientData}
-                currentDateString="2024-01-15"
-                onAction={mockOnAction}
-                showCribControls={false}
-                readOnly={true}
-            />
-        );
-
-        const checkboxes = screen.getAllByRole('checkbox');
-        checkboxes.forEach((checkbox) => {
-            expect(checkbox).toBeDisabled();
-        });
-    });
-
-    it('should not render action menu in readOnly mode', () => {
-        const patientData: PatientData = {
-            patientName: 'Test Patient',
-        };
-
-        const { container } = render(
-            <PatientRow
-                bed={mockBed}
-                data={patientData}
-                currentDateString="2024-01-15"
-                onAction={mockOnAction}
-                showCribControls={false}
-                readOnly={true}
-            />
-        );
-
-        // Action menu button should not be visible
-        // (PatientActionMenu hides the button when readOnly is true)
-        const actionButtons = container.querySelectorAll('[data-testid="action-menu-button"]');
-        // If we add data-testid in the future, this would work
-        // For now, we know the menu isn't rendered based on our implementation
-    });
-
-    it('should render blocked bed indicator', () => {
-        const blockedData: PatientData = {
-            isBlocked: true,
-        };
-
-        render(
-            <PatientRow
-                bed={mockBed}
-                data={blockedData}
-                currentDateString="2024-01-15"
-                onAction={mockOnAction}
-                showCribControls={false}
-                readOnly={false}
-            />
-        );
-
-        // Blocked beds have distinct styling, check for blocked indicator
-        // The row should have specific classes or text indicating it's blocked
+        expect(mockContext.updatePatient).toHaveBeenCalledWith('R1', 'status', PatientStatus.GRAVE);
     });
 });

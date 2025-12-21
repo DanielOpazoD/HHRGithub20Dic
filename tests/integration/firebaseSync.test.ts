@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DailyRecord, Specialty, PatientStatus } from '../../types';
+import { DailyRecord, Specialty, PatientStatus } from '@/types';
 
 // Mock Firebase modules
 // Create a proper Timestamp mock class for instanceof checks
@@ -31,7 +31,7 @@ vi.mock('firebase/firestore', () => ({
     where: vi.fn()
 }));
 
-vi.mock('../../firebaseConfig', () => ({
+vi.mock('@/firebaseConfig', () => ({
     db: {}
 }));
 
@@ -65,7 +65,7 @@ describe('Firebase Sync Integration', () => {
     describe('DailyRecord Sync', () => {
         it('should include nurse and TENS fields when saving record', async () => {
             const { setDoc } = await import('firebase/firestore');
-            const { saveRecordToFirestore } = await import('../../services/storage/firestoreService');
+            const { saveRecordToFirestore } = await import('@/services/storage/firestoreService');
 
             const record = createMockRecord('2025-12-13');
 
@@ -125,7 +125,7 @@ describe('Firebase Sync Integration', () => {
 
     describe('Catalog Sync', () => {
         it('should save and retrieve nurse catalog from localStorage', async () => {
-            const { saveStoredNurses, getStoredNurses } = await import('../../services/storage/localStorageService');
+            const { saveStoredNurses, getStoredNurses } = await import('@/services/storage/localStorageService');
 
             const nurses = ['María García', 'Juan Pérez', 'Ana López'];
 
@@ -136,7 +136,7 @@ describe('Firebase Sync Integration', () => {
         });
 
         it('should handle empty catalogs', async () => {
-            const { saveStoredNurses, getStoredNurses } = await import('../../services/storage/localStorageService');
+            const { saveStoredNurses, getStoredNurses } = await import('@/services/storage/localStorageService');
 
             saveStoredNurses([]);
             const retrieved = getStoredNurses();

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canEditModule, getVisibleModules, isAdmin, canViewModule, ROLES } from '../../utils/permissions';
+import { canEditModule, getVisibleModules, isAdmin, canViewModule, ROLES } from '@/utils/permissions';
 
 describe('permissions.ts - Security Critical Tests', () => {
     describe('isAdmin', () => {

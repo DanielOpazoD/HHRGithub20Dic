@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:send-email": "node --loader ts-node/esm scripts/testSendCensusEmail.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"

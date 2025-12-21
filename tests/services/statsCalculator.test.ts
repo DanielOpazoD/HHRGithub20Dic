@@ -1,16 +1,36 @@
 import { describe, it, expect } from 'vitest';
-import { calculateStats } from '../../../services/calculations/statsCalculator';
-import { PatientData } from '../../../types';
-import { BEDS } from '../../../constants';
+import { calculateStats } from '@/services/calculations/statsCalculator';
+import { PatientData, Specialty, PatientStatus } from '@/types';
+import { BEDS } from '@/constants';
 
 describe('statsCalculator.ts - Critical Calculations', () => {
     describe('calculateStats', () => {
-        it('should return zero stats for empty beds', () => {
-            const emptyBeds: Record<string, PatientData> = {};
+        const createEmptyMockBeds = (): Record<string, PatientData> => {
+            const beds: Record<string, PatientData> = {};
             BEDS.forEach(bed => {
-                emptyBeds[bed.id] = {};
+                beds[bed.id] = {
+                    bedId: bed.id,
+                    isBlocked: false,
+                    bedMode: 'Cama',
+                    hasCompanionCrib: false,
+                    patientName: '',
+                    rut: '',
+                    age: '',
+                    pathology: '',
+                    specialty: Specialty.MEDICINA,
+                    status: PatientStatus.ESTABLE,
+                    admissionDate: '2025-01-01',
+                    hasWristband: false,
+                    devices: [],
+                    surgicalComplication: false,
+                    isUPC: false
+                };
             });
+            return beds;
+        };
 
+        it('should return zero stats for empty beds', () => {
+            const emptyBeds = createEmptyMockBeds();
             const stats = calculateStats(emptyBeds);
 
             expect(stats.occupiedBeds).toBe(0);
@@ -22,15 +42,13 @@ describe('statsCalculator.ts - Critical Calculations', () => {
         });
 
         it('should count occupied beds correctly', () => {
-            const beds: Record<string, PatientData> = {};
-            BEDS.forEach(bed => {
-                beds[bed.id] = {};
-            });
+            const beds = createEmptyMockBeds();
 
-            // Occupy 3 beds
-            beds['1C'].patientName = 'Juan Pérez';
-            beds['2C'].patientName = 'María González';
-            beds['3C'].patientName = 'Pedro López';
+            // Occupy 3 beds using REAL IDs from BEDS constant
+            const ids = BEDS.map(b => b.id);
+            beds[ids[0]].patientName = 'Juan Pérez';
+            beds[ids[1]].patientName = 'María González';
+            beds[ids[2]].patientName = 'Pedro López';
 
             const stats = calculateStats(beds);
 
@@ -39,14 +57,12 @@ describe('statsCalculator.ts - Critical Calculations', () => {
         });
 
         it('should count blocked beds correctly', () => {
-            const beds: Record<string, PatientData> = {};
-            BEDS.forEach(bed => {
-                beds[bed.id] = {};
-            });
+            const beds = createEmptyMockBeds();
 
             // Block 2 beds
-            beds['1C'].isBlocked = true;
-            beds['2C'].isBlocked = true;
+            const ids = BEDS.map(b => b.id);
+            beds[ids[0]].isBlocked = true;
+            beds[ids[1]].isBlocked = true;
 
             const stats = calculateStats(beds);
 
@@ -55,14 +71,12 @@ describe('statsCalculator.ts - Critical Calculations', () => {
         });
 
         it('should count clinical cribs (Cuna mode) correctly', () => {
-            const beds: Record<string, PatientData> = {};
-            BEDS.forEach(bed => {
-                beds[bed.id] = {};
-            });
+            const beds = createEmptyMockBeds();
 
             // Patient in Cuna mode
-            beds['1C'].patientName = 'Bebé López';
-            beds['1C'].bedMode = 'Cuna';
+            const ids = BEDS.map(b => b.id);
+            beds[ids[0]].patientName = 'Bebé López';
+            beds[ids[0]].bedMode = 'Cuna';
 
             const stats = calculateStats(beds);
 
@@ -72,17 +86,28 @@ describe('statsCalculator.ts - Critical Calculations', () => {
         });
 
         it('should count nested clinical cribs correctly', () => {
-            const beds: Record<string, PatientData> = {};
-            BEDS.forEach(bed => {
-                beds[bed.id] = {};
-            });
+            const beds = createEmptyMockBeds();
 
             // Mother in bed + baby in clinical crib
-            beds['1C'].patientName = 'Madre López';
-            beds['1C'].bedMode = 'Cama';
-            beds['1C'].clinicalCrib = {
+            const ids = BEDS.map(b => b.id);
+            beds[ids[0]].patientName = 'Madre López';
+            beds[ids[0]].bedMode = 'Cama';
+            beds[ids[0]].clinicalCrib = {
+                bedId: `${ids[0]}-crib`,
+                isBlocked: false,
+                bedMode: 'Cuna',
+                hasCompanionCrib: false,
                 patientName: 'Bebé López',
-                bedMode: 'Cuna'
+                rut: '',
+                age: '0',
+                pathology: 'RN',
+                specialty: Specialty.PEDIATRIA,
+                status: PatientStatus.ESTABLE,
+                admissionDate: '2025-01-01',
+                hasWristband: true,
+                devices: [],
+                surgicalComplication: false,
+                isUPC: false
             };
 
             const stats = calculateStats(beds);
@@ -95,14 +120,12 @@ describe('statsCalculator.ts - Critical Calculations', () => {
         });
 
         it('should count companion cribs (RN Sano) correctly', () => {
-            const beds: Record<string, PatientData> = {};
-            BEDS.forEach(bed => {
-                beds[bed.id] = {};
-            });
+            const beds = createEmptyMockBeds();
 
             // Mother with companion crib
-            beds['1C'].patientName = 'Madre González';
-            beds['1C'].hasCompanionCrib = true;
+            const ids = BEDS.map(b => b.id);
+            beds[ids[0]].patientName = 'Madre González';
+            beds[ids[0]].hasCompanionCrib = true;
 
             const stats = calculateStats(beds);
 
@@ -112,51 +135,63 @@ describe('statsCalculator.ts - Critical Calculations', () => {
         });
 
         it('should handle complex scenario: mix of beds, cribs, blocked', () => {
-            const beds: Record<string, PatientData> = {};
-            BEDS.forEach(bed => {
-                beds[bed.id] = {};
-            });
+            const beds = createEmptyMockBeds();
 
+            const ids = BEDS.map(b => b.id);
             // 1. Regular patient
-            beds['1C'].patientName = 'Paciente Regular';
+            beds[ids[0]].patientName = 'Paciente Regular';
 
-            // 2. Blocked bed (should not count in occupancy)
-            beds['2C'].isBlocked = true;
+            // 2. Blocked bed
+            beds[ids[1]].isBlocked = true;
 
             // 3. Mother with nested clinical crib
-            beds['3C'].patientName = 'Madre con Bebé';
-            beds['3C'].clinicalCrib = {
-                patientName: 'Bebé Clínico'
+            beds[ids[2]].patientName = 'Madre con Bebé';
+            beds[ids[2]].clinicalCrib = {
+                bedId: `${ids[2]}-crib`,
+                isBlocked: false,
+                bedMode: 'Cuna',
+                hasCompanionCrib: false,
+                patientName: 'Bebé Clínico',
+                rut: '',
+                age: '0',
+                pathology: 'RN',
+                specialty: Specialty.PEDIATRIA,
+                status: PatientStatus.ESTABLE,
+                admissionDate: '2025-01-01',
+                hasWristband: true,
+                devices: [],
+                surgicalComplication: false,
+                isUPC: false
             };
 
             // 4. Mother with companion crib (RN Sano)
-            beds['1M'].patientName = 'Madre con RN Sano';
-            beds['1M'].hasCompanionCrib = true;
+            // Use something like 'H1C1'
+            const h1c1 = ids.find(id => id === 'H1C1') || ids[3];
+            beds[h1c1].patientName = 'Madre con RN Sano';
+            beds[h1c1].hasCompanionCrib = true;
 
             // 5. Patient in Cuna mode
-            beds['2M'].patientName = 'Bebé en Cuna';
-            beds['2M'].bedMode = 'Cuna';
+            const h2c1 = ids.find(id => id === 'H2C1') || ids[4];
+            beds[h2c1].patientName = 'Bebé en Cuna';
+            beds[h2c1].bedMode = 'Cuna';
 
             const stats = calculateStats(beds);
 
-            expect(stats.occupiedBeds).toBe(4); // Regular + Mother + Mother + Cuna patient
-            expect(stats.occupiedCribs).toBe(1); // Nested baby
-            expect(stats.totalHospitalized).toBe(5); // 4 main + 1 nested
+            expect(stats.occupiedBeds).toBe(4);
+            expect(stats.totalHospitalized).toBe(5);
             expect(stats.blockedBeds).toBe(1);
             expect(stats.companionCribs).toBe(1);
-            expect(stats.clinicalCribsCount).toBe(2); // Nested crib + Cuna mode
-            expect(stats.totalCribsUsed).toBe(3); // Clinical crib + Companion crib + Cuna mode
+            expect(stats.clinicalCribsCount).toBe(2);
+            expect(stats.totalCribsUsed).toBe(3);
         });
 
         it('should not count blocked beds in occupancy calculations', () => {
-            const beds: Record<string, PatientData> = {};
-            BEDS.forEach(bed => {
-                beds[bed.id] = {};
-            });
+            const beds = createEmptyMockBeds();
+            const ids = BEDS.map(b => b.id);
 
             // Blocked bed with patient name (should not count as occupied)
-            beds['1C'].isBlocked = true;
-            beds['1C'].patientName = 'This should not count';
+            beds[ids[0]].isBlocked = true;
+            beds[ids[0]].patientName = 'This should not count';
 
             const stats = calculateStats(beds);
 

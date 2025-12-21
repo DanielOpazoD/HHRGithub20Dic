@@ -1,14 +1,14 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useDailyRecord } from '../hooks/useDailyRecord';
-import * as DailyRecordRepository from '../services/repositories/DailyRecordRepository';
-import * as localStorageService from '../services/storage/localStorageService';
-import { DailyRecord } from '../types';
+import { useDailyRecord } from '@/hooks/useDailyRecord';
+import * as DailyRecordRepository from '@/services/repositories/DailyRecordRepository';
+import * as localStorageService from '@/services/storage/localStorageService';
+import { DailyRecord } from '@/types';
 
 // Mock dependencies
-vi.mock('../services/repositories/DailyRecordRepository');
-vi.mock('../services/storage/localStorageService');
-vi.mock('../context/NotificationContext', () => ({
+vi.mock('@/services/repositories/DailyRecordRepository');
+vi.mock('@/services/storage/localStorageService');
+vi.mock('@/context/NotificationContext', () => ({
     useNotification: () => ({
         error: vi.fn(),
         success: vi.fn(),

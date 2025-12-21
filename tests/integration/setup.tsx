@@ -6,11 +6,11 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { vi } from 'vitest';
-import { DailyRecord, PatientData, Specialty, PatientStatus } from '../../types';
-import { NotificationProvider } from '../../context/NotificationContext';
-import { ConfirmDialogProvider } from '../../context/ConfirmDialogContext';
-import { DailyRecordProvider } from '../../context/DailyRecordContext';
-import { DailyRecordContextType } from '../../hooks/useDailyRecord';
+import { DailyRecord, PatientData, Specialty, PatientStatus } from '@/types';
+import { NotificationProvider } from '@/context/NotificationContext';
+import { ConfirmDialogProvider } from '@/context/ConfirmDialogContext';
+import { DailyRecordProvider } from '@/context/DailyRecordContext';
+import { DailyRecordContextType } from '@/hooks/useDailyRecord';
 
 // ============================================================================
 // Mock Data Factories
@@ -31,6 +31,8 @@ export const createMockPatient = (overrides: Partial<PatientData> = {}): Patient
     isUPC: false,
     isBlocked: false,
     blockedReason: '',
+    bedMode: 'Cama',
+    hasCompanionCrib: false,
     cudyr: {
         changeClothes: 0, mobilization: 0, feeding: 0, elimination: 0,
         psychosocial: 0, surveillance: 0, vitalSigns: 0, fluidBalance: 0,
@@ -76,6 +78,7 @@ export const createMockDailyRecordContext = (
     toggleBlockBed: vi.fn(),
     toggleExtraBed: vi.fn(),
     updateNurse: vi.fn(),
+    updateTens: vi.fn(),
     addDischarge: vi.fn(),
     updateDischarge: vi.fn(),
     deleteDischarge: vi.fn(),
@@ -86,7 +89,15 @@ export const createMockDailyRecordContext = (
     undoTransfer: vi.fn(),
     addCMA: vi.fn(),
     deleteCMA: vi.fn(),
-    updateCMA: vi.fn()
+    updateCMA: vi.fn(),
+    resetDay: vi.fn(),
+    updateHandoffChecklist: vi.fn(),
+    updateHandoffNovedades: vi.fn(),
+    updateHandoffStaff: vi.fn(),
+    updateMedicalSignature: vi.fn(),
+    updateMedicalHandoffDoctor: vi.fn().mockResolvedValue(undefined),
+    markMedicalHandoffAsSent: vi.fn().mockResolvedValue(undefined),
+    sendMedicalHandoff: vi.fn().mockResolvedValue(undefined),
 });
 
 // ============================================================================

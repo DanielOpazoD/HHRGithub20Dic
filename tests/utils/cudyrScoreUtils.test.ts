@@ -7,8 +7,8 @@ import {
     getCategoryColor,
     getCategorization,
     EMPTY_CUDYR_SCORE
-} from '../views/cudyr/CudyrScoreUtils';
-import { CudyrScore } from '../types';
+} from '@/views/cudyr/CudyrScoreUtils';
+import { CudyrScore } from '@/types';
 
 describe('CudyrScoreUtils', () => {
 

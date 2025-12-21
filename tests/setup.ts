@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { expect, afterEach } from 'vitest';
+import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 
@@ -12,10 +12,42 @@ afterEach(() => {
 });
 
 // Mock Firebase to prevent initialization errors in tests
-vi.mock('./firebaseConfig', () => ({
+const firebaseMock = {
     auth: {},
     db: {},
     storage: {},
     firebaseReady: Promise.resolve({}),
-    mountConfigWarning: () => {}
+    mountConfigWarning: () => { }
+};
+
+vi.mock('./firebaseConfig', () => firebaseMock);
+vi.mock('@/firebaseConfig', () => firebaseMock);
+
+// Mock auditService globally to prevent Firebase dependency chain execution
+vi.mock('./services/admin/auditService', () => ({
+    logAuditEvent: vi.fn(),
+    logPatientAdmission: vi.fn(),
+    logPatientDischarge: vi.fn(),
+    logPatientTransfer: vi.fn(),
+    logPatientCleared: vi.fn(),
+    logDailyRecordDeleted: vi.fn(),
+    logDailyRecordCreated: vi.fn(),
+    getAuditLogs: vi.fn().mockResolvedValue([]),
+    getAuditLogsForDate: vi.fn().mockResolvedValue([]),
+    getLocalAuditLogs: vi.fn().mockReturnValue([]),
+    AUDIT_ACTION_LABELS: {}
+}));
+
+vi.mock('@/services/admin/auditService', () => ({
+    logAuditEvent: vi.fn(),
+    logPatientAdmission: vi.fn(),
+    logPatientDischarge: vi.fn(),
+    logPatientTransfer: vi.fn(),
+    logPatientCleared: vi.fn(),
+    logDailyRecordDeleted: vi.fn(),
+    logDailyRecordCreated: vi.fn(),
+    getAuditLogs: vi.fn().mockResolvedValue([]),
+    getAuditLogsForDate: vi.fn().mockResolvedValue([]),
+    getLocalAuditLogs: vi.fn().mockReturnValue([]),
+    AUDIT_ACTION_LABELS: {}
 }));

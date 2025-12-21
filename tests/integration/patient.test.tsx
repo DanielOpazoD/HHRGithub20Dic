@@ -5,9 +5,9 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, createMockPatient } from './setup';
-import { PatientRow } from '../../components/census/PatientRow';
-import { BEDS } from '../../constants';
-import { PatientStatus, Specialty } from '../../types';
+import { PatientRow } from '@/components/census/PatientRow';
+import { BEDS } from '@/constants';
+import { PatientStatus, Specialty } from '@/types';
 
 // Mock callbacks
 const mockOnAction = vi.fn();

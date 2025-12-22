@@ -108,7 +108,7 @@ function App() {
               setModule={setCurrentModule}
               censusViewMode={censusViewMode}
               setCensusViewMode={setCensusViewMode}
-              onOpenBedManager={() => setShowBedManager(true)}
+              onOpenBedManager={currentModule === 'CENSUS' ? () => setShowBedManager(true) : undefined}
               onExportJSON={handleExportJSON}
               onExportCSV={handleExportCSV}
               onImportJSON={handleImportJSON}

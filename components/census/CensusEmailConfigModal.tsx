@@ -104,14 +104,14 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
             <div
                 ref={dialogRef}
                 tabIndex={-1}
-                className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 outline-none"
+                className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-5 outline-none"
                 aria-modal="true"
                 role="dialog"
             >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between mb-3">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800">Configuración del envío de correo</h2>
-                        <p className="text-sm text-slate-500">Personaliza destinatarios y el mensaje antes de enviar el censo.</p>
+                        <p className="text-[13px] text-slate-500">Personaliza destinatarios y el mensaje antes de enviar el censo.</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -140,7 +140,7 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                         type="email"
                                         value={email}
                                         onChange={(e) => handleRecipientChange(index, e.target.value)}
-                                        className="min-w-[220px] border border-slate-200 rounded-lg px-2.5 py-1.5 text-[13px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                        className="flex-1 min-w-[280px] border border-slate-200 rounded-lg px-3 py-2 text-[13px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                                     />
                                     <button
                                         onClick={() => handleRemoveRecipient(index)}
@@ -157,11 +157,11 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                     placeholder="nuevo@correo.cl"
                                     value={newRecipient}
                                     onChange={(e) => setNewRecipient(e.target.value)}
-                                    className="flex-1 min-w-[220px] border border-slate-200 rounded-lg px-2.5 py-1.5 text-[13px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 min-w-[280px] border border-slate-200 rounded-lg px-3 py-2 text-[13px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 <button
                                     onClick={handleAddRecipient}
-                                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[13px] font-semibold"
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[13px] font-semibold shadow-sm"
                                 >
                                     <Plus size={12} /> Agregar
                                 </button>
@@ -196,10 +196,10 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                     </section>
                 </div>
 
-                <div className="flex justify-end gap-2 mt-6">
+                <div className="flex justify-end gap-2 mt-4">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm"
                     >
                         Cerrar
                     </button>

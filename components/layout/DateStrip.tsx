@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Cloud, RefreshCw, AlertTriangle, Database, FileSpreadsheet, Send, Printer } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Cloud, RefreshCw, AlertTriangle, Database, FileSpreadsheet, Send, Printer } from 'lucide-react';
 import clsx from 'clsx';
 import { MONTH_NAMES } from '../../constants';
 import { useDemoMode } from '../../context/DemoModeContext';
@@ -274,10 +274,11 @@ export const DateStrip: React.FC<DateStripProps> = ({
                         {onOpenBedManager && (
                             <button
                                 onClick={onOpenBedManager}
-                                className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded border border-slate-200 transition-colors"
-                                title="Gestionar Camas"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 transition-colors shadow-sm"
+                                title="Bloqueo de camas"
                             >
-                                <Settings size={12} />
+                                <Lock size={14} />
+                                <span className="hidden sm:inline text-[11px] font-semibold">Camas</span>
                             </button>
                         )}
                     </div>

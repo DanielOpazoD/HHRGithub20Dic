@@ -173,23 +173,23 @@ export const useHandoffLogic = ({
             const dateStr = `${day}-${month}-${year}`;
             const handoffUrl = `${window.location.origin}?mode=signature&date=${dateStr}`;
 
-            // Manual message construction with Unicode escapes to ensure robust encoding across all browsers/carriers
-            const message = `\u{1F3E5} Hospital Hanga Roa\n` +
-                `\u{1F4CB} Entrega de Turno M\u00E9dico\n\n` +
-                `\u{1F4C5} Fecha: ${dateStr}\n` +
-                `\u{1F468}\u{200D}\u{2695}\u{FE0F} Entregado por: ${record.medicalHandoffDoctor || 'Sin especificar'}\n` +
-                `\u{1F551} Firmado: ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}\n\n` +
-                `\u{1F4CA} Resumen:\n` +
-                `\u{2022} Hospitalizados: ${hospitalized} pacientes\n` +
-                `\u{2022} Camas libres: ${freeBeds}\n` +
-                `\u{2022} Nuevos ingresos: 0\n` +
-                `\u{2022} Altas: 0\n\n` +
-                `\u{1F517} Ver entrega completa:\n` +
+            // Manual message construction with legacy surrogate pairs for maximum cross-platform compatibility
+            const message = `\uD83C\uDFE5 Hospital Hanga Roa\n` +
+                `\uD83D\uDCCB Entrega de Turno M\u00E9dico\n\n` +
+                `\uD83D\uDCC5 Fecha: ${dateStr}\n` +
+                `\uD83D\uDC68\u200D\u2695\uFE0F Entregado por: ${record.medicalHandoffDoctor || 'Sin especificar'}\n` +
+                `\uD83D\uDD51 Firmado: ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}\n\n` +
+                `\uD83D\uDCCA Resumen:\n` +
+                `\u2022 Hospitalizados: ${hospitalized} pacientes\n` +
+                `\u2022 Camas libres: ${freeBeds}\n` +
+                `\u2022 Nuevos ingresos: 0\n` +
+                `\u2022 Altas: 0\n\n` +
+                `\uD83D\uDD17 Ver entrega completa:\n` +
                 `${handoffUrl}\n\n` +
                 `- Enviado manualmente por Sistema HHR`;
 
             const encodedMessage = encodeURIComponent(message);
-            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?text=${encodedMessage}`, '_blank');
         } catch (error: any) {
             console.error('Error in manual WhatsApp:', error);
             onSuccess(error.message || 'Error al preparar WhatsApp');

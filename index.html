@@ -54,9 +54,9 @@
         // Register service worker for offline functionality and caching
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js', { type: 'module' })
+                navigator.serviceWorker.register('/sw.js')
                     .then(registration => {
-                        console.log('✅ Service Worker registrado:', registration.scope);
+                        console.log('✅ Service Worker registrado');
 
                         // Check for updates every hour
                         setInterval(() => {
@@ -66,12 +66,6 @@
                     .catch(error => {
                         console.warn('⚠️ Service Worker falló:', error);
                     });
-            });
-
-            // Listen for service worker updates
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                console.log('🔄 Service Worker actualizado - recargando...');
-                window.location.reload();
             });
         }
     </script>

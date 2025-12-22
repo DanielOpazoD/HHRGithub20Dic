@@ -2,7 +2,7 @@
  * useSignatureMode
  * Handles URL-based signature mode for medical handoffs
  */
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { signInAnonymously, User } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
@@ -23,11 +23,14 @@ export function useSignatureMode(
     const signatureDate = urlParams.get('date');
 
     // Anonymous login for signature mode
+    const isSigningInRef = useRef(false);
     useEffect(() => {
-        if (isSignatureMode && !user && !authLoading) {
-            signInAnonymously(auth).catch((err) =>
-                console.error("Anonymous auth failed", err)
-            );
+        if (isSignatureMode && !user && !authLoading && !isSigningInRef.current) {
+            isSigningInRef.current = true;
+            signInAnonymously(auth).catch((err) => {
+                console.error("Anonymous auth failed", err);
+                isSigningInRef.current = false;
+            });
         }
     }, [isSignatureMode, user, authLoading]);
 

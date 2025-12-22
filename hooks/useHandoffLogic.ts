@@ -173,18 +173,18 @@ export const useHandoffLogic = ({
             const dateStr = `${day}-${month}-${year}`;
             const handoffUrl = `${window.location.origin}?mode=signature&date=${dateStr}`;
 
-            // Manual message construction with clean emojis to avoid encoding issues
-            const message = `🏥 Hospital Hanga Roa\n` +
-                `📋 Entrega de Turno Médico\n\n` +
-                `📅 Fecha: ${dateStr}\n` +
-                `👨‍⚕️ Entregado por: ${record.medicalHandoffDoctor || 'Sin especificar'}\n` +
-                `🕐 Firmado: ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}\n\n` +
-                `📊 Resumen:\n` +
-                `• Hospitalizados: ${hospitalized} pacientes\n` +
-                `• Camas libres: ${freeBeds}\n` +
-                `• Nuevos ingresos: 0\n` +
-                `• Altas: 0\n\n` +
-                `🔗 Ver entrega completa:\n` +
+            // Manual message construction with Unicode escapes to ensure robust encoding across all browsers/carriers
+            const message = `\u{1F3E5} Hospital Hanga Roa\n` +
+                `\u{1F4CB} Entrega de Turno M\u00E9dico\n\n` +
+                `\u{1F4C5} Fecha: ${dateStr}\n` +
+                `\u{1F468}\u{200D}\u{2695}\u{FE0F} Entregado por: ${record.medicalHandoffDoctor || 'Sin especificar'}\n` +
+                `\u{1F551} Firmado: ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}\n\n` +
+                `\u{1F4CA} Resumen:\n` +
+                `\u{2022} Hospitalizados: ${hospitalized} pacientes\n` +
+                `\u{2022} Camas libres: ${freeBeds}\n` +
+                `\u{2022} Nuevos ingresos: 0\n` +
+                `\u{2022} Altas: 0\n\n` +
+                `\u{1F517} Ver entrega completa:\n` +
                 `${handoffUrl}\n\n` +
                 `- Enviado manualmente por Sistema HHR`;
 

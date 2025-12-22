@@ -43,8 +43,12 @@ service cloud.firestore {
       // All authenticated users can read
       allow read: if isAuthenticated();
       
-      // Only admins and nurses can create/update/delete
-      allow create, update: if canEdit();
+      // Update rule: regular editors can update everything, 
+      // but ANY authenticated user (including anonymous) can update the medicalSignature field
+      allow update: if canEdit() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['medicalSignature', 'lastUpdated']));
+      
+      // Only admins and nurses can create
+      allow create: if canEdit();
       allow delete: if isAdmin(); // Only admin can delete entire days
     }
     

@@ -12,7 +12,7 @@ import { HandoffChecklistDay } from './HandoffChecklistDay';
 import { HandoffChecklistNight } from './HandoffChecklistNight';
 import { HandoffNovedades } from './HandoffNovedades';
 import { HandoffStaffSelector } from './HandoffStaffSelector';
-import { CudyrView } from '../cudyr/CudyrView';
+import { HandoffCudyrPrint } from './HandoffCudyrPrint';
 import { HandoffPrintHeader } from './HandoffPrintHeader';
 import { HandoffShiftSelector } from './HandoffShiftSelector';
 
@@ -506,8 +506,8 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             {/* CUDYR - Night Nursing Print Only */}
             {!isMedical && selectedShift === 'night' && (
-                <div className="handoff-cudyr-print print:break-before-page">
-                    <CudyrView readOnly={true} />
+                <div className="print:break-before-page">
+                    <HandoffCudyrPrint />
                 </div>
             )}
         </div>

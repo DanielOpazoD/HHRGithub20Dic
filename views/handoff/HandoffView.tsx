@@ -506,7 +506,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             {/* CUDYR - Night Nursing Print Only */}
             {!isMedical && selectedShift === 'night' && (
-                <div className="handoff-cudyr-print hidden print:block print:break-before-page">
+                <div className="handoff-cudyr-print print:break-before-page">
                     <CudyrView readOnly={true} />
                 </div>
             )}

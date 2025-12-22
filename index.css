@@ -70,7 +70,7 @@
 
 @media print {
     .handoff-cudyr-print {
-        display: block;
+        display: block !important;
     }
 }
 

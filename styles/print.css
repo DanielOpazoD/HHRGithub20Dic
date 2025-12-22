@@ -11,33 +11,20 @@
     background: white !important;
   }
 
+  /* Remove residual tinted backgrounds and shadows from every element to avoid gray boxes */
+  body * {
+    background: white !important;
+    box-shadow: none !important;
+  }
+
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  /* Remove tinted backgrounds and shadows that add gray blocks at the end of PDFs */
-  .bg-slate-50,
-  .bg-slate-100,
-  .bg-slate-200,
-  .bg-indigo-50,
-  .bg-blue-50,
-  .bg-red-50,
-  .bg-orange-50 {
-    background-color: white !important;
-  }
-
-  .shadow,
-  .shadow-sm,
-  .shadow-md,
-  .shadow-lg,
-  .shadow-xl,
-  .shadow-2xl {
-    box-shadow: none !important;
-  }
-
   /* Ensure appended print-only sections render on a white canvas */
   .handoff-cudyr-print {
     background: white !important;
+    page-break-before: always;
   }
 }

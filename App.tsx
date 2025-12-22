@@ -129,7 +129,7 @@ function App() {
               daysInMonth={daysInMonth}
               existingDaysInMonth={existingDaysInMonth}
               onPrintPDF={showPrintButton ? () => window.print() : undefined}
-              onOpenBedManager={() => setShowBedManager(true)}
+              onOpenBedManager={currentModule === 'CENSUS' ? () => setShowBedManager(true) : undefined}
               onExportExcel={currentModule === 'CENSUS'
                 ? () => generateCensusMasterExcel(selectedYear, selectedMonth, selectedDay)
                 : undefined}

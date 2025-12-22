@@ -64,4 +64,36 @@
     animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.handoff-cudyr-print {
+    display: none;
+}
+
+/* Cleaner print surface for handoff exports */
+.handoff-print-surface {
+    background: transparent;
+}
+
+@media print {
+    .handoff-cudyr-print {
+        display: block;
+    }
+
+    .handoff-print-surface {
+        background: white !important;
+    }
+
+    .handoff-print-surface .shadow-sm,
+    .handoff-print-surface .shadow,
+    .handoff-print-surface .shadow-md {
+        box-shadow: none !important;
+    }
+
+    .handoff-print-surface .bg-slate-50,
+    .handoff-print-surface .bg-slate-100,
+    .handoff-print-surface .bg-slate-200,
+    .handoff-print-surface .bg-slate-300 {
+        background-color: white !important;
+    }
+}
+
 @import './styles/print.css';

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Plus, Trash2, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
-import { buildCensusEmailBody, CENSUS_DEFAULT_RECIPIENTS } from '../../constants/email';
+import { buildCensusEmailBody } from '../../constants/email';
 
 interface Props {
     isOpen: boolean;
@@ -11,6 +11,7 @@ interface Props {
     message: string;
     onMessageChange: (message: string) => void;
     onResetMessage?: () => void;
+    onResetSendStatus?: () => void;
     date: string;
     nursesSignature?: string;
 }
@@ -25,6 +26,7 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
     message,
     onMessageChange,
     onResetMessage,
+    onResetSendStatus,
     date,
     nursesSignature
 }) => {
@@ -126,16 +128,10 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                     <section>
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-sm font-semibold text-slate-700">Destinatarios</h3>
-                            <button
-                                onClick={() => onRecipientsChange(CENSUS_DEFAULT_RECIPIENTS)}
-                                className="text-xs text-blue-700 hover:text-blue-800 font-semibold"
-                            >
-                                Restablecer por defecto
-                            </button>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {recipients.length === 0 && (
-                                <p className="text-xs text-slate-500 w-full">No hay destinatarios. Se usará la lista por defecto si no agregas correos.</p>
+                                <p className="text-xs text-slate-500 w-full">No hay destinatarios configurados. Agrega los correos a los que deseas enviar el censo.</p>
                             )}
                             {recipients.map((email, index) => (
                                 <div
@@ -206,6 +202,15 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                 </div>
 
                 <div className="flex justify-end gap-2 mt-6">
+                    {onResetSendStatus && (
+                        <button
+                            onClick={onResetSendStatus}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50"
+                        >
+                            <RefreshCw size={14} />
+                            Restablecer botón enviar
+                        </button>
+                    )}
                     <button
                         onClick={onClose}
                         className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"

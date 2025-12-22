@@ -34,6 +34,7 @@ interface UseCensusEmailReturn {
   error: string | null;
 
   // Actions
+  resetStatus: () => void;
   sendEmail: () => Promise<void>;
 }
 
@@ -55,7 +56,7 @@ export const useCensusEmail = ({
 
   // ========== RECIPIENTS STATE ==========
   const [recipients, setRecipients] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return CENSUS_DEFAULT_RECIPIENTS;
+    if (typeof window === 'undefined') return [];
     const stored = window.localStorage.getItem('censusEmailRecipients');
     if (stored) {
       try {
@@ -65,7 +66,7 @@ export const useCensusEmail = ({
         // ignore parsing errors and fallback to defaults
       }
     }
-    return CENSUS_DEFAULT_RECIPIENTS;
+    return [];
   });
 
   // ========== MESSAGE STATE ==========
@@ -82,6 +83,12 @@ export const useCensusEmail = ({
   const [showEmailConfig, setShowEmailConfig] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+
+  // Reset status when navigating between days to avoid locking the button for other dates
+  useEffect(() => {
+    setStatus('idle');
+    setError(null);
+  }, [currentDateString]);
 
   // ========== PERSISTENCE EFFECTS ==========
   useEffect(() => {
@@ -112,6 +119,11 @@ export const useCensusEmail = ({
     setMessage(buildCensusEmailBody(currentDateString, nurseSignature));
     setMessageEdited(false);
   }, [currentDateString, nurseSignature]);
+
+  const resetStatus = useCallback(() => {
+    setStatus('idle');
+    setError(null);
+  }, []);
 
   const sendEmail = useCallback(async () => {
     if (!record) {
@@ -192,6 +204,7 @@ export const useCensusEmail = ({
     onResetMessage,
     status,
     error,
+    resetStatus,
     sendEmail,
   };
 };

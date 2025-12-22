@@ -190,7 +190,6 @@ function App() {
             message={censusEmail.message}
             onMessageChange={censusEmail.onMessageChange}
             onResetMessage={censusEmail.onResetMessage}
-            onResetSendStatus={censusEmail.resetStatus}
             date={currentDateString}
             nursesSignature={nurseSignature}
           />

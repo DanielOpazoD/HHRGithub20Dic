@@ -11,7 +11,6 @@ interface Props {
     message: string;
     onMessageChange: (message: string) => void;
     onResetMessage?: () => void;
-    onResetSendStatus?: () => void;
     date: string;
     nursesSignature?: string;
 }
@@ -26,7 +25,6 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
     message,
     onMessageChange,
     onResetMessage,
-    onResetSendStatus,
     date,
     nursesSignature
 }) => {
@@ -142,14 +140,14 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                         type="email"
                                         value={email}
                                         onChange={(e) => handleRecipientChange(index, e.target.value)}
-                                        className="min-w-[220px] border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                        className="min-w-[220px] border border-slate-200 rounded-lg px-2.5 py-1.5 text-[13px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                                     />
                                     <button
                                         onClick={() => handleRemoveRecipient(index)}
-                                        className="p-2 text-red-600 hover:text-red-700"
+                                        className="p-1.5 text-red-600 hover:text-red-700"
                                         aria-label="Eliminar destinatario"
                                     >
-                                        <Trash2 size={16} />
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
                             ))}
@@ -159,13 +157,13 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                     placeholder="nuevo@correo.cl"
                                     value={newRecipient}
                                     onChange={(e) => setNewRecipient(e.target.value)}
-                                    className="flex-1 min-w-[220px] border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 min-w-[220px] border border-slate-200 rounded-lg px-2.5 py-1.5 text-[13px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 <button
                                     onClick={handleAddRecipient}
-                                    className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[13px] font-semibold"
                                 >
-                                    <Plus size={14} /> Agregar
+                                    <Plus size={12} /> Agregar
                                 </button>
                             </div>
                             {error && <p className="text-xs text-red-600">{error}</p>}
@@ -195,22 +193,10 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                 'border-slate-200'
                             )}
                         />
-                        <p className="text-xs text-slate-500">
-                            Predeterminado: "{defaultMessage}"{nursesSignature ? ` (firma sugerida: ${nursesSignature})` : ''}
-                        </p>
                     </section>
                 </div>
 
                 <div className="flex justify-end gap-2 mt-6">
-                    {onResetSendStatus && (
-                        <button
-                            onClick={onResetSendStatus}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50"
-                        >
-                            <RefreshCw size={14} />
-                            Restablecer botón enviar
-                        </button>
-                    )}
                     <button
                         onClick={onClose}
                         className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"

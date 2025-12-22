@@ -49,7 +49,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                 </div>
             </div>
 
-            <div className="border border-slate-300 rounded-lg overflow-hidden">
+            <div className="border border-slate-300 rounded-lg print:overflow-visible">
                 <table className="w-full text-left text-[11px] border-collapse">
                     <thead>
                         <tr className="bg-slate-100 text-slate-700 uppercase text-[10px]">

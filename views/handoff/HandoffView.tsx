@@ -322,7 +322,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                 </div>
             )}
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none print:overflow-visible">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>

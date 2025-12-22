@@ -171,17 +171,22 @@ export const useHandoffLogic = ({
 
             const [year, month, day] = record.date.split('-');
             const dateStr = `${day}-${month}-${year}`;
-            const handoffUrl = `${window.location.origin}?mode=signature&date=${record.date}`;
+            const handoffUrl = `${window.location.origin}?mode=signature&date=${dateStr}`;
 
-            const message = handoffTemplate.content
-                .replace(/\{\{date\}\}/g, dateStr)
-                .replace(/\{\{signedBy\}\}/g, record.medicalHandoffDoctor || 'Sin especificar')
-                .replace(/\{\{signedAt\}\}/g, new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }))
-                .replace(/\{\{hospitalized\}\}/g, String(hospitalized))
-                .replace(/\{\{freeBeds\}\}/g, String(freeBeds))
-                .replace(/\{\{newAdmissions\}\}/g, '0') // Not easily available here, used 0/N/A
-                .replace(/\{\{discharges\}\}/g, '0')
-                .replace(/\{\{handoffUrl\}\}/g, handoffUrl);
+            // Manual message construction with clean emojis to avoid encoding issues
+            const message = `🏥 Hospital Hanga Roa\n` +
+                `📋 Entrega de Turno Médico\n\n` +
+                `📅 Fecha: ${dateStr}\n` +
+                `👨‍⚕️ Entregado por: ${record.medicalHandoffDoctor || 'Sin especificar'}\n` +
+                `🕐 Firmado: ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}\n\n` +
+                `📊 Resumen:\n` +
+                `• Hospitalizados: ${hospitalized} pacientes\n` +
+                `• Camas libres: ${freeBeds}\n` +
+                `• Nuevos ingresos: 0\n` +
+                `• Altas: 0\n\n` +
+                `🔗 Ver entrega completa:\n` +
+                `${handoffUrl}\n\n` +
+                `- Enviado manualmente por Sistema HHR`;
 
             const encodedMessage = encodeURIComponent(message);
             window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');

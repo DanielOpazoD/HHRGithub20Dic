@@ -16,6 +16,7 @@ import {
     updatePartial,
     subscribe
 } from '../services/repositories/DailyRecordRepository';
+import { auth } from '../firebaseConfig';
 import { saveRecordLocal } from '../services/storage/localStorageService';
 import { applyPatches } from '../utils/patchUtils';
 
@@ -61,57 +62,69 @@ export const useDailyRecordSync = (currentDateString: string): UseDailyRecordSyn
     // Real-time Sync Subscription
     // ========================================================================
     useEffect(() => {
-        const unsubscribe = subscribe(currentDateString, (remoteRecord) => {
-            if (!remoteRecord) {
-                // Remote record deleted -> Clear local state
-                setRecord(null);
-                setSyncStatus('idle');
-                import('../services/storage/localStorageService').then(({ deleteRecordLocal }) => {
-                    deleteRecordLocal(currentDateString);
+        let unsubRepo: (() => void) | null = null;
+
+        // Wait for auth to be ready before subscribing to Firestore
+        const unregisterAuthObserver = auth.onAuthStateChanged((user) => {
+            if (user) {
+                if (unsubRepo) unsubRepo();
+
+                unsubRepo = subscribe(currentDateString, (remoteRecord) => {
+                    if (!remoteRecord) {
+                        // Remote record deleted -> Clear local state
+                        setRecord(null);
+                        setSyncStatus('idle');
+                        import('../services/storage/localStorageService').then(({ deleteRecordLocal }) => {
+                            deleteRecordLocal(currentDateString);
+                        });
+                        return;
+                    }
+
+                    if (remoteRecord) {
+                        const now = Date.now();
+                        const timeSinceLastChange = now - lastLocalChangeRef.current;
+
+                        // Only ignore updates if we JUST saved (within 300ms) - very short window to catch echoes
+                        if (isSavingRef.current && timeSinceLastChange < 300) {
+                            return;
+                        }
+
+                        setRecord(prev => {
+                            if (!prev) return remoteRecord;
+
+                            const localTime = prev.lastUpdated ? new Date(prev.lastUpdated).getTime() : 0;
+                            const remoteTime = remoteRecord.lastUpdated ? new Date(remoteRecord.lastUpdated).getTime() : 0;
+
+                            // Accept remote if it's newer (even by a small margin)
+                            if (remoteTime > localTime + 100) {
+                                return remoteRecord;
+                            }
+
+                            // If we just made a local change, keep local
+                            if (timeSinceLastChange < 300) {
+                                return prev;
+                            }
+
+                            // Accept remote if no recent local changes
+                            if (timeSinceLastChange > 1000) {
+                                return remoteRecord;
+                            }
+
+                            return prev;
+                        });
+
+                        setLastSyncTime(new Date());
+                        setSyncStatus('saved');
+                        saveRecordLocal(remoteRecord);
+                    }
                 });
-                return;
-            }
-
-            if (remoteRecord) {
-                const now = Date.now();
-                const timeSinceLastChange = now - lastLocalChangeRef.current;
-
-                // Only ignore updates if we JUST saved (within 300ms) - very short window to catch echoes
-                if (isSavingRef.current && timeSinceLastChange < 300) {
-                    return;
-                }
-
-                setRecord(prev => {
-                    if (!prev) return remoteRecord;
-
-                    const localTime = prev.lastUpdated ? new Date(prev.lastUpdated).getTime() : 0;
-                    const remoteTime = remoteRecord.lastUpdated ? new Date(remoteRecord.lastUpdated).getTime() : 0;
-
-                    // Accept remote if it's newer (even by a small margin)
-                    if (remoteTime > localTime + 100) {
-                        return remoteRecord;
-                    }
-
-                    // If we just made a local change, keep local
-                    if (timeSinceLastChange < 300) {
-                        return prev;
-                    }
-
-                    // Accept remote if no recent local changes
-                    if (timeSinceLastChange > 1000) {
-                        return remoteRecord;
-                    }
-
-                    return prev;
-                });
-
-                setLastSyncTime(new Date());
-                setSyncStatus('saved');
-                saveRecordLocal(remoteRecord);
             }
         });
 
-        return () => unsubscribe();
+        return () => {
+            unregisterAuthObserver();
+            if (unsubRepo) unsubRepo();
+        };
     }, [currentDateString]);
 
     // ========================================================================

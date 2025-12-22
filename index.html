@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hanga Roa Hospital Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -39,22 +42,22 @@
                 }
             }
         }
-        
+
         // Polyfill for process.env to prevent GenAI SDK crash in client-side environments
         window.process = {
             env: {
                 NODE_ENV: 'production'
             }
         };
-        
+
         // ========== SERVICE WORKER REGISTRATION ==========
         // Register service worker for offline functionality and caching
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('/sw.js', { type: 'module' })
                     .then(registration => {
                         console.log('✅ Service Worker registrado:', registration.scope);
-                        
+
                         // Check for updates every hour
                         setInterval(() => {
                             registration.update();
@@ -64,7 +67,7 @@
                         console.warn('⚠️ Service Worker falló:', error);
                     });
             });
-            
+
             // Listen for service worker updates
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 console.log('🔄 Service Worker actualizado - recargando...');
@@ -72,7 +75,7 @@
             });
         }
     </script>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
@@ -86,10 +89,12 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+    <link rel="stylesheet" href="/index.css">
 </head>
+
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>

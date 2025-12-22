@@ -32,9 +32,17 @@ export function useSignatureMode(
     }, [isSignatureMode, user, authLoading]);
 
     // Determine effective date
-    const currentDateString = (isSignatureMode && signatureDate)
-        ? signatureDate
-        : navDateString;
+    const currentDateString = useMemo(() => {
+        if (isSignatureMode && signatureDate) {
+            // Support DD-MM-YYYY format
+            if (signatureDate.includes('-') && signatureDate.split('-')[0].length <= 2) {
+                const [d, m, y] = signatureDate.split('-');
+                return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+            return signatureDate;
+        }
+        return navDateString;
+    }, [isSignatureMode, signatureDate, navDateString]);
 
     return {
         isSignatureMode,

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { useDailyRecordContext } from '../../context/DailyRecordContext';
 import { useStaffContext } from '../../context/StaffContext';
 import { BEDS } from '../../constants';
-import { MessageSquare, Stethoscope, Sun, Moon, Share2, CheckCircle, Send, RefreshCw, UserMinus, ArrowRightLeft, Clock, ShieldCheck } from 'lucide-react';
+import { MessageSquare, Stethoscope, Sun, Moon, Share2, CheckCircle, Send, UserMinus, ArrowRightLeft, Clock, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx';
 import { getShiftSchedule } from '../../utils/dateUtils';
 
@@ -45,8 +45,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
     const {
         selectedShift,
         setSelectedShift,
-        whatsappSending,
-        whatsappSent,
         isMedical,
         visibleBeds,
         hasAnyPatients,
@@ -57,7 +55,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
         tensList,
         handleNursingNoteChange,
         handleShareLink,
-        handleSendWhatsApp,
         handleSendWhatsAppManual,
         formatPrintDate,
     } = useHandoffLogic({
@@ -104,7 +101,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
             />
 
             {/* Main Header (Visible) with integrated Shift Switcher */}
-            <header className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-4 print:hidden">
+            <header className="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-3 print:hidden">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-50 rounded-lg">
                         <Icon size={24} className={headerColor} />
@@ -138,25 +135,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                 {/* Medical Action Buttons */}
                 {isMedical && !readOnly && (
                     <div className="flex items-center gap-2 md:ml-auto">
-                        <button
-                            onClick={handleSendWhatsApp}
-                            disabled={whatsappSending || whatsappSent || !!record.medicalSignature}
-                            className={clsx(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                                (whatsappSent || record.medicalSignature)
-                                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                    : "bg-green-600 text-white hover:bg-green-700"
-                            )}
-                            title="Enviar entrega por WhatsApp (Automático)"
-                        >
-                            {whatsappSending ? (
-                                <><RefreshCw size={14} className="animate-spin" /> Enviando...</>
-                            ) : whatsappSent ? (
-                                <><CheckCircle size={14} /> Enviado</>
-                            ) : (
-                                <><Send size={14} /> Enviar WhatsApp (Rail)</>
-                            )}
-                        </button>
                         <button
                             onClick={handleSendWhatsAppManual}
                             disabled={!!record.medicalSignature}

@@ -20,11 +20,11 @@ export const HandoffShiftSelector: React.FC<HandoffShiftSelectorProps> = ({
     schedule
 }) => {
     return (
-        <div className="flex justify-center gap-4 mb-6 print:hidden">
+        <div className="flex justify-center gap-3 mb-1 print:hidden">
             <button
                 onClick={() => onShiftChange('day')}
                 className={clsx(
-                    "flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-wide transition-all shadow-md",
+                    "flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all shadow",
                     selectedShift === 'day'
                         ? "bg-gradient-to-br from-medical-500 to-medical-700 text-white scale-105 shadow-lg shadow-medical-200"
                         : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
@@ -40,7 +40,7 @@ export const HandoffShiftSelector: React.FC<HandoffShiftSelectorProps> = ({
             <button
                 onClick={() => onShiftChange('night')}
                 className={clsx(
-                    "flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-wide transition-all shadow-md",
+                    "flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all shadow",
                     selectedShift === 'night'
                         ? "bg-gradient-to-br from-slate-700 to-slate-900 text-white scale-105 shadow-lg shadow-slate-300"
                         : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"

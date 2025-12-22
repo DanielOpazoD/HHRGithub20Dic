@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Plus, Trash2, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
-import { buildCensusEmailBody, CENSUS_DEFAULT_RECIPIENTS } from '../../constants/email';
+import { buildCensusEmailBody } from '../../constants/email';
 
 interface Props {
     isOpen: boolean;
@@ -126,16 +126,10 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                     <section>
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-sm font-semibold text-slate-700">Destinatarios</h3>
-                            <button
-                                onClick={() => onRecipientsChange(CENSUS_DEFAULT_RECIPIENTS)}
-                                className="text-xs text-blue-700 hover:text-blue-800 font-semibold"
-                            >
-                                Restablecer por defecto
-                            </button>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {recipients.length === 0 && (
-                                <p className="text-xs text-slate-500 w-full">No hay destinatarios. Se usará la lista por defecto si no agregas correos.</p>
+                                <p className="text-xs text-slate-500 w-full">No hay destinatarios configurados. Agrega los correos a los que deseas enviar el censo.</p>
                             )}
                             {recipients.map((email, index) => (
                                 <div
@@ -146,14 +140,14 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                         type="email"
                                         value={email}
                                         onChange={(e) => handleRecipientChange(index, e.target.value)}
-                                        className="min-w-[220px] border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                        className="min-w-[220px] border border-slate-200 rounded-lg px-2.5 py-1.5 text-[13px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                                     />
                                     <button
                                         onClick={() => handleRemoveRecipient(index)}
-                                        className="p-2 text-red-600 hover:text-red-700"
+                                        className="p-1.5 text-red-600 hover:text-red-700"
                                         aria-label="Eliminar destinatario"
                                     >
-                                        <Trash2 size={16} />
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
                             ))}
@@ -163,13 +157,13 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                     placeholder="nuevo@correo.cl"
                                     value={newRecipient}
                                     onChange={(e) => setNewRecipient(e.target.value)}
-                                    className="flex-1 min-w-[220px] border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 min-w-[220px] border border-slate-200 rounded-lg px-2.5 py-1.5 text-[13px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 <button
                                     onClick={handleAddRecipient}
-                                    className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[13px] font-semibold"
                                 >
-                                    <Plus size={14} /> Agregar
+                                    <Plus size={12} /> Agregar
                                 </button>
                             </div>
                             {error && <p className="text-xs text-red-600">{error}</p>}
@@ -199,9 +193,6 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                 'border-slate-200'
                             )}
                         />
-                        <p className="text-xs text-slate-500">
-                            Predeterminado: "{defaultMessage}"{nursesSignature ? ` (firma sugerida: ${nursesSignature})` : ''}
-                        </p>
                     </section>
                 </div>
 

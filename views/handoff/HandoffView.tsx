@@ -202,7 +202,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                                             markMedicalHandoffAsSent(doctorName);
                                                         }
                                                     }}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
                                                     title="Firmar entrega de turno"
                                                 >
                                                     <ShieldCheck size={14} />
@@ -506,7 +506,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             {/* CUDYR - Night Nursing Print Only */}
             {!isMedical && selectedShift === 'night' && (
-                <div className="handoff-cudyr-print print:break-before-page print:block">
+                <div className="handoff-cudyr-print hidden print:block print:break-before-page">
                     <CudyrView readOnly={true} />
                 </div>
             )}

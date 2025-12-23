@@ -66,7 +66,7 @@ export const useCensusEmail = ({
         // ignore parsing errors and fallback to defaults
       }
     }
-    return [];
+    return CENSUS_DEFAULT_RECIPIENTS;
   });
 
   // ========== MESSAGE STATE ==========

@@ -44,6 +44,13 @@
     visibility: visible !important;
   }
 
+  /* Neutralize any residual tinted backgrounds inside the printout */
+  .handoff-cudyr-print,
+  .handoff-cudyr-print * {
+    background: white !important;
+    background-color: white !important;
+  }
+
   .handoff-cudyr-print table,
   .handoff-cudyr-print tbody,
   .handoff-cudyr-print tr,

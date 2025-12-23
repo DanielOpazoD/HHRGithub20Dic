@@ -86,7 +86,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
     }
 
     return (
-        <div className="space-y-4 animate-fade-in pb-20 font-sans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:w-full print:px-0">
+        <div className="space-y-3 print:space-y-2 animate-fade-in pb-20 font-sans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:w-full print:px-0">
             {/* Print-only Header */}
             <HandoffPrintHeader
                 title={title}
@@ -324,7 +324,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none print:overflow-visible">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:[&_th]:text-[10px] print:[&_td]:text-[10px]">
                         <thead>
                             <tr className={tableHeaderClass}>
                                 <th className="p-2 border-r border-slate-200 text-center w-20 print:w-[40px] print:text-[10px] print:p-1">Cama</th>
@@ -384,7 +384,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             {/* Additional Sections for Nursing Handoff (Altas, Traslados, CMA) */}
             {!isMedical && (
-                <div className="space-y-6 print:space-y-4 print:text-[11px] print:leading-tight">
+                <div className="space-y-4 print:space-y-2 print:text-[11px] print:leading-tight">
                     {/* Discharges - Simplified Read-Only */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none print:bg-transparent">
                         <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-sm print:mb-1 print:text-black">
@@ -394,7 +394,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                         {(!record.discharges || record.discharges.length === 0) ? (
                             <p className="text-slate-400 italic text-sm print:text-[10px]">No hay altas registradas hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-[10px] border-collapse">
+                            <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
                                         <th className="p-2 border-r border-slate-200 w-20">Cama</th>
@@ -431,7 +431,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                         {(!record.transfers || record.transfers.length === 0) ? (
                             <p className="text-slate-400 italic text-sm print:text-[10px]">No hay traslados registrados hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-[10px] border-collapse">
+                            <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
                                         <th className="p-2 border-r border-slate-200 w-24">Cama Origen</th>
@@ -461,7 +461,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                         {(!record.cma || record.cma.length === 0) ? (
                             <p className="text-slate-400 italic text-sm print:text-[10px]">No hay pacientes de CMA hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-[10px] border-collapse">
+                            <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
                                         <th className="p-2 border-r border-slate-200 w-20">Cama</th>

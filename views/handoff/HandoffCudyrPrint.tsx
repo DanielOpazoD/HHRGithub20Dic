@@ -25,7 +25,7 @@ export const HandoffCudyrPrint: React.FC = () => {
     const responsibleNurses = (record.nursesNightShift || []).filter((n) => n && n.trim() !== '');
 
     return (
-        <div className="handoff-cudyr-print">
+        <div className="handoff-cudyr-print print:bg-white print:m-0 print:p-0">
             <div className="mb-3 pb-3 border-b border-slate-300">
                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
                     <ClipboardList size={18} className="text-medical-700" />

@@ -135,6 +135,7 @@ export const DischargeModal: React.FC<DischargeModalProps> = ({
                         <input
                             type="time"
                             className="w-32 p-2 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-green-200 focus:border-green-400"
+                            step={300}
                             value={dischargeTime}
                             onChange={(e) => setDischargeTime(e.target.value)}
                         />

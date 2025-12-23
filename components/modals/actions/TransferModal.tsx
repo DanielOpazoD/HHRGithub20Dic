@@ -128,6 +128,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
                         <input
                             type="time"
                             className="w-32 p-2 border rounded text-xs border-slate-200 focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                            step={300}
                             value={transferTime}
                             onChange={(e) => setTransferTime(e.target.value)}
                         />

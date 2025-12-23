@@ -190,7 +190,8 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                         {showAdmissionTime && (
                             <DebouncedInput
                                 type="time"
-                                className="w-24 p-0.5 h-8 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-white shadow"
+                                step={300}
+                                className="w-24 p-0.5 h-8 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-white shadow-lg z-30"
                                 value={data.admissionTime || ''}
                                 onChange={handleDebouncedText('admissionTime')}
                                 disabled={readOnly}

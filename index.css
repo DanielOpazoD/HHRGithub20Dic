@@ -64,4 +64,14 @@
     animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.handoff-cudyr-print {
+    display: none;
+}
+
+@media print {
+    .handoff-cudyr-print {
+        display: block !important;
+    }
+}
+
 @import './styles/print.css';

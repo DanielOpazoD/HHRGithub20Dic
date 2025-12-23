@@ -11,8 +11,43 @@
     background: white !important;
   }
 
+  /* Remove residual tinted backgrounds and shadows from every element to avoid gray boxes */
+  body * {
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  /* Neutralize entrance animations so printed elements stay visible */
+  .animate-fade-in,
+  .animate-scale-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* Ensure appended print-only sections render on a white canvas */
+  .handoff-cudyr-print {
+    background: white !important;
+    page-break-before: always;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .handoff-cudyr-print table,
+  .handoff-cudyr-print tbody,
+  .handoff-cudyr-print tr,
+  .handoff-cudyr-print td,
+  .handoff-cudyr-print th {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
   }
 }

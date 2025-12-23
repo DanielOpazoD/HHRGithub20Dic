@@ -12,7 +12,7 @@ import { HandoffChecklistDay } from './HandoffChecklistDay';
 import { HandoffChecklistNight } from './HandoffChecklistNight';
 import { HandoffNovedades } from './HandoffNovedades';
 import { HandoffStaffSelector } from './HandoffStaffSelector';
-import { CudyrView } from '../cudyr/CudyrView';
+import { HandoffCudyrPrint } from './HandoffCudyrPrint';
 import { HandoffPrintHeader } from './HandoffPrintHeader';
 import { HandoffShiftSelector } from './HandoffShiftSelector';
 
@@ -202,7 +202,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                                             markMedicalHandoffAsSent(doctorName);
                                                         }
                                                     }}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
                                                     title="Firmar entrega de turno"
                                                 >
                                                     <ShieldCheck size={14} />
@@ -322,7 +322,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                 </div>
             )}
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none print:overflow-visible">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -506,8 +506,8 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             {/* CUDYR - Night Nursing Print Only */}
             {!isMedical && selectedShift === 'night' && (
-                <div className="hidden print:block print:break-before-page">
-                    <CudyrView readOnly={true} />
+                <div className="print:break-before-page">
+                    <HandoffCudyrPrint />
                 </div>
             )}
         </div>

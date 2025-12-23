@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { calculateDeviceDays, TRACKED_DEVICES, TrackedDevice } from './DeviceDateConfigModal';
+import { calculateDeviceDays, TRACKED_DEVICES, TrackedDevice, VVP_DEVICE_DETAIL_KEYS, VVP_DEVICES, VvpDevice } from './DeviceDateConfigModal';
 import { DeviceDetails } from '../../types';
 
 interface DeviceBadgeProps {
@@ -14,15 +14,18 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
     deviceDetails = {},
     currentDate
 }) => {
-    let badgeText = device;
-    if (device === '2 VVP') badgeText = '2VVP';
-
+    const badgeText = device;
+    const isVvp = VVP_DEVICES.includes(device as VvpDevice);
     const isTracked = TRACKED_DEVICES.includes(device as TrackedDevice);
-    const details = isTracked ? deviceDetails[device as TrackedDevice] : undefined;
+    const details = isTracked
+        ? deviceDetails[device as TrackedDevice]
+        : isVvp
+            ? deviceDetails[VVP_DEVICE_DETAIL_KEYS[device as VvpDevice]]
+            : undefined;
     const days = details?.installationDate ? calculateDeviceDays(details.installationDate, currentDate) : null;
 
     // Alert colors based on days (IAAS thresholds)
-    const isAlert = isTracked && days !== null && (
+    const isAlert = !isVvp && isTracked && days !== null && (
         (device === 'CUP' && days >= 5) ||
         (device === 'CVC' && days >= 7) ||
         (device === 'VMI' && days >= 5)

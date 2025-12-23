@@ -54,7 +54,7 @@ describe('usePatientTransfers', () => {
             const { result } = renderHook(() => usePatientTransfers(record, mockSaveAndUpdate));
 
             act(() => {
-                result.current.addTransfer('R1', 'Avión Ambulancia', 'H. Regional Valdivia', '');
+                result.current.addTransfer('R1', '10:00', 'Avión Ambulancia', 'H. Regional Valdivia', '');
             });
 
             expect(mockSaveAndUpdate).toHaveBeenCalledWith(

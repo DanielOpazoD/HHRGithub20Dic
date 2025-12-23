@@ -9,21 +9,32 @@ export interface TransferModalProps {
     receivingCenter: string;
     receivingCenterOther: string;
     transferEscort: string;
+    initialTime?: string;
 
     // New props for Mother + Baby
     hasClinicalCrib?: boolean;
     clinicalCribName?: string;
 
     onUpdate: (field: string, value: string) => void;
+    onTimeChange: (value: string) => void;
     onClose: () => void;
     onConfirm: () => void;
 }
 
 export const TransferModal: React.FC<TransferModalProps> = ({
     isOpen, isEditing, evacuationMethod, receivingCenter, receivingCenterOther, transferEscort, onUpdate, onClose, onConfirm,
-    hasClinicalCrib, clinicalCribName
+    hasClinicalCrib, clinicalCribName, onTimeChange, initialTime
 }) => {
     const [customEscort, setCustomEscort] = useState('');
+    const [time, setTime] = useState('');
+
+    const currentTime = () => new Date().toTimeString().slice(0, 5);
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setTime(initialTime || currentTime());
+        }
+    }, [initialTime, isOpen]);
 
     if (!isOpen) return null;
 
@@ -53,6 +64,19 @@ export const TransferModal: React.FC<TransferModalProps> = ({
                 )}
 
                 <div className="space-y-4 mb-6">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Hora de traslado</label>
+                        <input
+                            type="time"
+                            value={time}
+                            onChange={(e) => {
+                                setTime(e.target.value);
+                                onTimeChange(e.target.value);
+                            }}
+                            className="w-full p-2 border rounded text-sm"
+                        />
+                    </div>
+
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Medio de Evacuación</label>
                         <select

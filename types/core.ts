@@ -87,6 +87,7 @@ export interface PatientData {
     specialty: Specialty;
     status: PatientStatus;
     admissionDate: string;
+    admissionTime?: string;
     hasWristband: boolean;
     devices: string[];
     deviceDetails?: DeviceDetails; // Dates for CUP, CVC, VMI
@@ -129,6 +130,7 @@ export interface DischargeData {
     patientName: string;
     rut: string;
     diagnosis: string;
+    time: string;
     status: 'Vivo' | 'Fallecido';
     dischargeType?: 'Domicilio (Habitual)' | 'Voluntaria' | 'Fuga' | 'Otra'; // Sub-classification for 'Vivo'
     dischargeTypeOther?: string; // Description if 'Otra'
@@ -148,6 +150,7 @@ export interface TransferData {
     patientName: string;
     rut: string;
     diagnosis: string;
+    time: string;
     evacuationMethod: string;
     receivingCenter: string;
     receivingCenterOther?: string;

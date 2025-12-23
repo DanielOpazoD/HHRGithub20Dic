@@ -19,6 +19,7 @@ export interface DischargeState {
     recordId?: string;
     isOpen: boolean;
     status: 'Vivo' | 'Fallecido';
+    time?: string;
     type?: string;
     typeOther?: string;
     hasClinicalCrib?: boolean;
@@ -30,6 +31,7 @@ export interface TransferState {
     bedId: string | null;
     recordId?: string;
     isOpen: boolean;
+    time?: string;
     evacuationMethod: string;
     receivingCenter: string;
     receivingCenterOther: string;
@@ -47,7 +49,7 @@ interface CensusActionsContextType {
     // Discharge State
     dischargeState: DischargeState;
     setDischargeState: (state: DischargeState) => void;
-    executeDischarge: (data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string }) => void;
+    executeDischarge: (data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string, time: string }) => void;
     handleEditDischarge: (d: DischargeData) => void;
 
     // Transfer State
@@ -96,13 +98,15 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
     const [dischargeState, setDischargeState] = useState<DischargeState>({
         bedId: null,
         isOpen: false,
-        status: 'Vivo'
+        status: 'Vivo',
+        time: undefined
     });
 
     // Transfer State
     const [transferState, setTransferState] = useState<TransferState>({
         bedId: null,
         isOpen: false,
+        time: undefined,
         evacuationMethod: EVACUATION_METHODS[0],
         receivingCenter: RECEIVING_CENTERS[0],
         receivingCenterOther: '',
@@ -113,6 +117,8 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
     const [showCribConfig, setShowCribConfig] = useState(false);
 
     // --- Handlers ---
+
+    const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
 
     const handleRowAction = useCallback(async (action: 'clear' | 'copy' | 'move' | 'discharge' | 'transfer', bedId: string) => {
         if (!record) return;
@@ -138,6 +144,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 recordId: undefined,
                 isOpen: true,
                 status: 'Vivo',
+                time: getCurrentTime(),
                 hasClinicalCrib: hasBaby,
                 clinicalCribName: patient.clinicalCrib?.patientName,
                 clinicalCribStatus: 'Vivo'
@@ -149,6 +156,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 bedId,
                 recordId: undefined,
                 isOpen: true,
+                time: getCurrentTime(),
                 evacuationMethod: EVACUATION_METHODS[0],
                 receivingCenter: RECEIVING_CENTERS[0],
                 receivingCenterOther: '',
@@ -165,18 +173,20 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
         setActionState({ type: null, sourceBedId: null, targetBedId: null });
     }, [actionState, moveOrCopyPatient]);
 
-    const executeDischarge = useCallback((data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string }) => {
+    const executeDischarge = useCallback((data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string, time: string }) => {
         // If data is provided (from Modal onConfirm), use it. Fallback to state (legacy/editing)
         const status = data?.status || dischargeState.status;
         const type = data?.type;
         const typeOther = data?.typeOther;
+        const time = data?.time || dischargeState.time || getCurrentTime();
 
         if (dischargeState.recordId) {
             updateDischarge(
                 dischargeState.recordId,
                 status,
                 type,
-                typeOther
+                typeOther,
+                time
             );
         } else if (dischargeState.bedId) {
             addDischarge(
@@ -184,7 +194,8 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 status,
                 dischargeState.clinicalCribStatus,
                 type,
-                typeOther
+                typeOther,
+                time
             );
         }
         setDischargeState(prev => ({ ...prev, isOpen: false }));
@@ -193,6 +204,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
     const executeTransfer = useCallback(() => {
         if (transferState.recordId) {
             updateTransfer(transferState.recordId, {
+                time: transferState.time || getCurrentTime(),
                 evacuationMethod: transferState.evacuationMethod,
                 receivingCenter: transferState.receivingCenter,
                 receivingCenterOther: transferState.receivingCenterOther,
@@ -201,6 +213,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
         } else if (transferState.bedId) {
             addTransfer(
                 transferState.bedId,
+                transferState.time || getCurrentTime(),
                 transferState.evacuationMethod,
                 transferState.receivingCenter,
                 transferState.receivingCenterOther,
@@ -216,6 +229,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
             recordId: d.id,
             isOpen: true,
             status: d.status,
+            time: d.time,
             type: d.dischargeType,
             typeOther: d.dischargeTypeOther
         });
@@ -226,6 +240,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
             bedId: null,
             recordId: t.id,
             isOpen: true,
+            time: t.time,
             evacuationMethod: t.evacuationMethod,
             receivingCenter: t.receivingCenter,
             receivingCenterOther: t.receivingCenterOther || '',

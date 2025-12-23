@@ -48,6 +48,9 @@ export const DeviceDetailsSchema = z.object({
     CUP: DeviceInfoSchema.optional(),
     CVC: DeviceInfoSchema.optional(),
     VMI: DeviceInfoSchema.optional(),
+    VVP1: DeviceInfoSchema.optional(),
+    VVP2: DeviceInfoSchema.optional(),
+    VVP3: DeviceInfoSchema.optional(),
 });
 
 // ============================================================================

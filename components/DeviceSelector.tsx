@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { Plus, X, Check, Settings } from 'lucide-react';
 import clsx from 'clsx';
 import { DEVICE_OPTIONS } from '../constants';
-import { DeviceDetails, DeviceInfo } from '../types';
+import { DeviceDetails } from '../types';
 import {
     DeviceDateConfigModal,
     DeviceBadge,
     TRACKED_DEVICES,
-    TrackedDevice
+    TrackedDevice,
+    VVP_DEVICES,
+    VvpDevice,
+    VVP_DEVICE_DETAIL_KEYS
 } from './device-selector';
 
 interface DeviceSelectorProps {
@@ -31,26 +34,52 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
     const [customDevice, setCustomDevice] = useState('');
     const [editingDevice, setEditingDevice] = useState<TrackedDevice | null>(null);
 
-    // Helper to determine VVP state: 0 (none), 1 (VVP), 2 (2 VVP)
-    const vvpCount = devices.includes('2 VVP') ? 2 : devices.includes('VVP') ? 1 : 0;
+    const selectedVvps = devices.filter((d): d is VvpDevice => VVP_DEVICES.includes(d as VvpDevice));
+    const vvpCount = selectedVvps.length;
 
     // Filter out VVP related strings to get "other" devices
-    const otherDevicesList = DEVICE_OPTIONS.filter(d => d !== 'VVP');
+    const otherDevicesList = DEVICE_OPTIONS.filter(d => !VVP_DEVICES.includes(d as VvpDevice));
 
     const setVVPCount = (count: number) => {
-        let newDevices = devices.filter(d => d !== 'VVP' && d !== '2 VVP');
-        if (count === 1) newDevices.push('VVP');
-        if (count === 2) newDevices.push('2 VVP');
+        const remainingDevices = devices.filter(d => !VVP_DEVICES.includes(d as VvpDevice));
+        const newVvps = VVP_DEVICES.slice(0, count);
+        const newDevices = [...remainingDevices, ...newVvps];
         onChange(newDevices);
+
+        if (onDetailsChange) {
+            const cleanedDetails = { ...deviceDetails };
+            VVP_DEVICES.slice(count).forEach(vvp => {
+                const detailKey = VVP_DEVICE_DETAIL_KEYS[vvp];
+                delete cleanedDetails[detailKey];
+            });
+            onDetailsChange(cleanedDetails);
+        }
+    };
+
+    const isVvpDevice = (dev: string): dev is VvpDevice => VVP_DEVICES.includes(dev as VvpDevice);
+    const isTrackedDevice = (dev: string): dev is TrackedDevice =>
+        TRACKED_DEVICES.includes(dev as TrackedDevice);
+
+    const getDeviceDetail = (dev: string) => {
+        if (isTrackedDevice(dev)) return deviceDetails[dev];
+        if (isVvpDevice(dev)) {
+            const detailKey = VVP_DEVICE_DETAIL_KEYS[dev];
+            return deviceDetails[detailKey];
+        }
+        return undefined;
     };
 
     const toggleDevice = (device: string) => {
         if (devices.includes(device)) {
             onChange(devices.filter(d => d !== device));
             // Also clear details if tracked device is removed
-            if (TRACKED_DEVICES.includes(device as TrackedDevice) && onDetailsChange) {
+            if (onDetailsChange) {
                 const newDetails = { ...deviceDetails };
-                delete newDetails[device as TrackedDevice];
+                if (isTrackedDevice(device)) {
+                    delete newDetails[device];
+                } else if (isVvpDevice(device)) {
+                    delete newDetails[VVP_DEVICE_DETAIL_KEYS[device]];
+                }
                 onDetailsChange(newDetails);
             }
         } else {
@@ -68,17 +97,11 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
         }
     };
 
-    const handleDeviceConfigSave = (info: DeviceInfo) => {
+    const handleDeviceConfigSave = (details: DeviceDetails) => {
         if (editingDevice && onDetailsChange) {
-            onDetailsChange({
-                ...deviceDetails,
-                [editingDevice]: info
-            });
+            onDetailsChange(details);
         }
     };
-
-    const isTrackedDevice = (dev: string): dev is TrackedDevice =>
-        TRACKED_DEVICES.includes(dev as TrackedDevice);
 
     if (disabled) return null;
 
@@ -119,7 +142,18 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                         <div className="p-3">
                             {/* Special VVP Section */}
                             <div className="mb-3 pb-3 border-b border-slate-100">
-                                <label className="text-xs font-semibold text-slate-600 mb-2 block">Vías Venosas (VVP)</label>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="text-xs font-semibold text-slate-600 block">Vías Venosas (VVP)</label>
+                                    {vvpCount > 0 && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingDevice('VVP'); }}
+                                            className="p-1 rounded hover:bg-medical-100 text-medical-600"
+                                            title="Configurar fechas de VVP"
+                                        >
+                                            <Settings size={14} />
+                                        </button>
+                                    )}
+                                </div>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setVVPCount(0)}
@@ -148,6 +182,15 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                                     >
                                         2
                                     </button>
+                                    <button
+                                        onClick={() => setVVPCount(3)}
+                                        className={clsx(
+                                            "flex-1 py-1 text-xs rounded border transition-colors",
+                                            vvpCount === 3 ? "bg-amber-500 text-white border-amber-600 shadow-sm" : "hover:bg-amber-50 text-amber-600 border-amber-200"
+                                        )}
+                                    >
+                                        3
+                                    </button>
                                 </div>
                             </div>
 
@@ -156,7 +199,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                                 {otherDevicesList.map(dev => {
                                     const isTracked = isTrackedDevice(dev);
                                     const isSelected = devices.includes(dev);
-                                    const details = isTracked ? deviceDetails[dev as TrackedDevice] : undefined;
+                                    const details = getDeviceDetail(dev);
                                     const hasConfig = details?.installationDate;
 
                                     return (
@@ -222,9 +265,9 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                                 </div>
 
                                 {/* Show custom devices (not in DEVICE_OPTIONS) with remove button */}
-                                {devices.filter(d => !DEVICE_OPTIONS.includes(d) && d !== 'VVP' && d !== '2 VVP').length > 0 && (
+                                {devices.filter(d => !DEVICE_OPTIONS.includes(d)).length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-1">
-                                        {devices.filter(d => !DEVICE_OPTIONS.includes(d) && d !== 'VVP' && d !== '2 VVP').map(dev => (
+                                        {devices.filter(d => !DEVICE_OPTIONS.includes(d)).map(dev => (
                                             <span
                                                 key={dev}
                                                 className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium flex items-center gap-1"
@@ -252,7 +295,8 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
             {editingDevice && (
                 <DeviceDateConfigModal
                     device={editingDevice}
-                    deviceInfo={deviceDetails[editingDevice] || {}}
+                    deviceDetails={deviceDetails}
+                    activeVvps={selectedVvps}
                     currentDate={currentDate}
                     onSave={handleDeviceConfigSave}
                     onClose={() => setEditingDevice(null)}

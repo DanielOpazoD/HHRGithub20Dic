@@ -23,6 +23,15 @@
     filter: none !important;
   }
 
+  /* After clearing backgrounds globally, force the page canvas to stay white */
+  html,
+  body,
+  #root,
+  main {
+    background: white !important;
+    background-color: white !important;
+  }
+
   /* Neutralize entrance animations so printed elements stay visible */
   .animate-fade-in,
   .animate-scale-in {

@@ -384,17 +384,17 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             {/* Additional Sections for Nursing Handoff (Altas, Traslados, CMA) */}
             {!isMedical && (
-                <div className="space-y-6 print:space-y-4">
+                <div className="space-y-6 print:space-y-4 print:text-[11px] print:leading-tight">
                     {/* Discharges - Simplified Read-Only */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none">
-                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-base print:mb-1 print:text-black">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none print:bg-transparent">
+                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-sm print:mb-1 print:text-black">
                             <UserMinus size={20} className="text-red-500 print:w-4 print:h-4" />
                             Altas
                         </h3>
                         {(!record.discharges || record.discharges.length === 0) ? (
-                            <p className="text-slate-400 italic text-sm">No hay altas registradas hoy.</p>
+                            <p className="text-slate-400 italic text-sm print:text-[10px]">No hay altas registradas hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-xs border-collapse">
+                            <table className="w-full text-left text-sm print:text-[10px] border-collapse">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
                                         <th className="p-2 border-r border-slate-200 w-20">Cama</th>
@@ -406,11 +406,11 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                 </thead>
                                 <tbody>
                                     {record.discharges.map(d => (
-                                        <tr key={d.id} className="border-b border-slate-100 print:border-slate-300">
+                                        <tr key={d.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
                                             <td className="p-2 border-r border-slate-200">{d.bedName}</td>
                                             <td className="p-2 border-r border-slate-200">
-                                                <div className="font-medium">{d.patientName}</div>
-                                                <div className="text-xs text-slate-500 font-mono">{d.rut}</div>
+                                                <div className="font-medium print:text-[10px]">{d.patientName}</div>
+                                                <div className="text-xs text-slate-500 font-mono print:text-[9px]">{d.rut}</div>
                                             </td>
                                             <td className="p-2 border-r border-slate-200">{d.diagnosis}</td>
                                             <td className="p-2 border-r border-slate-200">{d.dischargeType}</td>
@@ -423,15 +423,15 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                     </div>
 
                     {/* Transfers - Simplified Read-Only */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none">
-                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-base print:mb-1 print:text-black">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none print:bg-transparent">
+                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-sm print:mb-1 print:text-black">
                             <ArrowRightLeft size={20} className="text-blue-500 print:w-4 print:h-4" />
                             Traslados
                         </h3>
                         {(!record.transfers || record.transfers.length === 0) ? (
-                            <p className="text-slate-400 italic text-sm">No hay traslados registrados hoy.</p>
+                            <p className="text-slate-400 italic text-sm print:text-[10px]">No hay traslados registrados hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-xs border-collapse">
+                            <table className="w-full text-left text-sm print:text-[10px] border-collapse">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
                                         <th className="p-2 border-r border-slate-200 w-24">Cama Origen</th>
@@ -441,7 +441,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                 </thead>
                                 <tbody>
                                     {record.transfers.map(t => (
-                                        <tr key={t.id} className="border-b border-slate-100 print:border-slate-300">
+                                        <tr key={t.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
                                             <td className="p-2 border-r border-slate-200">{t.bedName}</td>
                                             <td className="p-2 border-r border-slate-200">{t.patientName}</td>
                                             <td className="p-2">{t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}</td>
@@ -453,15 +453,15 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                     </div>
 
                     {/* CMA - Simplified Read-Only */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none">
-                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-base print:mb-1 print:text-black">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none print:bg-transparent">
+                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-sm print:mb-1 print:text-black">
                             <Sun size={20} className="text-orange-500 print:w-4 print:h-4" />
                             Hospitalización Diurna / CMA
                         </h3>
                         {(!record.cma || record.cma.length === 0) ? (
-                            <p className="text-slate-400 italic text-sm">No hay pacientes de CMA hoy.</p>
+                            <p className="text-slate-400 italic text-sm print:text-[10px]">No hay pacientes de CMA hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-xs border-collapse">
+                            <table className="w-full text-left text-sm print:text-[10px] border-collapse">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
                                         <th className="p-2 border-r border-slate-200 w-20">Cama</th>
@@ -472,7 +472,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                                 </thead>
                                 <tbody>
                                     {record.cma.map(c => (
-                                        <tr key={c.id} className="border-b border-slate-100 print:border-slate-300">
+                                        <tr key={c.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
                                             <td className="p-2 border-r border-slate-200">{c.bedName}</td>
                                             <td className="p-2 border-r border-slate-200">{c.patientName}</td>
                                             <td className="p-2 border-r border-slate-200">{c.diagnosis}</td>

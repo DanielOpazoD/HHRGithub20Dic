@@ -13,7 +13,9 @@
 
   /* Remove residual tinted backgrounds and shadows from every element to avoid gray boxes */
   body * {
-    background: white !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
   }
 

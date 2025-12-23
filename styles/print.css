@@ -3,6 +3,18 @@
     margin: 10mm 10mm 10mm 10mm;
   }
 
+  /* Ensure all elements are fully visible when captured for print */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+
   /* Reduce spacing and optimize for print */
   html,
   body,

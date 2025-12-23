@@ -166,7 +166,15 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                 {isEmpty && !isSubRow ? (
                     <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
-                    <div className="flex flex-col gap-1 w-full">
+                    <div
+                        className="w-full relative"
+                        onFocusCapture={() => setShowAdmissionTime(true)}
+                        onBlur={(event) => {
+                            const next = event.relatedTarget as HTMLElement | null;
+                            if (next && event.currentTarget.contains(next)) return;
+                            setShowAdmissionTime(false);
+                        }}
+                    >
                         <DebouncedInput
                             type="date"
                             max={new Date().toISOString().split('T')[0]} // Impossible to have future admission
@@ -176,14 +184,13 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                             )}
                             value={data.admissionDate || ''}
                             onChange={handleDebouncedText('admissionDate')}
-                            onFocus={() => setShowAdmissionTime(true)}
                             onClick={() => setShowAdmissionTime(true)}
                             disabled={readOnly}
                         />
                         {showAdmissionTime && (
                             <DebouncedInput
                                 type="time"
-                                className="w-full p-0.5 h-8 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs"
+                                className="w-full p-0.5 h-8 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs absolute left-0 top-full mt-1 bg-white shadow"
                                 value={data.admissionTime || ''}
                                 onChange={handleDebouncedText('admissionTime')}
                                 disabled={readOnly}

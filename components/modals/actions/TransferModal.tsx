@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Baby } from 'lucide-react';
 import { EVACUATION_METHODS, RECEIVING_CENTERS } from '../../../constants';
+import { getTimeRoundedToStep } from '../../../utils';
 
 export interface TransferModalProps {
     isOpen: boolean;
@@ -29,7 +30,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
 
     React.useEffect(() => {
         if (isOpen) {
-            const nowTime = new Date().toTimeString().slice(0, 5);
+            const nowTime = getTimeRoundedToStep();
             setTransferTime(initialTime || nowTime);
         }
     }, [isOpen, initialTime]);

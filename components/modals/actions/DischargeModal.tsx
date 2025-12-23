@@ -1,5 +1,6 @@
 import React from 'react';
 import { Baby } from 'lucide-react';
+import { getTimeRoundedToStep } from '../../../utils';
 
 export interface DischargeModalProps {
     isOpen: boolean;
@@ -36,7 +37,7 @@ export const DischargeModal: React.FC<DischargeModalProps> = ({
         if (isOpen) {
             setDischargeType((initialType as any) || 'Domicilio (Habitual)');
             setOtherDetails(initialOtherDetails || '');
-            const nowTime = new Date().toTimeString().slice(0, 5);
+            const nowTime = getTimeRoundedToStep();
             setDischargeTime(initialTime || nowTime);
         }
     }, [isOpen, initialType, initialOtherDetails, initialTime]);

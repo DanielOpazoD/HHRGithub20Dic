@@ -44,6 +44,17 @@ export const daysBetween = (startDate: string, endDate: string): number => {
 };
 
 /**
+ * Get a HH:MM string rounded to the nearest time step.
+ * Defaults to 5-minute granularity for aligning time pickers.
+ */
+export const getTimeRoundedToStep = (date: Date = new Date(), stepMinutes = 5): string => {
+    const stepMs = stepMinutes * 60 * 1000;
+    const roundedMs = Math.round(date.getTime() / stepMs) * stepMs;
+    const roundedDate = new Date(roundedMs);
+    return roundedDate.toTimeString().slice(0, 5);
+};
+
+/**
  * Check if a date string is in the future
  */
 export const isFutureDate = (dateString: string): boolean => {

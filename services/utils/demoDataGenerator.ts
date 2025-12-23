@@ -7,6 +7,7 @@
 import { DailyRecord, PatientData, PatientStatus, Specialty, DischargeData, TransferData } from '../../types';
 import { BEDS, DEVICE_OPTIONS } from '../../constants';
 import { createEmptyPatient } from '../factories/patientFactory';
+import { getTimeRoundedToStep } from '../../utils';
 
 // ============================================================================
 // Clinical Profiles - Realistic diagnosis-specialty-status mappings
@@ -303,7 +304,7 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                 patientName: patient.patientName,
                 rut: patient.rut,
                 diagnosis: patient.pathology,
-                time: new Date().toTimeString().slice(0, 5),
+                time: getTimeRoundedToStep(),
                 status: Math.random() > 0.02 ? 'Vivo' : 'Fallecido',
                 age: patient.age,
                     insurance: patient.insurance,
@@ -323,7 +324,7 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                         patientName: patient.clinicalCrib.patientName,
                         rut: patient.clinicalCrib.rut,
                         diagnosis: patient.clinicalCrib.pathology,
-                        time: new Date().toTimeString().slice(0, 5),
+                        time: getTimeRoundedToStep(),
                         status: 'Vivo',
                         age: patient.clinicalCrib.age,
                         insurance: patient.insurance,
@@ -348,7 +349,7 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                 patientName: patient.patientName,
                 rut: patient.rut,
                 diagnosis: patient.pathology,
-                time: new Date().toTimeString().slice(0, 5),
+                time: getTimeRoundedToStep(),
                 evacuationMethod: randomItem(EVACUATION_METHODS),
                 receivingCenter: randomItem(RECEIVING_CENTERS),
                     receivingCenterOther: '',

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calendar, Clock } from 'lucide-react';
 import { DeviceDetails, DeviceInfo } from '../../types';
 
@@ -6,7 +7,7 @@ import { DeviceDetails, DeviceInfo } from '../../types';
 export const TRACKED_DEVICES = ['CUP', 'CVC', 'VMI'] as const;
 export type TrackedDevice = typeof TRACKED_DEVICES[number];
 
-export const VVP_DEVICES = ['VVP 1', 'VVP 2', 'VVP 3'] as const;
+export const VVP_DEVICES = ['VVP', 'VVP 2', 'VVP 3'] as const;
 export type VvpDevice = typeof VVP_DEVICES[number];
 type VvpDeviceKey = 'VVP1' | 'VVP2' | 'VVP3';
 
@@ -16,9 +17,11 @@ export const DEVICE_LABELS: Record<TrackedDevice, string> = {
     'VMI': 'Ventilación Mecánica Invasiva'
 };
 
-export const mapVvpToKey = (device: VvpDevice): VvpDeviceKey => {
+export const mapVvpToKey = (device: VvpDevice | 'VVP 1'): VvpDeviceKey => {
     switch (device) {
-        case 'VVP 1': return 'VVP1';
+        case 'VVP':
+        case 'VVP 1':
+            return 'VVP1';
         case 'VVP 2': return 'VVP2';
         case 'VVP 3': return 'VVP3';
     }
@@ -60,7 +63,7 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
         onClose();
     };
 
-    return (
+    const modalContent = (
         <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-xs animate-scale-in">
                 <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50 rounded-t-lg">
@@ -130,6 +133,8 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
             </div>
         </div>
     );
+
+    return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
 
 interface VvpDateConfigModalProps {
@@ -183,7 +188,7 @@ export const VvpDateConfigModal: React.FC<VvpDateConfigModalProps> = ({
         onClose();
     };
 
-    return (
+    const modalContent = (
         <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-sm animate-scale-in">
                 <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50 rounded-t-lg">
@@ -264,4 +269,6 @@ export const VvpDateConfigModal: React.FC<VvpDateConfigModalProps> = ({
             </div>
         </div>
     );
+
+    return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

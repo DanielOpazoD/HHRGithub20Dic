@@ -14,9 +14,9 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
     deviceDetails = {},
     currentDate
 }) => {
-    const isVvp = VVP_DEVICES.includes(device as typeof VVP_DEVICES[number]);
+    const isVvp = VVP_DEVICES.includes(device as typeof VVP_DEVICES[number]) || device === 'VVP 1';
     const isTracked = TRACKED_DEVICES.includes(device as TrackedDevice) || isVvp;
-    const detailKey = isVvp ? mapVvpToKey(device as typeof VVP_DEVICES[number]) : device as TrackedDevice;
+    const detailKey = isVvp ? mapVvpToKey(device as typeof VVP_DEVICES[number] | 'VVP 1') : device as TrackedDevice;
     const details = isTracked ? deviceDetails[detailKey] : undefined;
     const days = details?.installationDate ? calculateDeviceDays(details.installationDate, currentDate) : null;
     const badgeText = device;

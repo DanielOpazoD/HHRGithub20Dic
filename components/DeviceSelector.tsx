@@ -34,26 +34,37 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
     const [customDevice, setCustomDevice] = useState('');
     const [editingDevice, setEditingDevice] = useState<TrackedDevice | 'VVP' | null>(null);
 
-    const selectedVvps = VVP_DEVICES.filter(vvp => devices.includes(vvp));
+    const normalizeVvp = (label: string): typeof VVP_DEVICES[number] | null => {
+        if (label === 'VVP' || label === 'VVP 1') return 'VVP';
+        if (label === 'VVP 2') return 'VVP 2';
+        if (label === 'VVP 3') return 'VVP 3';
+        return null;
+    };
+
+    const selectedVvps = Array.from(new Set(devices
+        .map(normalizeVvp)
+        .filter((v): v is typeof VVP_DEVICES[number] => v !== null)));
 
     // Filter out VVP related strings to get "other" devices
-    const otherDevicesList = DEVICE_OPTIONS.filter(d => !VVP_DEVICES.includes(d as typeof VVP_DEVICES[number]));
+    const otherDevicesList = DEVICE_OPTIONS.filter(d => !normalizeVvp(d));
 
     const getDetailKey = (device: string) => {
         if (TRACKED_DEVICES.includes(device as TrackedDevice)) {
             return device as TrackedDevice;
         }
-        if (VVP_DEVICES.includes(device as typeof VVP_DEVICES[number])) {
-            return mapVvpToKey(device as typeof VVP_DEVICES[number]);
+        const normalizedVvp = normalizeVvp(device);
+        if (normalizedVvp) {
+            return mapVvpToKey(normalizedVvp);
         }
         return null;
     };
 
     const toggleVvp = (device: typeof VVP_DEVICES[number]) => {
-        const isSelected = devices.includes(device);
+        const isSelected = selectedVvps.includes(device);
+        const cleanedDevices = devices.filter(d => normalizeVvp(d) !== device);
         const newDevices = isSelected
-            ? devices.filter(d => d !== device)
-            : [...devices, device];
+            ? cleanedDevices
+            : [...cleanedDevices, device];
         onChange(newDevices);
 
         if (isSelected && onDetailsChange) {

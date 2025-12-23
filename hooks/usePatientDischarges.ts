@@ -13,7 +13,8 @@ export const usePatientDischarges = (
         status: 'Vivo' | 'Fallecido',
         cribStatus?: 'Vivo' | 'Fallecido',
         dischargeType?: string,
-        dischargeTypeOther?: string
+        dischargeTypeOther?: string,
+        time?: string
     ) => {
         if (!record) return;
         const patient = record.beds[bedId];
@@ -36,6 +37,7 @@ export const usePatientDischarges = (
             patientName: patient.patientName,
             rut: patient.rut,
             diagnosis: patient.pathology,
+            time: time || new Date().toTimeString().slice(0, 5),
             status: status,
             dischargeType: status === 'Vivo' ? (dischargeType as any) : undefined,
             dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined,
@@ -57,6 +59,7 @@ export const usePatientDischarges = (
                 patientName: patient.clinicalCrib.patientName,
                 rut: patient.clinicalCrib.rut,
                 diagnosis: patient.clinicalCrib.pathology,
+                time: time || new Date().toTimeString().slice(0, 5),
                 status: cribStatus,
                 age: patient.clinicalCrib.age,
                 insurance: patient.insurance,
@@ -86,14 +89,16 @@ export const usePatientDischarges = (
         id: string,
         status: 'Vivo' | 'Fallecido',
         dischargeType?: string,
-        dischargeTypeOther?: string
+        dischargeTypeOther?: string,
+        time?: string
     ) => {
         if (!record) return;
         const updatedDischarges = record.discharges.map(d => d.id === id ? {
             ...d,
             status,
             dischargeType: status === 'Vivo' ? (dischargeType as any) : undefined,
-            dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined
+            dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined,
+            time: time || d.time
         } : d);
         saveAndUpdate({ ...record, discharges: updatedDischarges });
     };

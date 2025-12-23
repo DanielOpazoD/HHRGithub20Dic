@@ -72,7 +72,7 @@ describe('Patient Flow Integration', () => {
 
         // 3. Discharge
         act(() => {
-            result.current.addDischarge('R1', 'Vivo', undefined, 'Domicilio (Habitual)');
+            result.current.addDischarge('R1', 'Vivo', undefined, 'Domicilio (Habitual)', undefined, '08:00');
         });
 
         expect(result.current.record?.beds['R1'].patientName).toBe('');
@@ -103,7 +103,7 @@ describe('Patient Flow Integration', () => {
 
         // 1. Transfer
         act(() => {
-            result.current.addTransfer('R1', 'Ambulancia', 'Hospital Regional', '');
+            result.current.addTransfer('R1', '09:00', 'Ambulancia', 'Hospital Regional', '');
         });
 
         expect(result.current.record?.beds['R1'].patientName).toBe('');

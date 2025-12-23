@@ -8,7 +8,7 @@ export const usePatientTransfers = (
     saveAndUpdate: (updatedRecord: DailyRecord) => void
 ) => {
 
-    const addTransfer = (bedId: string, method: string, center: string, centerOther: string, escort?: string) => {
+    const addTransfer = (bedId: string, time: string, method: string, center: string, centerOther: string, escort?: string) => {
         if (!record) return;
         const patient = record.beds[bedId];
         const bedDef = BEDS.find(b => b.id === bedId);
@@ -30,6 +30,7 @@ export const usePatientTransfers = (
             patientName: patient.patientName,
             rut: patient.rut,
             diagnosis: patient.pathology,
+            time,
             evacuationMethod: method,
             receivingCenter: center,
             receivingCenterOther: centerOther,
@@ -52,6 +53,7 @@ export const usePatientTransfers = (
                 patientName: patient.clinicalCrib.patientName,
                 rut: patient.clinicalCrib.rut,
                 diagnosis: patient.clinicalCrib.pathology,
+                time,
                 evacuationMethod: method,
                 receivingCenter: center,
                 receivingCenterOther: centerOther,

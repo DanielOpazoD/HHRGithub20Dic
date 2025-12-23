@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Plus, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { buildCensusEmailBody } from '../../constants/email';
@@ -29,6 +29,7 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
     date,
     nursesSignature
 }) => {
+    const safeRecipients = Array.isArray(recipients) ? recipients : [];
     const [newRecipient, setNewRecipient] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showBulkEditor, setShowBulkEditor] = useState(false);
@@ -36,7 +37,7 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editingValue, setEditingValue] = useState('');
     const [showAllRecipients, setShowAllRecipients] = useState(false);
-    const defaultMessage = useMemo(() => buildCensusEmailBody(date, nursesSignature), [date, nursesSignature]);
+    const defaultMessage = buildCensusEmailBody(date, nursesSignature);
     const dialogRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -44,7 +45,7 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
             setError(null);
             setNewRecipient('');
             setShowBulkEditor(false);
-            setBulkRecipients(recipients.join('\n'));
+            setBulkRecipients(safeRecipients.join('\n'));
             setEditingIndex(null);
             setEditingValue('');
             setShowAllRecipients(false);
@@ -81,12 +82,12 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
             return;
         }
 
-        if (recipients.includes(trimmed)) {
+        if (safeRecipients.includes(trimmed)) {
             setError('Ese destinatario ya está agregado.');
             return;
         }
 
-        onRecipientsChange([...recipients, trimmed]);
+        onRecipientsChange([...safeRecipients, trimmed]);
         setNewRecipient('');
         setError(null);
     };
@@ -116,14 +117,14 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
     };
 
     const handleBulkCancel = () => {
-        setBulkRecipients(recipients.join('\n'));
+        setBulkRecipients(safeRecipients.join('\n'));
         setShowBulkEditor(false);
         setError(null);
     };
 
     const handleStartEditRecipient = (index: number) => {
         setEditingIndex(index);
-        setEditingValue(recipients[index]);
+        setEditingValue(safeRecipients[index]);
         setError(null);
     };
 
@@ -141,12 +142,12 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
             return;
         }
 
-        if (recipients.some((email, idx) => idx !== editingIndex && email === normalized)) {
+        if (safeRecipients.some((email, idx) => idx !== editingIndex && email === normalized)) {
             setError('Ese destinatario ya está agregado.');
             return;
         }
 
-        const updated = [...recipients];
+        const updated = [...safeRecipients];
         updated[editingIndex] = normalized;
         onRecipientsChange(updated);
         setEditingIndex(null);
@@ -159,14 +160,11 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
         setEditingValue('');
     };
 
-    const visibleRecipients = useMemo(() => {
-        const MAX_VISIBLE = 12;
-        if (showAllRecipients) return recipients;
-        return recipients.slice(0, MAX_VISIBLE);
-    }, [recipients, showAllRecipients]);
+    const MAX_VISIBLE = 12;
+    const visibleRecipients = showAllRecipients ? safeRecipients : safeRecipients.slice(0, MAX_VISIBLE);
 
     const handleRemoveRecipient = (index: number) => {
-        const updated = recipients.filter((_, i) => i !== index);
+        const updated = safeRecipients.filter((_, i) => i !== index);
         onRecipientsChange(updated);
     };
 
@@ -206,7 +204,7 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-sm font-semibold text-slate-700">Destinatarios</h3>
                             <div className="flex items-center gap-3">
-                                {recipients.length > 12 && !showBulkEditor && (
+                                {safeRecipients.length > 12 && !showBulkEditor && (
                                     <button
                                         onClick={() => setShowAllRecipients((prev) => !prev)}
                                         className="text-[11px] font-semibold text-slate-600 hover:text-slate-800"
@@ -255,7 +253,7 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                         ) : (
                             <div className="space-y-2">
                                 <div className="flex flex-wrap gap-2">
-                                    {recipients.length === 0 && (
+                                    {safeRecipients.length === 0 && (
                                         <p className="text-xs text-slate-500 w-full">No hay destinatarios configurados. Agrega los correos a los que deseas enviar el censo.</p>
                                     )}
                                     {visibleRecipients.map((email, index) => (
@@ -300,8 +298,8 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                             </button>
                                         </div>
                                     ))}
-                                    {recipients.length > visibleRecipients.length && (
-                                        <div className="text-[11px] text-slate-500 px-2 py-1">+ {recipients.length - visibleRecipients.length} ocultos</div>
+                                    {safeRecipients.length > visibleRecipients.length && (
+                                        <div className="text-[11px] text-slate-500 px-2 py-1">+ {safeRecipients.length - visibleRecipients.length} ocultos</div>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2 mt-1 w-full flex-wrap">

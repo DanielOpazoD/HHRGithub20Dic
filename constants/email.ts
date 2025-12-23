@@ -1,7 +1,27 @@
 import { formatDateDDMMYYYY } from '../services/utils/dateFormatter';
 
 export const CENSUS_DEFAULT_RECIPIENTS = [
-    'hospitalizados@hospitalhangaroa.cl'
+    'arenka.palma@hospitalhangaroa.cl',
+    'natalia.arzola@hospitalhangaroa.cl',
+    'vaitiare.hereveri@hospitalhangaroa.cl',
+    'kaany.pakomio@hospitalhangaroa.cl',
+    'claudia.salgado@hospitalhangaroa.cl',
+    'andrea.saldana@saludoriente.cl',
+    'bianca.atam@hospitalhangaroa.cl',
+    'ana.pont@hospitalhangaroa.cl',
+    'katherin.pont@hospitalhangaroa.cl',
+    'eyleen.cisternas@hospitalhangaroa.cl',
+    'marco.ramirez@hospitalhangaroa.cl',
+    'josemiguel.villavicencio@hospitalhangaroa.cl',
+    'patricio.medina@saludoriente.cl',
+    'carla.curinao@hospitalhangaroa.cl',
+    'epidemiologia@hospitalhangaroa.cl',
+    'archivosome@hospitalhangaroa.cl',
+    'antonio.espinoza@hospitalhangaroa.cl',
+    'juan.pakomio@hospitalhangaroa.cl',
+    'gestion.camas@saludoriente.cl',
+    'ivan.pulgar@hospitalhangaroa.cl',
+    'daniel.opazo@hospitalhangaroa.cl'
 ];
 
 // Use simple hyphen to avoid encoding issues

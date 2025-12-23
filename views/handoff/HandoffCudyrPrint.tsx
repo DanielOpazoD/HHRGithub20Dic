@@ -45,7 +45,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:p-0">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:p-0 print:rounded-none">
                 <div className="overflow-x-auto print:overflow-visible">
                     <table className="w-full text-left text-xs border-collapse border border-slate-300 table-fixed min-w-[720px] print:table-auto print:min-w-0 print:text-[7px]">
                         <thead>
@@ -143,7 +143,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.invasiveElements)}</td>
 
                                         <td className="p-1 text-center print:p-0.5">
-                                            <span className={clsx('px-2 py-0.5 rounded font-bold text-xs block w-full shadow-sm print:px-1 print:text-[10px]', badgeColor)}>
+                                            <span className={clsx('px-2 py-0.5 rounded font-bold text-xs block w-full shadow-sm print:px-1 print:text-[10px] print:shadow-none', badgeColor)}>
                                                 {finalCat}
                                             </span>
                                         </td>

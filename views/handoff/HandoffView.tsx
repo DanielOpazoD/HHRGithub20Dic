@@ -86,7 +86,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
     }
 
     return (
-        <div className="space-y-3 print:space-y-2 animate-fade-in pb-20 font-sans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:w-full print:px-0">
+        <div className="space-y-3 print:space-y-2 animate-fade-in pb-20 font-sans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:w-full print:px-0 print:pb-0">
             {/* Print-only Header */}
             <HandoffPrintHeader
                 title={title}

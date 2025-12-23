@@ -192,6 +192,11 @@ function App() {
             onResetMessage={censusEmail.onResetMessage}
             date={currentDateString}
             nursesSignature={nurseSignature}
+            isAdminUser={censusEmail.isAdminUser}
+            testModeEnabled={censusEmail.testModeEnabled}
+            onTestModeChange={censusEmail.setTestModeEnabled}
+            testRecipient={censusEmail.testRecipient}
+            onTestRecipientChange={censusEmail.setTestRecipient}
           />
 
           <TestAgent

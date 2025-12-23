@@ -3,6 +3,7 @@ import { useConfirmDialog } from '../context/ConfirmDialogContext';
 import { DailyRecord } from '../types';
 import { buildCensusEmailBody, CENSUS_DEFAULT_RECIPIENTS } from '../constants/email';
 import { formatDate, getMonthRecordsFromFirestore, triggerCensusEmail } from '../services';
+import { isAdmin } from '../utils/permissions';
 
 interface UseCensusEmailParams {
   record: DailyRecord | null;
@@ -36,7 +37,17 @@ interface UseCensusEmailReturn {
   // Actions
   resetStatus: () => void;
   sendEmail: () => Promise<void>;
+
+  // Test mode
+  testModeEnabled: boolean;
+  setTestModeEnabled: (value: boolean) => void;
+  testRecipient: string;
+  setTestRecipient: (value: string) => void;
+  isAdminUser: boolean;
 }
+
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const normalizeEmail = (value: string) => value.trim().toLowerCase();
 
 /**
  * Hook to manage census email configuration and sending.
@@ -53,6 +64,7 @@ export const useCensusEmail = ({
   role,
 }: UseCensusEmailParams): UseCensusEmailReturn => {
   const { confirm, alert } = useConfirmDialog();
+  const isAdminUser = isAdmin(role);
 
   // ========== RECIPIENTS STATE ==========
   const [recipients, setRecipients] = useState<string[]>(() => {
@@ -79,6 +91,10 @@ export const useCensusEmail = ({
   // Track if user has manually edited the message in this session
   const [messageEdited, setMessageEdited] = useState(false);
 
+  // ========== TEST MODE (ADMIN) ==========
+  const [testModeEnabled, setTestModeEnabled] = useState(false);
+  const [testRecipient, setTestRecipient] = useState('');
+
   // ========== UI STATE ==========
   const [showEmailConfig, setShowEmailConfig] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -89,6 +105,13 @@ export const useCensusEmail = ({
     setStatus('idle');
     setError(null);
   }, [currentDateString]);
+
+  useEffect(() => {
+    if (!isAdminUser) {
+      setTestModeEnabled(false);
+      setTestRecipient('');
+    }
+  }, [isAdminUser]);
 
   // ========== PERSISTENCE EFFECTS ==========
   useEffect(() => {
@@ -133,16 +156,30 @@ export const useCensusEmail = ({
 
     if (status === 'loading' || status === 'success') return;
 
-    const resolvedRecipients = recipients.filter(r => r.trim()).length > 0
-      ? recipients.map(r => r.trim()).filter(Boolean)
+    const shouldUseTestMode = isAdminUser && testModeEnabled;
+
+    let resolvedRecipients = recipients.filter(r => r.trim()).length > 0
+      ? recipients.map(r => normalizeEmail(r)).filter(Boolean)
       : CENSUS_DEFAULT_RECIPIENTS;
+
+    if (shouldUseTestMode) {
+      const normalizedTestRecipient = normalizeEmail(testRecipient);
+      if (!normalizedTestRecipient || !isValidEmail(normalizedTestRecipient)) {
+        const errorMessage = 'Ingresa un correo de prueba válido para el modo prueba.';
+        setError(errorMessage);
+        alert(errorMessage, 'Modo prueba');
+        return;
+      }
+      resolvedRecipients = [normalizedTestRecipient];
+    }
 
     const confirmationText = [
       `Enviar correo de censo del ${formatDate(currentDateString)}?`,
       `Destinatarios: ${resolvedRecipients.join(', ')}`,
+      shouldUseTestMode ? '(Modo prueba activo - solo se enviará al destinatario indicado)' : '',
       '',
       '¿Confirmas el envío?'
-    ].join('\n');
+    ].filter(Boolean).join('\n');
 
     const confirmed = await confirm({
       title: 'Confirmar Envío de Censo',
@@ -192,7 +229,22 @@ export const useCensusEmail = ({
       setStatus('error');
       alert(errorMessage, 'Error al enviar');
     }
-  }, [record, status, recipients, currentDateString, message, nurseSignature, selectedYear, selectedMonth, selectedDay, user, role]);
+  }, [
+    record,
+    status,
+    recipients,
+    currentDateString,
+    message,
+    nurseSignature,
+    selectedYear,
+    selectedMonth,
+    selectedDay,
+    user,
+    role,
+    testModeEnabled,
+    testRecipient,
+    isAdminUser
+  ]);
 
   return {
     showEmailConfig,
@@ -206,5 +258,10 @@ export const useCensusEmail = ({
     error,
     resetStatus,
     sendEmail,
+    testModeEnabled,
+    setTestModeEnabled,
+    testRecipient,
+    setTestRecipient,
+    isAdminUser,
   };
 };

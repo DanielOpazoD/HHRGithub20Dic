@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { X, Plus, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { buildCensusEmailBody } from '../../constants/email';
 
@@ -33,6 +33,9 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
     const [error, setError] = useState<string | null>(null);
     const [showBulkEditor, setShowBulkEditor] = useState(false);
     const [bulkRecipients, setBulkRecipients] = useState('');
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [editingValue, setEditingValue] = useState('');
+    const [showAllRecipients, setShowAllRecipients] = useState(false);
     const defaultMessage = useMemo(() => buildCensusEmailBody(date, nursesSignature), [date, nursesSignature]);
     const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +45,9 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
             setNewRecipient('');
             setShowBulkEditor(false);
             setBulkRecipients(recipients.join('\n'));
+            setEditingIndex(null);
+            setEditingValue('');
+            setShowAllRecipients(false);
         }
     }, [isOpen, recipients]);
 
@@ -115,11 +121,49 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
         setError(null);
     };
 
-    const handleRecipientChange = (index: number, value: string) => {
-        const updated = [...recipients];
-        updated[index] = value;
-        onRecipientsChange(updated);
+    const handleStartEditRecipient = (index: number) => {
+        setEditingIndex(index);
+        setEditingValue(recipients[index]);
+        setError(null);
     };
+
+    const handleSaveRecipient = () => {
+        if (editingIndex === null) return;
+
+        const normalized = normalizeEmail(editingValue);
+        if (!normalized) {
+            setError('Ingresa un correo válido.');
+            return;
+        }
+
+        if (!isValidEmail(normalized)) {
+            setError('Ingresa un correo válido.');
+            return;
+        }
+
+        if (recipients.some((email, idx) => idx !== editingIndex && email === normalized)) {
+            setError('Ese destinatario ya está agregado.');
+            return;
+        }
+
+        const updated = [...recipients];
+        updated[editingIndex] = normalized;
+        onRecipientsChange(updated);
+        setEditingIndex(null);
+        setEditingValue('');
+        setError(null);
+    };
+
+    const handleCancelEditRecipient = () => {
+        setEditingIndex(null);
+        setEditingValue('');
+    };
+
+    const visibleRecipients = useMemo(() => {
+        const MAX_VISIBLE = 12;
+        if (showAllRecipients) return recipients;
+        return recipients.slice(0, MAX_VISIBLE);
+    }, [recipients, showAllRecipients]);
 
     const handleRemoveRecipient = (index: number) => {
         const updated = recipients.filter((_, i) => i !== index);
@@ -161,16 +205,26 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                     <section>
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-sm font-semibold text-slate-700">Destinatarios</h3>
-                            <button
-                                onClick={() => {
-                                    setShowBulkEditor(!showBulkEditor);
-                                    setBulkRecipients(recipients.join('\n'));
-                                    setError(null);
-                                }}
-                                className="text-xs font-semibold text-blue-700 hover:text-blue-800"
-                            >
-                                {showBulkEditor ? 'Volver a edición individual' : 'Edición masiva'}
-                            </button>
+                            <div className="flex items-center gap-3">
+                                {recipients.length > 12 && !showBulkEditor && (
+                                    <button
+                                        onClick={() => setShowAllRecipients((prev) => !prev)}
+                                        className="text-[11px] font-semibold text-slate-600 hover:text-slate-800"
+                                    >
+                                        {showAllRecipients ? 'Ocultar lista' : 'Mostrar todos'}
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        setShowBulkEditor(!showBulkEditor);
+                                        setBulkRecipients(recipients.join('\n'));
+                                        setError(null);
+                                    }}
+                                    className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+                                >
+                                    {showBulkEditor ? 'Volver a edición individual' : 'Edición masiva'}
+                                </button>
+                            </div>
                         </div>
                         {showBulkEditor ? (
                             <div className="space-y-2">
@@ -199,41 +253,68 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-wrap gap-2">
-                                {recipients.length === 0 && (
-                                    <p className="text-xs text-slate-500 w-full">No hay destinatarios configurados. Agrega los correos a los que deseas enviar el censo.</p>
-                                )}
-                                {recipients.map((email, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full"
-                                    >
-                                        <input
-                                            type="email"
-                                            value={email}
-                                            onChange={(e) => handleRecipientChange(index, e.target.value)}
-                                            className="flex-1 min-w-[280px] sm:min-w-[360px] border border-slate-200 rounded-lg px-3 py-2 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                        />
-                                        <button
-                                            onClick={() => handleRemoveRecipient(index)}
-                                            className="p-1.5 text-red-600 hover:text-red-700"
-                                            aria-label="Eliminar destinatario"
+                            <div className="space-y-2">
+                                <div className="flex flex-wrap gap-2">
+                                    {recipients.length === 0 && (
+                                        <p className="text-xs text-slate-500 w-full">No hay destinatarios configurados. Agrega los correos a los que deseas enviar el censo.</p>
+                                    )}
+                                    {visibleRecipients.map((email, index) => (
+                                        <div
+                                            key={`${email}-${index}`}
+                                            className="flex items-center gap-1 bg-slate-100 border border-slate-200 rounded-full px-2 py-1 text-[11px] text-slate-700"
                                         >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                                <div className="flex items-center gap-2 mt-2 w-full flex-wrap">
+                                            {editingIndex === index ? (
+                                                <input
+                                                    type="email"
+                                                    value={editingValue}
+                                                    onChange={(e) => setEditingValue(e.target.value)}
+                                                    onBlur={handleSaveRecipient}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            handleSaveRecipient();
+                                                        }
+                                                        if (e.key === 'Escape') {
+                                                            e.preventDefault();
+                                                            handleCancelEditRecipient();
+                                                        }
+                                                    }}
+                                                    autoFocus
+                                                    className="text-[11px] px-2 py-1 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white min-w-[180px]"
+                                                />
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleStartEditRecipient(index)}
+                                                    className="text-left px-1 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-md"
+                                                >
+                                                    {email}
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleRemoveRecipient(index)}
+                                                className="ml-1 p-1 text-red-600 hover:text-red-700 rounded-full hover:bg-white"
+                                                aria-label={`Eliminar ${email}`}
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {recipients.length > visibleRecipients.length && (
+                                        <div className="text-[11px] text-slate-500 px-2 py-1">+ {recipients.length - visibleRecipients.length} ocultos</div>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1 w-full flex-wrap">
                                     <input
                                         type="email"
                                         placeholder="nuevo@correo.cl"
                                         value={newRecipient}
                                         onChange={(e) => setNewRecipient(e.target.value)}
-                                        className="flex-1 min-w-[280px] sm:min-w-[360px] border border-slate-200 rounded-lg px-3 py-2 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="flex-1 min-w-[240px] sm:min-w-[300px] border border-slate-200 rounded-lg px-3 py-2 text-[12px] leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <button
                                         onClick={handleAddRecipient}
-                                        className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[12px] font-semibold"
                                     >
                                         <Plus size={12} /> Agregar
                                     </button>

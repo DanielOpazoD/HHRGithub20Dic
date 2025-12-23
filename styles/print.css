@@ -15,4 +15,26 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
+  /* Ensure animated content is fully visible when printing */
+  .animate-fade-in,
+  .animate-scale-in,
+  [class*="animate-"] {
+    opacity: 1 !important;
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
+
+  /* Prevent clipping during print */
+  .print\:overflow-visible {
+    overflow: visible !important;
+  }
+
+  /* Allow natural page breaks for long sections */
+  .print\:break-inside-auto {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
 }

@@ -56,7 +56,7 @@ export const useCensusEmail = ({
 
   // ========== RECIPIENTS STATE ==========
   const [recipients, setRecipients] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
+    if (typeof window === 'undefined') return CENSUS_DEFAULT_RECIPIENTS;
     const stored = window.localStorage.getItem('censusEmailRecipients');
     if (stored) {
       try {
@@ -66,7 +66,7 @@ export const useCensusEmail = ({
         // ignore parsing errors and fallback to defaults
       }
     }
-    return [];
+    return CENSUS_DEFAULT_RECIPIENTS;
   });
 
   // ========== MESSAGE STATE ==========
@@ -133,8 +133,12 @@ export const useCensusEmail = ({
 
     if (status === 'loading' || status === 'success') return;
 
-    const resolvedRecipients = recipients.filter(r => r.trim()).length > 0
-      ? recipients.map(r => r.trim()).filter(Boolean)
+    const sanitizedRecipients = recipients
+      .map(r => r.trim())
+      .filter(Boolean);
+
+    const resolvedRecipients = sanitizedRecipients.length > 0
+      ? Array.from(new Set(sanitizedRecipients))
       : CENSUS_DEFAULT_RECIPIENTS;
 
     const confirmationText = [

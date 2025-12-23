@@ -29,6 +29,8 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
     nursesSignature
 }) => {
     const [newRecipient, setNewRecipient] = useState('');
+    const [isBulkEditing, setIsBulkEditing] = useState(false);
+    const [bulkText, setBulkText] = useState('');
     const [error, setError] = useState<string | null>(null);
     const defaultMessage = useMemo(() => buildCensusEmailBody(date, nursesSignature), [date, nursesSignature]);
     const dialogRef = useRef<HTMLDivElement>(null);
@@ -37,6 +39,7 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
         if (isOpen) {
             setError(null);
             setNewRecipient('');
+            setIsBulkEditing(false);
         }
     }, [isOpen]);
 
@@ -59,6 +62,13 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (isBulkEditing) {
+            setBulkText(recipients.join('\n'));
+            setError(null);
+        }
+    }, [isBulkEditing, recipients]);
+
     if (!isOpen) return null;
 
     const handleAddRecipient = () => {
@@ -77,6 +87,24 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
 
         onRecipientsChange([...recipients, trimmed]);
         setNewRecipient('');
+        setError(null);
+    };
+
+    const handleBulkApply = () => {
+        const entries = bulkText
+            .split(/[\n,]+/)
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+
+        const invalid = entries.filter((email) => !isValidEmail(email));
+        if (invalid.length > 0) {
+            setError(`Los siguientes correos no son válidos: ${invalid.join(', ')}`);
+            return;
+        }
+
+        const uniqueRecipients = Array.from(new Set(entries));
+        onRecipientsChange(uniqueRecipients);
+        setIsBulkEditing(false);
         setError(null);
     };
 
@@ -126,48 +154,83 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
                     <section>
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-sm font-semibold text-slate-700">Destinatarios</h3>
+                            <button
+                                onClick={() => setIsBulkEditing((prev) => !prev)}
+                                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-blue-700 hover:border-blue-300 hover:bg-blue-50"
+                            >
+                                {isBulkEditing ? 'Volver a vista individual' : 'Edición masiva'}
+                            </button>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                            {recipients.length === 0 && (
-                                <p className="text-xs text-slate-500 w-full">No hay destinatarios configurados. Agrega los correos a los que deseas enviar el censo.</p>
-                            )}
-                            {recipients.map((email, index) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full"
-                                >
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => handleRecipientChange(index, e.target.value)}
-                                        className="flex-1 min-w-[280px] sm:min-w-[360px] border border-slate-200 rounded-lg px-3 py-2 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                    />
+                        {isBulkEditing ? (
+                            <div className="space-y-2">
+                                <textarea
+                                    value={bulkText}
+                                    onChange={(e) => setBulkText(e.target.value)}
+                                    rows={6}
+                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Pega correos separados por coma o por línea"
+                                />
+                                <p className="text-xs text-slate-500">
+                                    Puedes importar y exportar la lista pegando correos separados por comas o saltos de línea. Las entradas duplicadas se eliminarán automáticamente.
+                                </p>
+                                <div className="flex gap-2 justify-end">
                                     <button
-                                        onClick={() => handleRemoveRecipient(index)}
-                                        className="p-1.5 text-red-600 hover:text-red-700"
-                                        aria-label="Eliminar destinatario"
+                                        onClick={() => setIsBulkEditing(false)}
+                                        className="px-3.5 py-1.5 rounded-md border border-slate-200 text-slate-700 text-sm hover:bg-slate-50"
                                     >
-                                        <Trash2 size={14} />
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleBulkApply}
+                                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-semibold"
+                                    >
+                                        Guardar lista
                                     </button>
                                 </div>
-                            ))}
-                            <div className="flex items-center gap-2 mt-2 w-full flex-wrap">
-                                <input
-                                    type="email"
-                                    placeholder="nuevo@correo.cl"
-                                    value={newRecipient}
-                                    onChange={(e) => setNewRecipient(e.target.value)}
-                                    className="flex-1 min-w-[280px] sm:min-w-[360px] border border-slate-200 rounded-lg px-3 py-2 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <button
-                                    onClick={handleAddRecipient}
-                                    className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
-                                >
-                                    <Plus size={12} /> Agregar
-                                </button>
                             </div>
-                            {error && <p className="text-xs text-red-600">{error}</p>}
-                        </div>
+                        ) : (
+                            <div className="flex flex-wrap gap-2">
+                                {recipients.length === 0 && (
+                                    <p className="text-xs text-slate-500 w-full">No hay destinatarios configurados. Agrega los correos a los que deseas enviar el censo.</p>
+                                )}
+                                {recipients.map((email, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full"
+                                    >
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => handleRecipientChange(index, e.target.value)}
+                                            className="flex-1 min-w-[280px] sm:min-w-[360px] border border-slate-200 rounded-lg px-3 py-2 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                        />
+                                        <button
+                                            onClick={() => handleRemoveRecipient(index)}
+                                            className="p-1.5 text-red-600 hover:text-red-700"
+                                            aria-label="Eliminar destinatario"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <div className="flex items-center gap-2 mt-2 w-full flex-wrap">
+                                    <input
+                                        type="email"
+                                        placeholder="nuevo@correo.cl"
+                                        value={newRecipient}
+                                        onChange={(e) => setNewRecipient(e.target.value)}
+                                        className="flex-1 min-w-[280px] sm:min-w-[360px] border border-slate-200 rounded-lg px-3 py-2 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <button
+                                        onClick={handleAddRecipient}
+                                        className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
+                                    >
+                                        <Plus size={12} /> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
                     </section>
 
                     <section>

@@ -21,6 +21,7 @@ export interface DischargeState {
     status: 'Vivo' | 'Fallecido';
     type?: string;
     typeOther?: string;
+    time?: string;
     hasClinicalCrib?: boolean;
     clinicalCribName?: string;
     clinicalCribStatus?: 'Vivo' | 'Fallecido';
@@ -34,6 +35,7 @@ export interface TransferState {
     receivingCenter: string;
     receivingCenterOther: string;
     transferEscort: string;
+    time?: string;
     hasClinicalCrib?: boolean;
     clinicalCribName?: string;
 }
@@ -47,13 +49,13 @@ interface CensusActionsContextType {
     // Discharge State
     dischargeState: DischargeState;
     setDischargeState: (state: DischargeState) => void;
-    executeDischarge: (data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string }) => void;
+    executeDischarge: (data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string, time?: string }) => void;
     handleEditDischarge: (d: DischargeData) => void;
 
     // Transfer State
     transferState: TransferState;
     setTransferState: (state: TransferState) => void;
-    executeTransfer: () => void;
+    executeTransfer: (data?: { time?: string }) => void;
     handleEditTransfer: (t: TransferData) => void;
 
     // UI State
@@ -140,7 +142,8 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 status: 'Vivo',
                 hasClinicalCrib: hasBaby,
                 clinicalCribName: patient.clinicalCrib?.patientName,
-                clinicalCribStatus: 'Vivo'
+                clinicalCribStatus: 'Vivo',
+                time: undefined
             });
         } else if (action === 'transfer') {
             const patient = record.beds[bedId];
@@ -153,6 +156,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 receivingCenter: RECEIVING_CENTERS[0],
                 receivingCenterOther: '',
                 transferEscort: 'Enfermera',
+                time: undefined,
                 hasClinicalCrib: hasBaby,
                 clinicalCribName: patient.clinicalCrib?.patientName
             });
@@ -165,18 +169,20 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
         setActionState({ type: null, sourceBedId: null, targetBedId: null });
     }, [actionState, moveOrCopyPatient]);
 
-    const executeDischarge = useCallback((data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string }) => {
+    const executeDischarge = useCallback((data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string, time?: string }) => {
         // If data is provided (from Modal onConfirm), use it. Fallback to state (legacy/editing)
         const status = data?.status || dischargeState.status;
         const type = data?.type;
         const typeOther = data?.typeOther;
+        const time = data?.time || dischargeState.time || new Date().toTimeString().slice(0, 5);
 
         if (dischargeState.recordId) {
             updateDischarge(
                 dischargeState.recordId,
                 status,
                 type,
-                typeOther
+                typeOther,
+                time
             );
         } else if (dischargeState.bedId) {
             addDischarge(
@@ -184,19 +190,22 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 status,
                 dischargeState.clinicalCribStatus,
                 type,
-                typeOther
+                typeOther,
+                time
             );
         }
         setDischargeState(prev => ({ ...prev, isOpen: false }));
     }, [dischargeState, updateDischarge, addDischarge]);
 
-    const executeTransfer = useCallback(() => {
+    const executeTransfer = useCallback((data?: { time?: string }) => {
+        const time = data?.time || transferState.time || new Date().toTimeString().slice(0, 5);
         if (transferState.recordId) {
             updateTransfer(transferState.recordId, {
                 evacuationMethod: transferState.evacuationMethod,
                 receivingCenter: transferState.receivingCenter,
                 receivingCenterOther: transferState.receivingCenterOther,
-                transferEscort: transferState.transferEscort
+                transferEscort: transferState.transferEscort,
+                time
             });
         } else if (transferState.bedId) {
             addTransfer(
@@ -204,7 +213,8 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 transferState.evacuationMethod,
                 transferState.receivingCenter,
                 transferState.receivingCenterOther,
-                transferState.transferEscort
+                transferState.transferEscort,
+                time
             );
         }
         setTransferState(prev => ({ ...prev, isOpen: false }));
@@ -217,7 +227,8 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
             isOpen: true,
             status: d.status,
             type: d.dischargeType,
-            typeOther: d.dischargeTypeOther
+            typeOther: d.dischargeTypeOther,
+            time: d.time
         });
     }, []);
 
@@ -229,7 +240,8 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
             evacuationMethod: t.evacuationMethod,
             receivingCenter: t.receivingCenter,
             receivingCenterOther: t.receivingCenterOther || '',
-            transferEscort: t.transferEscort || 'Enfermera'
+            transferEscort: t.transferEscort || 'Enfermera',
+            time: t.time
         });
     }, []);
 

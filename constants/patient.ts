@@ -26,6 +26,7 @@ export const EMPTY_PATIENT: Omit<PatientData, 'bedId'> = {
     specialty: Specialty.EMPTY,
     status: PatientStatus.EMPTY,
     admissionDate: '',
+    admissionTime: '',
     hasWristband: true,
     devices: [],
     surgicalComplication: false,

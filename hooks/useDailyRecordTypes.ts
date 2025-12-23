@@ -42,13 +42,13 @@ export interface DailyRecordContextType {
     updateTens: (shift: 'day' | 'night', index: number, name: string) => void;
 
     // Discharge Management (from usePatientDischarges)
-    addDischarge: (bedId: string, status: 'Vivo' | 'Fallecido', cribStatus?: 'Vivo' | 'Fallecido', dischargeType?: string, dischargeTypeOther?: string) => void;
-    updateDischarge: (id: string, status: 'Vivo' | 'Fallecido', dischargeType?: string, dischargeTypeOther?: string) => void;
+    addDischarge: (bedId: string, status: 'Vivo' | 'Fallecido', cribStatus?: 'Vivo' | 'Fallecido', dischargeType?: string, dischargeTypeOther?: string, time?: string) => void;
+    updateDischarge: (id: string, status: 'Vivo' | 'Fallecido', dischargeType?: string, dischargeTypeOther?: string, time?: string) => void;
     deleteDischarge: (id: string) => void;
     undoDischarge: (id: string) => void;
 
     // Transfer Management (from usePatientTransfers)
-    addTransfer: (bedId: string, method: string, center: string, centerOther: string, escort?: string) => void;
+    addTransfer: (bedId: string, method: string, center: string, centerOther: string, escort?: string, time?: string) => void;
     updateTransfer: (id: string, updates: Partial<TransferData>) => void;
     deleteTransfer: (id: string) => void;
     undoTransfer: (id: string) => void;

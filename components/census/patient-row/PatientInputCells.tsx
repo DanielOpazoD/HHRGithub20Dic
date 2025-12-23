@@ -33,6 +33,8 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
     readOnly = false
 }) => {
 
+    const [showAdmissionTime, setShowAdmissionTime] = React.useState(false);
+
     // Helper for text fields - adapts debounced handler to original event-based API
     const handleDebouncedText = (field: keyof PatientData) => (value: string) => {
         // Create synthetic event-like object to match existing handler signature
@@ -164,17 +166,30 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                 {isEmpty && !isSubRow ? (
                     <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
-                    <DebouncedInput
-                        type="date"
-                        max={new Date().toISOString().split('T')[0]} // Impossible to have future admission
-                        className={clsx(
-                            "w-full p-0.5 h-9 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs",
-                            isSubRow && "h-8"
+                    <div className="flex flex-col gap-1 w-full">
+                        <DebouncedInput
+                            type="date"
+                            max={new Date().toISOString().split('T')[0]} // Impossible to have future admission
+                            className={clsx(
+                                "w-full p-0.5 h-9 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs",
+                                isSubRow && "h-8"
+                            )}
+                            value={data.admissionDate || ''}
+                            onChange={handleDebouncedText('admissionDate')}
+                            onFocus={() => setShowAdmissionTime(true)}
+                            onClick={() => setShowAdmissionTime(true)}
+                            disabled={readOnly}
+                        />
+                        {showAdmissionTime && (
+                            <DebouncedInput
+                                type="time"
+                                className="w-full p-0.5 h-8 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs"
+                                value={data.admissionTime || ''}
+                                onChange={handleDebouncedText('admissionTime')}
+                                disabled={readOnly}
+                            />
                         )}
-                        value={data.admissionDate || ''}
-                        onChange={handleDebouncedText('admissionDate')}
-                        disabled={readOnly}
-                    />
+                    </div>
                 )}
             </td>
 

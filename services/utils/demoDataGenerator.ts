@@ -7,6 +7,7 @@
 import { DailyRecord, PatientData, PatientStatus, Specialty, DischargeData, TransferData } from '../../types';
 import { BEDS, DEVICE_OPTIONS } from '../../constants';
 import { createEmptyPatient } from '../factories/patientFactory';
+import { getTimeRoundedToStep } from '../../utils';
 
 // ============================================================================
 // Clinical Profiles - Realistic diagnosis-specialty-status mappings
@@ -299,12 +300,13 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                     id: crypto.randomUUID(),
                     bedName: bedDef?.name || bedId,
                     bedId: bedId,
-                    bedType: bedDef?.type || '',
-                    patientName: patient.patientName,
-                    rut: patient.rut,
-                    diagnosis: patient.pathology,
-                    status: Math.random() > 0.02 ? 'Vivo' : 'Fallecido',
-                    age: patient.age,
+                bedType: bedDef?.type || '',
+                patientName: patient.patientName,
+                rut: patient.rut,
+                diagnosis: patient.pathology,
+                time: getTimeRoundedToStep(),
+                status: Math.random() > 0.02 ? 'Vivo' : 'Fallecido',
+                age: patient.age,
                     insurance: patient.insurance,
                     origin: patient.origin,
                     isRapanui: patient.isRapanui,
@@ -322,6 +324,7 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                         patientName: patient.clinicalCrib.patientName,
                         rut: patient.clinicalCrib.rut,
                         diagnosis: patient.clinicalCrib.pathology,
+                        time: getTimeRoundedToStep(),
                         status: 'Vivo',
                         age: patient.clinicalCrib.age,
                         insurance: patient.insurance,
@@ -342,12 +345,13 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                     id: crypto.randomUUID(),
                     bedName: bedDef?.name || bedId,
                     bedId: bedId,
-                    bedType: bedDef?.type || '',
-                    patientName: patient.patientName,
-                    rut: patient.rut,
-                    diagnosis: patient.pathology,
-                    evacuationMethod: randomItem(EVACUATION_METHODS),
-                    receivingCenter: randomItem(RECEIVING_CENTERS),
+                bedType: bedDef?.type || '',
+                patientName: patient.patientName,
+                rut: patient.rut,
+                diagnosis: patient.pathology,
+                time: getTimeRoundedToStep(),
+                evacuationMethod: randomItem(EVACUATION_METHODS),
+                receivingCenter: randomItem(RECEIVING_CENTERS),
                     receivingCenterOther: '',
                     age: patient.age,
                     insurance: patient.insurance,

@@ -87,6 +87,7 @@ export const CensusModals: React.FC<CensusModalsProps> = ({
                 onStatusChange={(s) => setDischargeState({ ...dischargeState, status: s })}
                 initialType={dischargeState.type}
                 initialOtherDetails={dischargeState.typeOther}
+                initialTime={dischargeState.time}
                 onClose={() => setDischargeState({ ...dischargeState, isOpen: false })}
                 onConfirm={executeDischarge}
             />
@@ -100,6 +101,7 @@ export const CensusModals: React.FC<CensusModalsProps> = ({
                 transferEscort={transferState.transferEscort}
                 hasClinicalCrib={transferState.hasClinicalCrib}
                 clinicalCribName={transferState.clinicalCribName}
+                initialTime={transferState.time}
                 onUpdate={(field, val) => setTransferState({ ...transferState, [field]: val })}
                 onClose={() => setTransferState({ ...transferState, isOpen: false })}
                 onConfirm={executeTransfer}

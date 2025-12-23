@@ -1,5 +1,6 @@
 import React from 'react';
 import { Baby } from 'lucide-react';
+import { getTimeRoundedToStep } from '../../../utils';
 
 export interface DischargeModalProps {
     isOpen: boolean;
@@ -15,27 +16,31 @@ export interface DischargeModalProps {
     // Initial Data for Editing
     initialType?: string;
     initialOtherDetails?: string;
+    initialTime?: string;
 
     onStatusChange: (s: 'Vivo' | 'Fallecido') => void;
     onClose: () => void;
-    onConfirm: (data: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string }) => void;
+    onConfirm: (data: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string, time: string }) => void;
 }
 
 export const DischargeModal: React.FC<DischargeModalProps> = ({
     isOpen, isEditing, status, onStatusChange, onClose, onConfirm,
     hasClinicalCrib, clinicalCribName, clinicalCribStatus, onClinicalCribStatusChange,
-    initialType, initialOtherDetails
+    initialType, initialOtherDetails, initialTime
 }) => {
     const [dischargeType, setDischargeType] = React.useState<'Domicilio (Habitual)' | 'Voluntaria' | 'Fuga' | 'Otra'>((initialType as any) || 'Domicilio (Habitual)');
     const [otherDetails, setOtherDetails] = React.useState(initialOtherDetails || '');
+    const [dischargeTime, setDischargeTime] = React.useState('');
 
     // Reset state when modal opens or initial props change
     React.useEffect(() => {
         if (isOpen) {
             setDischargeType((initialType as any) || 'Domicilio (Habitual)');
             setOtherDetails(initialOtherDetails || '');
+            const nowTime = getTimeRoundedToStep();
+            setDischargeTime(initialTime || nowTime);
         }
-    }, [isOpen, initialType, initialOtherDetails]);
+    }, [isOpen, initialType, initialOtherDetails, initialTime]);
 
     if (!isOpen) return null;
 
@@ -43,7 +48,8 @@ export const DischargeModal: React.FC<DischargeModalProps> = ({
         onConfirm({
             status,
             type: status === 'Vivo' ? dischargeType : undefined,
-            typeOther: (status === 'Vivo' && dischargeType === 'Otra') ? otherDetails : undefined
+            typeOther: (status === 'Vivo' && dischargeType === 'Otra') ? otherDetails : undefined,
+            time: dischargeTime
         });
     };
 
@@ -125,6 +131,16 @@ export const DischargeModal: React.FC<DischargeModalProps> = ({
                             )}
                         </div>
                     )}
+                    <div className="mt-4">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Hora de alta</label>
+                        <input
+                            type="time"
+                            className="w-32 p-2 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-green-200 focus:border-green-400"
+                            step={300}
+                            value={dischargeTime}
+                            onChange={(e) => setDischargeTime(e.target.value)}
+                        />
+                    </div>
                 </div>
 
                 {/* Clinical Crib Patient (Baby) */}

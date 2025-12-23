@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Baby } from 'lucide-react';
 import { EVACUATION_METHODS, RECEIVING_CENTERS } from '../../../constants';
+import { getTimeRoundedToStep } from '../../../utils';
 
 export interface TransferModalProps {
     isOpen: boolean;
@@ -9,6 +10,7 @@ export interface TransferModalProps {
     receivingCenter: string;
     receivingCenterOther: string;
     transferEscort: string;
+    initialTime?: string;
 
     // New props for Mother + Baby
     hasClinicalCrib?: boolean;
@@ -16,14 +18,22 @@ export interface TransferModalProps {
 
     onUpdate: (field: string, value: string) => void;
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: (data: { time: string }) => void;
 }
 
 export const TransferModal: React.FC<TransferModalProps> = ({
     isOpen, isEditing, evacuationMethod, receivingCenter, receivingCenterOther, transferEscort, onUpdate, onClose, onConfirm,
-    hasClinicalCrib, clinicalCribName
+    hasClinicalCrib, clinicalCribName, initialTime
 }) => {
     const [customEscort, setCustomEscort] = useState('');
+    const [transferTime, setTransferTime] = useState('');
+
+    React.useEffect(() => {
+        if (isOpen) {
+            const nowTime = getTimeRoundedToStep();
+            setTransferTime(initialTime || nowTime);
+        }
+    }, [isOpen, initialTime]);
 
     if (!isOpen) return null;
 
@@ -114,10 +124,20 @@ export const TransferModal: React.FC<TransferModalProps> = ({
                             />
                         </div>
                     )}
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Hora de traslado</label>
+                        <input
+                            type="time"
+                            className="w-32 p-2 border rounded text-xs border-slate-200 focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                            step={300}
+                            value={transferTime}
+                            onChange={(e) => setTransferTime(e.target.value)}
+                        />
+                    </div>
                 </div>
                 <div className="flex justify-end gap-2">
                     <button onClick={onClose} className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded">Cancelar</button>
-                    <button onClick={onConfirm} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    <button onClick={() => onConfirm({ time: transferTime })} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                         {isEditing ? 'Guardar Cambios' : 'Confirmar Traslado'}
                     </button>
                 </div>

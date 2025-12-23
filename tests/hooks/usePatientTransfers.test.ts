@@ -87,6 +87,7 @@ describe('usePatientTransfers', () => {
                 patientName: 'Test Patient',
                 rut: '12.345.678-9',
                 diagnosis: 'Test',
+                time: '',
                 evacuationMethod: 'Avión',
                 receivingCenter: 'Hospital',
                 originalData: originalPatient

@@ -11,6 +11,7 @@ export {
     getTodayISO,
     formatDateForDisplay,
     daysBetween,
+    getTimeRoundedToStep,
     isFutureDate,
     parseISODate
 } from './dateUtils';

@@ -12,8 +12,12 @@
   }
 
   /* Remove residual tinted backgrounds and shadows from every element to avoid gray boxes */
-  body * {
-    background: white !important;
+  body *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
   }
 
@@ -40,6 +44,17 @@
     overflow: visible !important;
     opacity: 1 !important;
     visibility: visible !important;
+  }
+
+  /* Neutralize any residual tinted backgrounds inside the printout */
+  .handoff-cudyr-print,
+  .handoff-cudyr-print *,
+  .handoff-cudyr-print::before,
+  .handoff-cudyr-print::after,
+  .handoff-cudyr-print *::before,
+  .handoff-cudyr-print *::after {
+    background: white !important;
+    background-color: white !important;
   }
 
   .handoff-cudyr-print table,

@@ -86,7 +86,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
     }
 
     return (
-        <div className="space-y-4 animate-fade-in pb-20 font-sans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:w-full print:px-0">
+        <div className="space-y-4 animate-fade-in pb-20 font-sans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:w-full print:px-0 print:space-y-2">
             {/* Print-only Header */}
             <HandoffPrintHeader
                 title={title}
@@ -324,7 +324,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none print:overflow-visible">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse print:text-[10px] print:leading-tight">
                         <thead>
                             <tr className={tableHeaderClass}>
                                 <th className="p-2 border-r border-slate-200 text-center w-20 print:w-[40px] print:text-[10px] print:p-1">Cama</th>
@@ -384,37 +384,37 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             {/* Additional Sections for Nursing Handoff (Altas, Traslados, CMA) */}
             {!isMedical && (
-                <div className="space-y-6 print:space-y-4">
+                <div className="space-y-6 print:space-y-2 print:text-[10px] print:leading-snug">
                     {/* Discharges - Simplified Read-Only */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none">
-                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-base print:mb-1 print:text-black">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-1.5 print:shadow-none print:border print:border-slate-200 print:bg-transparent">
+                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-[10px] print:mb-1 print:text-black">
                             <UserMinus size={20} className="text-red-500 print:w-4 print:h-4" />
                             Altas
                         </h3>
                         {(!record.discharges || record.discharges.length === 0) ? (
-                            <p className="text-slate-400 italic text-sm">No hay altas registradas hoy.</p>
+                            <p className="text-slate-400 italic text-sm print:text-[10px]">No hay altas registradas hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-xs border-collapse">
+                            <table className="w-full text-left text-sm print:text-[9px] border-collapse print:leading-tight">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
-                                        <th className="p-2 border-r border-slate-200 w-20">Cama</th>
-                                        <th className="p-2 border-r border-slate-200">Paciente/RUT</th>
-                                        <th className="p-2 border-r border-slate-200">Diagnóstico</th>
-                                        <th className="p-2 border-r border-slate-200">Tipo Alta</th>
-                                        <th className="p-2 w-24">Estado</th>
+                                        <th className="p-2 border-r border-slate-200 w-20 print:p-1">Cama</th>
+                                        <th className="p-2 border-r border-slate-200 print:p-1">Paciente/RUT</th>
+                                        <th className="p-2 border-r border-slate-200 print:p-1">Diagnóstico</th>
+                                        <th className="p-2 border-r border-slate-200 print:p-1">Tipo Alta</th>
+                                        <th className="p-2 w-24 print:p-1">Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {record.discharges.map(d => (
-                                        <tr key={d.id} className="border-b border-slate-100 print:border-slate-300">
-                                            <td className="p-2 border-r border-slate-200">{d.bedName}</td>
-                                            <td className="p-2 border-r border-slate-200">
-                                                <div className="font-medium">{d.patientName}</div>
-                                                <div className="text-xs text-slate-500 font-mono">{d.rut}</div>
+                                        <tr key={d.id} className="border-b border-slate-100 print:border-slate-300 print:text-[9px]">
+                                            <td className="p-2 border-r border-slate-200 print:p-1">{d.bedName}</td>
+                                            <td className="p-2 border-r border-slate-200 print:p-1">
+                                                <div className="font-medium print:text-[9px]">{d.patientName}</div>
+                                                <div className="text-xs text-slate-500 font-mono print:text-[8px]">{d.rut}</div>
                                             </td>
-                                            <td className="p-2 border-r border-slate-200">{d.diagnosis}</td>
-                                            <td className="p-2 border-r border-slate-200">{d.dischargeType}</td>
-                                            <td className="p-2">{d.status}</td>
+                                            <td className="p-2 border-r border-slate-200 print:p-1">{d.diagnosis}</td>
+                                            <td className="p-2 border-r border-slate-200 print:p-1">{d.dischargeType}</td>
+                                            <td className="p-2 print:p-1">{d.status}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -423,28 +423,28 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                     </div>
 
                     {/* Transfers - Simplified Read-Only */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none">
-                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-base print:mb-1 print:text-black">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-1.5 print:shadow-none print:border print:border-slate-200 print:bg-transparent">
+                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-[10px] print:mb-1 print:text-black">
                             <ArrowRightLeft size={20} className="text-blue-500 print:w-4 print:h-4" />
                             Traslados
                         </h3>
                         {(!record.transfers || record.transfers.length === 0) ? (
-                            <p className="text-slate-400 italic text-sm">No hay traslados registrados hoy.</p>
+                            <p className="text-slate-400 italic text-sm print:text-[10px]">No hay traslados registrados hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-xs border-collapse">
+                            <table className="w-full text-left text-sm print:text-[9px] border-collapse print:leading-tight">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
-                                        <th className="p-2 border-r border-slate-200 w-24">Cama Origen</th>
-                                        <th className="p-2 border-r border-slate-200">Paciente</th>
-                                        <th className="p-2 w-48">Destino</th>
+                                        <th className="p-2 border-r border-slate-200 w-24 print:p-1">Cama Origen</th>
+                                        <th className="p-2 border-r border-slate-200 print:p-1">Paciente</th>
+                                        <th className="p-2 w-48 print:p-1">Destino</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {record.transfers.map(t => (
-                                        <tr key={t.id} className="border-b border-slate-100 print:border-slate-300">
-                                            <td className="p-2 border-r border-slate-200">{t.bedName}</td>
-                                            <td className="p-2 border-r border-slate-200">{t.patientName}</td>
-                                            <td className="p-2">{t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}</td>
+                                        <tr key={t.id} className="border-b border-slate-100 print:border-slate-300 print:text-[9px]">
+                                            <td className="p-2 border-r border-slate-200 print:p-1">{t.bedName}</td>
+                                            <td className="p-2 border-r border-slate-200 print:p-1">{t.patientName}</td>
+                                            <td className="p-2 print:p-1">{t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -453,30 +453,30 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                     </div>
 
                     {/* CMA - Simplified Read-Only */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-0 print:shadow-none print:border-none">
-                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-base print:mb-1 print:text-black">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 print:p-1.5 print:shadow-none print:border print:border-slate-200 print:bg-transparent">
+                        <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-[10px] print:mb-1 print:text-black">
                             <Sun size={20} className="text-orange-500 print:w-4 print:h-4" />
                             Hospitalización Diurna / CMA
                         </h3>
                         {(!record.cma || record.cma.length === 0) ? (
-                            <p className="text-slate-400 italic text-sm">No hay pacientes de CMA hoy.</p>
+                            <p className="text-slate-400 italic text-sm print:text-[10px]">No hay pacientes de CMA hoy.</p>
                         ) : (
-                            <table className="w-full text-left text-sm print:text-xs border-collapse">
+                            <table className="w-full text-left text-sm print:text-[9px] border-collapse print:leading-tight">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
-                                        <th className="p-2 border-r border-slate-200 w-20">Cama</th>
-                                        <th className="p-2 border-r border-slate-200">Paciente</th>
-                                        <th className="p-2 border-r border-slate-200">Diagnóstico</th>
-                                        <th className="p-2 w-24">Hora</th>
+                                        <th className="p-2 border-r border-slate-200 w-20 print:p-1">Cama</th>
+                                        <th className="p-2 border-r border-slate-200 print:p-1">Paciente</th>
+                                        <th className="p-2 border-r border-slate-200 print:p-1">Diagnóstico</th>
+                                        <th className="p-2 w-24 print:p-1">Hora</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {record.cma.map(c => (
-                                        <tr key={c.id} className="border-b border-slate-100 print:border-slate-300">
-                                            <td className="p-2 border-r border-slate-200">{c.bedName}</td>
-                                            <td className="p-2 border-r border-slate-200">{c.patientName}</td>
-                                            <td className="p-2 border-r border-slate-200">{c.diagnosis}</td>
-                                            <td className="p-2">
+                                        <tr key={c.id} className="border-b border-slate-100 print:border-slate-300 print:text-[9px]">
+                                            <td className="p-2 border-r border-slate-200 print:p-1">{c.bedName}</td>
+                                            <td className="p-2 border-r border-slate-200 print:p-1">{c.patientName}</td>
+                                            <td className="p-2 border-r border-slate-200 print:p-1">{c.diagnosis}</td>
+                                            <td className="p-2 print:p-1">
                                                 {c.timestamp ? new Date(c.timestamp).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '-'}
                                             </td>
                                         </tr>

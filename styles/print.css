@@ -11,9 +11,13 @@
     background: white !important;
   }
 
-  /* Remove residual tinted backgrounds and shadows from every element to avoid gray boxes */
-  body * {
-    background: white !important;
+  /* Remove residual tinted backgrounds and shadows from every element (and pseudo-elements) to avoid gray boxes */
+  body *,
+  body *::before,
+  body *::after {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
   }
 

@@ -19,8 +19,8 @@ export const HandoffNovedades: React.FC<HandoffNovedadesProps> = ({ value, onCha
     }, [value]);
 
     return (
-        <div className="bg-white border border-slate-200 rounded-lg p-4 mt-6 print:border-none print:p-0 print:mt-4 print:bg-transparent">
-            <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-base print:mb-1 print:text-black">
+        <div className="bg-white border border-slate-200 rounded-lg p-4 mt-6 print:border print:border-slate-200 print:p-1.5 print:mt-3 print:bg-transparent">
+            <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-[10px] print:mb-1 print:text-black">
                 <MessageCircle size={20} className="text-amber-500 print:w-4 print:h-4" />
                 Novedades
             </h3>

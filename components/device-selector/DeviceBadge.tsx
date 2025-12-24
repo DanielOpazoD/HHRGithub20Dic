@@ -29,17 +29,25 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
     );
 
     return (
-        <span
-            className={clsx(
-                "text-[9px] px-1 py-0.5 rounded border font-medium whitespace-nowrap flex items-center gap-0.5",
-                isAlert
-                    ? "bg-orange-100 text-orange-700 border-orange-200"
-                    : "bg-medical-50 text-medical-700 border-medical-100"
-            )}
-        >
-            {badgeText}
-            {days !== null && (
-                <span className="text-[8px] opacity-70 ml-0.5">({days}d)</span>
+        <span className="relative group inline-flex">
+            <span
+                className={clsx(
+                    "text-[9px] px-1 py-0.5 rounded border font-medium whitespace-nowrap flex items-center gap-0.5",
+                    isAlert
+                        ? "bg-orange-100 text-orange-700 border-orange-200"
+                        : "bg-medical-50 text-medical-700 border-medical-100"
+                )}
+            >
+                {badgeText}
+                {days !== null && (
+                    <span className="text-[8px] opacity-70 ml-0.5">({days}d)</span>
+                )}
+            </span>
+
+            {isTracked && details?.installationDate && (
+                <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 bg-slate-900 text-white text-[10px] px-2 py-1 rounded shadow-lg whitespace-nowrap z-20 pointer-events-none">
+                    Instalado: {new Date(details.installationDate).toLocaleDateString('es-CL')}
+                </span>
             )}
         </span>
     );

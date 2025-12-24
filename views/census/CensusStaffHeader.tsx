@@ -48,7 +48,14 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
             </div>
 
             {/* Right: Stats Summary */}
-            {stats && <SummaryCard stats={stats} />}
+            {stats && (
+                <SummaryCard
+                    stats={stats}
+                    discharges={record.discharges || []}
+                    transfers={record.transfers || []}
+                    cmaCount={record.cma?.length || 0}
+                />
+            )}
         </div>
     );
 };

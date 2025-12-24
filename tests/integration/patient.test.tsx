@@ -127,7 +127,7 @@ describe('Patient Management Integration', () => {
             const bed = BEDS[0];
             const patientWithDevices = createMockPatient({
                 patientName: 'Pedro Soto',
-                devices: ['VVP', 'CVC']
+                devices: ['VVP#1', 'CVC']
             });
 
             render(

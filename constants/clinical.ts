@@ -14,8 +14,9 @@ export const ADMISSION_ORIGIN_OPTIONS: string[] = ['CAE', 'APS', 'Urgencias', 'P
 export type AdmissionOrigin = 'CAE' | 'APS' | 'Urgencias' | 'Pabellón' | 'Otro';
 
 // Medical Devices
-export const DEVICE_OPTIONS: string[] = ['VVP', 'CVC', 'LA', 'CUP', 'VMNI', 'CNAF', 'VMI'];
-export type DeviceType = 'VVP' | 'CVC' | 'LA' | 'CUP' | 'VMNI' | 'CNAF' | 'VMI';
+export const VVP_DEVICE_KEYS = ['VVP#1', 'VVP#2', 'VVP#3'] as const;
+export const DEVICE_OPTIONS: string[] = ['CVC', 'LA', 'CUP', 'VMNI', 'CNAF', 'VMI'];
+export type DeviceType = typeof DEVICE_OPTIONS[number] | typeof VVP_DEVICE_KEYS[number];
 
 // Evacuation/Transfer Methods
 export const EVACUATION_METHODS: string[] = [

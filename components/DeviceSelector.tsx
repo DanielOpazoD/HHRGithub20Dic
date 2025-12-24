@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { Plus, X, Check, Settings } from 'lucide-react';
+import React, { useLayoutEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Plus, X, Settings, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import { DEVICE_OPTIONS } from '../constants';
 import { DeviceDetails, DeviceInfo } from '../types';
 import {
     DeviceDateConfigModal,
+    VvpDateConfigModal,
     DeviceBadge,
     TRACKED_DEVICES,
-    TrackedDevice
+    TrackedDevice,
+    VVP_DEVICES,
+    mapVvpToKey
 } from './device-selector';
 
 interface DeviceSelectorProps {
@@ -29,28 +33,60 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [customDevice, setCustomDevice] = useState('');
-    const [editingDevice, setEditingDevice] = useState<TrackedDevice | null>(null);
+    const [editingDevice, setEditingDevice] = useState<TrackedDevice | 'VVP' | null>(null);
+    const triggerRef = React.useRef<HTMLDivElement>(null);
+    const menuRef = React.useRef<HTMLDivElement>(null);
+    const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
 
-    // Helper to determine VVP state: 0 (none), 1 (VVP), 2 (2 VVP)
-    const vvpCount = devices.includes('2 VVP') ? 2 : devices.includes('VVP') ? 1 : 0;
+    const normalizeVvp = (label: string): typeof VVP_DEVICES[number] | null => {
+        if (label === 'VVP' || label === 'VVP 1') return 'VVP';
+        if (label === 'VVP 2') return 'VVP 2';
+        if (label === 'VVP 3') return 'VVP 3';
+        return null;
+    };
+
+    const selectedVvps = Array.from(new Set(devices
+        .map(normalizeVvp)
+        .filter((v): v is typeof VVP_DEVICES[number] => v !== null)));
 
     // Filter out VVP related strings to get "other" devices
-    const otherDevicesList = DEVICE_OPTIONS.filter(d => d !== 'VVP');
+    const otherDevicesList = DEVICE_OPTIONS.filter(d => !normalizeVvp(d));
 
-    const setVVPCount = (count: number) => {
-        let newDevices = devices.filter(d => d !== 'VVP' && d !== '2 VVP');
-        if (count === 1) newDevices.push('VVP');
-        if (count === 2) newDevices.push('2 VVP');
+    const getDetailKey = (device: string) => {
+        if (TRACKED_DEVICES.includes(device as TrackedDevice)) {
+            return device as TrackedDevice;
+        }
+        const normalizedVvp = normalizeVvp(device);
+        if (normalizedVvp) {
+            return mapVvpToKey(normalizedVvp);
+        }
+        return null;
+    };
+
+    const toggleVvp = (device: typeof VVP_DEVICES[number]) => {
+        const isSelected = selectedVvps.includes(device);
+        const cleanedDevices = devices.filter(d => normalizeVvp(d) !== device);
+        const newDevices = isSelected
+            ? cleanedDevices
+            : [...cleanedDevices, device];
         onChange(newDevices);
+
+        if (isSelected && onDetailsChange) {
+            const key = mapVvpToKey(device);
+            const newDetails = { ...deviceDetails };
+            delete newDetails[key];
+            onDetailsChange(newDetails);
+        }
     };
 
     const toggleDevice = (device: string) => {
         if (devices.includes(device)) {
             onChange(devices.filter(d => d !== device));
             // Also clear details if tracked device is removed
-            if (TRACKED_DEVICES.includes(device as TrackedDevice) && onDetailsChange) {
+            const key = getDetailKey(device);
+            if (key && onDetailsChange) {
                 const newDetails = { ...deviceDetails };
-                delete newDetails[device as TrackedDevice];
+                delete newDetails[key];
                 onDetailsChange(newDetails);
             }
         } else {
@@ -68,17 +104,83 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
         }
     };
 
-    const handleDeviceConfigSave = (info: DeviceInfo) => {
-        if (editingDevice && onDetailsChange) {
-            onDetailsChange({
-                ...deviceDetails,
-                [editingDevice]: info
+    const handleDeviceConfigSave = (info: DeviceInfo | Partial<DeviceDetails>) => {
+        if (!editingDevice || !onDetailsChange) return;
+
+        if (editingDevice === 'VVP') {
+            const updates = info as Partial<DeviceDetails>;
+            const newDetails = { ...deviceDetails };
+            (['VVP1', 'VVP2', 'VVP3'] as const).forEach(key => {
+                if (Object.prototype.hasOwnProperty.call(updates, key)) {
+                    const value = updates[key];
+                    if (value?.installationDate || value?.removalDate || value?.note) {
+                        newDetails[key] = value;
+                    } else {
+                        delete newDetails[key];
+                    }
+                }
             });
+            onDetailsChange(newDetails);
+            return;
         }
+
+        const payload = info as DeviceInfo;
+        const hasContent = payload.installationDate || payload.removalDate || payload.note;
+        const newDetails = { ...deviceDetails };
+        if (hasContent) {
+            newDetails[editingDevice] = payload;
+        } else {
+            delete newDetails[editingDevice];
+        }
+        onDetailsChange(newDetails);
     };
 
     const isTrackedDevice = (dev: string): dev is TrackedDevice =>
         TRACKED_DEVICES.includes(dev as TrackedDevice);
+
+    const updateMenuPosition = React.useCallback(() => {
+        if (!showMenu || !triggerRef.current) return;
+
+        const rect = triggerRef.current.getBoundingClientRect();
+        const margin = 8;
+        const viewportTop = window.scrollY + margin;
+        const viewportBottom = window.scrollY + window.innerHeight - margin;
+        const width = menuRef.current?.offsetWidth ?? 256;
+        const height = menuRef.current?.offsetHeight ?? 0;
+
+        let left = rect.left + window.scrollX;
+        left = Math.min(left, window.scrollX + window.innerWidth - width - margin);
+        left = Math.max(window.scrollX + margin, left);
+
+        let top = rect.bottom + margin + window.scrollY;
+        if (height && top + height > viewportBottom) {
+            const aboveTop = rect.top + window.scrollY - height - margin;
+            top = aboveTop >= viewportTop ? aboveTop : viewportTop;
+        }
+
+        setMenuStyle({
+            top,
+            left,
+            maxHeight: `${viewportBottom - viewportTop}px`
+        });
+    }, [showMenu]);
+
+    useLayoutEffect(() => {
+        updateMenuPosition();
+    }, [showMenu, devices.length, selectedVvps.length, updateMenuPosition]);
+
+    React.useEffect(() => {
+        if (!showMenu) return;
+
+        const handleWindowChange = () => updateMenuPosition();
+        window.addEventListener('resize', handleWindowChange);
+        window.addEventListener('scroll', handleWindowChange, true);
+
+        return () => {
+            window.removeEventListener('resize', handleWindowChange);
+            window.removeEventListener('scroll', handleWindowChange, true);
+        };
+    }, [showMenu, updateMenuPosition]);
 
     if (disabled) return null;
 
@@ -89,6 +191,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                 className="flex flex-wrap gap-1 min-h-[26px] cursor-pointer items-center justify-start p-1 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors relative"
                 onClick={() => setShowMenu(!showMenu)}
                 title="Haga clic para gestionar dispositivos"
+                ref={triggerRef}
             >
                 {devices.length === 0 && (
                     <span className="text-slate-300 mx-auto flex items-center justify-center w-full opacity-50">
@@ -107,152 +210,204 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 
             {/* Dropdown Menu */}
             {showMenu && (
-                <>
-                    <div className="absolute z-50 mt-1 right-0 w-64 bg-white rounded-lg shadow-xl border border-slate-200 animate-scale-in text-left">
-                        <div className="p-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center rounded-t-lg">
-                            <span className="text-xs font-bold text-slate-700 uppercase">Dispositivos</span>
-                            <button onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} className="text-slate-400 hover:text-slate-600">
-                                <X size={14} />
-                            </button>
-                        </div>
-
-                        <div className="p-3">
-                            {/* Special VVP Section */}
-                            <div className="mb-3 pb-3 border-b border-slate-100">
-                                <label className="text-xs font-semibold text-slate-600 mb-2 block">Vías Venosas (VVP)</label>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setVVPCount(0)}
-                                        className={clsx(
-                                            "flex-1 py-1 text-xs rounded border transition-colors",
-                                            vvpCount === 0 ? "bg-slate-200 text-slate-600 border-slate-300 shadow-inner" : "hover:bg-slate-50 text-slate-500"
-                                        )}
-                                    >
-                                        Ninguna
-                                    </button>
-                                    <button
-                                        onClick={() => setVVPCount(1)}
-                                        className={clsx(
-                                            "flex-1 py-1 text-xs rounded border transition-colors",
-                                            vvpCount === 1 ? "bg-medical-600 text-white border-medical-700 shadow-sm" : "hover:bg-medical-50 text-medical-600 border-medical-200"
-                                        )}
-                                    >
-                                        1
-                                    </button>
-                                    <button
-                                        onClick={() => setVVPCount(2)}
-                                        className={clsx(
-                                            "flex-1 py-1 text-xs rounded border transition-colors",
-                                            vvpCount === 2 ? "bg-purple-600 text-white border-purple-700 shadow-sm" : "hover:bg-purple-50 text-purple-600 border-purple-200"
-                                        )}
-                                    >
-                                        2
-                                    </button>
-                                </div>
+                createPortal(
+                    <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)}></div>
+                        <div
+                            ref={menuRef}
+                            className="fixed z-50 w-[340px] bg-white rounded-lg shadow-xl border border-slate-200 animate-scale-in text-left overflow-y-auto"
+                            style={menuStyle}
+                        >
+                            <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex justify-between items-center rounded-t-lg">
+                                <span className="text-[11px] font-bold text-slate-700 uppercase">Dispositivos</span>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowMenu(false); }}
+                                    className="text-slate-400 hover:text-slate-600"
+                                >
+                                    <X size={14} />
+                                </button>
                             </div>
 
-                            {/* Other Devices Grid */}
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                                {otherDevicesList.map(dev => {
-                                    const isTracked = isTrackedDevice(dev);
-                                    const isSelected = devices.includes(dev);
-                                    const details = isTracked ? deviceDetails[dev as TrackedDevice] : undefined;
-                                    const hasConfig = details?.installationDate;
-
-                                    return (
-                                        <div key={dev} className="relative">
-                                            <button
-                                                onClick={() => toggleDevice(dev)}
-                                                className={clsx(
-                                                    "w-full flex items-center gap-2 px-2 py-1.5 rounded border text-xs text-left transition-colors",
-                                                    isSelected
-                                                        ? "bg-medical-50 border-medical-200 text-medical-800"
-                                                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                                                )}
-                                            >
-                                                <div className={clsx(
-                                                    "w-3 h-3 rounded-sm border flex items-center justify-center flex-shrink-0",
-                                                    isSelected ? "bg-medical-600 border-medical-600" : "border-slate-300"
-                                                )}>
-                                                    {isSelected && <Check size={10} className="text-white" />}
-                                                </div>
-                                                <span className="flex-1 truncate">{dev}</span>
-
-                                                {/* Config icon for tracked devices */}
-                                                {isTracked && isSelected && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setEditingDevice(dev);
-                                                        }}
-                                                        className={clsx(
-                                                            "p-0.5 rounded hover:bg-medical-100 transition-colors",
-                                                            hasConfig ? "text-medical-600" : "text-slate-400"
-                                                        )}
-                                                        title="Configurar fechas"
-                                                    >
-                                                        <Settings size={12} />
-                                                    </button>
-                                                )}
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Free Text Custom Device */}
-                            <div className="pt-2 border-t border-slate-100">
-                                <label className="text-xs font-semibold text-slate-600 mb-2 block">Otro Dispositivo</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={customDevice}
-                                        onChange={(e) => setCustomDevice(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && addCustomDevice()}
-                                        className="flex-1 text-xs p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-medical-500 focus:outline-none"
-                                        placeholder="Escribir..."
-                                    />
-                                    <button
-                                        onClick={addCustomDevice}
-                                        disabled={!customDevice.trim()}
-                                        className="p-1.5 bg-medical-500 text-white rounded hover:bg-medical-600 disabled:opacity-50"
-                                    >
-                                        <Plus size={14} />
-                                    </button>
-                                </div>
-
-                                {/* Show custom devices (not in DEVICE_OPTIONS) with remove button */}
-                                {devices.filter(d => !DEVICE_OPTIONS.includes(d) && d !== 'VVP' && d !== '2 VVP').length > 0 && (
-                                    <div className="mt-2 flex flex-wrap gap-1">
-                                        {devices.filter(d => !DEVICE_OPTIONS.includes(d) && d !== 'VVP' && d !== '2 VVP').map(dev => (
-                                            <span
-                                                key={dev}
-                                                className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium flex items-center gap-1"
-                                            >
-                                                {dev}
+                            <div className="p-2 space-y-2 text-[11px]">
+                                <div className="grid grid-cols-1 gap-2">
+                                    {/* Special VVP Section */}
+                                    <div className="rounded-md border border-slate-100">
+                                        <div className="flex items-center justify-between px-2 py-1.5 bg-slate-50 rounded-t-md">
+                                            <label className="text-[11px] font-semibold text-slate-600">Vías Venosas (VVP)</label>
+                                            {selectedVvps.length > 0 && (
                                                 <button
-                                                    onClick={() => onChange(devices.filter(d => d !== dev))}
-                                                    className="text-amber-500 hover:text-red-500 ml-0.5"
-                                                    title="Eliminar dispositivo"
+                                                    className="text-slate-500 hover:text-medical-600 text-[11px] flex items-center gap-1"
+                                                    onClick={(e) => { e.stopPropagation(); setEditingDevice('VVP'); }}
+                                                    title="Configurar fechas VVP"
                                                 >
-                                                    <X size={10} />
+                                                    <Settings size={12} />
+                                                    Configurar
                                                 </button>
-                                            </span>
-                                        ))}
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-1.5 p-2">
+                                            {VVP_DEVICES.map(vvp => {
+                                                const isSelected = selectedVvps.includes(vvp);
+                                                const detailKey = mapVvpToKey(vvp);
+                                                const hasConfig = !!deviceDetails?.[detailKey]?.installationDate;
+
+                                                return (
+                                                    <label
+                                                        key={vvp}
+                                                        className={clsx(
+                                                            "flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer transition-colors",
+                                                            isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-4 h-4 accent-medical-500"
+                                                            checked={isSelected}
+                                                            onChange={() => toggleVvp(vvp)}
+                                                        />
+                                                        <span className="flex-1 truncate">{vvp}</span>
+                                                        {hasConfig && <Clock size={12} className="text-medical-600" />}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                )}
+
+                                    {/* Tracked Devices */}
+                                    <div className="rounded-md border border-slate-100">
+                                        <div className="px-2 py-1.5 bg-slate-50 rounded-t-md text-[11px] font-semibold text-slate-600">
+                                            Dispositivos IAAS
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1.5 p-2">
+                                            {TRACKED_DEVICES.map(dev => {
+                                                const isSelected = devices.includes(dev);
+                                                const hasConfig = !!deviceDetails?.[dev]?.installationDate;
+
+                                                return (
+                                                    <label
+                                                        key={dev}
+                                                        className={clsx(
+                                                            "flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer transition-colors",
+                                                            isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-4 h-4 accent-medical-500"
+                                                            checked={isSelected}
+                                                            onChange={() => toggleDevice(dev)}
+                                                        />
+                                                        <span className="flex-1 truncate">{dev}</span>
+                                                        {hasConfig && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); setEditingDevice(dev as TrackedDevice); }}
+                                                                className="text-medical-600 hover:text-medical-700 p-0.5 rounded"
+                                                                title="Configurar fechas"
+                                                            >
+                                                                <Settings size={12} />
+                                                            </button>
+                                                        )}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Other Devices */}
+                                    <div className="rounded-md border border-slate-100">
+                                        <div className="px-2 py-1.5 bg-slate-50 rounded-t-md text-[11px] font-semibold text-slate-600">
+                                            Otros dispositivos
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1.5 p-2">
+                                            {otherDevicesList.map(dev => {
+                                                const isSelected = devices.includes(dev);
+                                                return (
+                                                    <label
+                                                        key={dev}
+                                                        className={clsx(
+                                                            "flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer transition-colors",
+                                                            isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-4 h-4 accent-medical-500"
+                                                            checked={isSelected}
+                                                            onChange={() => toggleDevice(dev)}
+                                                        />
+                                                        <span className="flex-1 truncate">{dev}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Free Text Custom Device */}
+                                <div className="rounded-md border border-slate-100 p-2 space-y-1.5">
+                                    <label className="text-[11px] font-semibold text-slate-600 block">Otro Dispositivo</label>
+                                    <div className="flex gap-1.5">
+                                        <input
+                                            type="text"
+                                            value={customDevice}
+                                            onChange={(e) => setCustomDevice(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && addCustomDevice()}
+                                            className="flex-1 text-[11px] p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-medical-500 focus:outline-none"
+                                            placeholder="Escribir..."
+                                        />
+                                        <button
+                                            onClick={addCustomDevice}
+                                            disabled={!customDevice.trim()}
+                                            className="p-1.5 bg-medical-500 text-white rounded hover:bg-medical-600 disabled:opacity-50"
+                                        >
+                                            <Plus size={14} />
+                                        </button>
+                                    </div>
+
+                                    {devices.filter(d => !DEVICE_OPTIONS.includes(d)).length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            {devices.filter(d => !DEVICE_OPTIONS.includes(d)).map(dev => (
+                                                <span
+                                                    key={dev}
+                                                    className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium flex items-center gap-1"
+                                                >
+                                                    {dev}
+                                                    <button
+                                                        onClick={() => onChange(devices.filter(d => d !== dev))}
+                                                        className="text-amber-500 hover:text-red-500 ml-0.5"
+                                                        title="Eliminar dispositivo"
+                                                    >
+                                                        <X size={10} />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)}></div>
-                </>
+                    </>,
+                    document.body
+                )
             )}
 
             {/* Device Configuration Modal */}
-            {editingDevice && (
+            {editingDevice && editingDevice !== 'VVP' && (
                 <DeviceDateConfigModal
-                    device={editingDevice}
-                    deviceInfo={deviceDetails[editingDevice] || {}}
+                    device={editingDevice as TrackedDevice}
+                    deviceInfo={deviceDetails[editingDevice as TrackedDevice] || {}}
+                    currentDate={currentDate}
+                    onSave={handleDeviceConfigSave}
+                    onClose={() => setEditingDevice(null)}
+                />
+            )}
+
+            {editingDevice === 'VVP' && selectedVvps.length > 0 && (
+                <VvpDateConfigModal
+                    activeDevices={selectedVvps}
+                    deviceDetails={deviceDetails}
                     currentDate={currentDate}
                     onSave={handleDeviceConfigSave}
                     onClose={() => setEditingDevice(null)}

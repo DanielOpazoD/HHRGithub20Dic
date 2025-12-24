@@ -72,10 +72,16 @@ export const exportDataCSV = (record: DailyRecord | null) => {
             escape(p.devices.join('|')),                            // Dispositivos
             escape(formatDateDDMMYYYY(p.deviceDetails?.CUP?.installationDate)),  // CUP F.Instalación
             escape(formatDateDDMMYYYY(p.deviceDetails?.CUP?.removalDate)),       // CUP F.Retiro
+            escape(p.deviceDetails?.CUP?.note || ''),                            // CUP Nota
             escape(formatDateDDMMYYYY(p.deviceDetails?.CVC?.installationDate)),  // CVC F.Instalación
             escape(formatDateDDMMYYYY(p.deviceDetails?.CVC?.removalDate)),       // CVC F.Retiro
+            escape(p.deviceDetails?.CVC?.note || ''),                            // CVC Nota
             escape(formatDateDDMMYYYY(p.deviceDetails?.VMI?.installationDate)),  // VMI F.Inicio
             escape(formatDateDDMMYYYY(p.deviceDetails?.VMI?.removalDate)),       // VMI F.Término
+            escape(p.deviceDetails?.VMI?.note || ''),                            // VMI Nota
+            escape(formatDateDDMMYYYY(p.deviceDetails?.VVP?.installationDate)),  // VVP F.Instalación
+            escape(formatDateDDMMYYYY(p.deviceDetails?.VVP?.removalDate)),       // VVP F.Retiro
+            escape(p.deviceDetails?.VVP?.note || ''),                            // VVP Nota
             escape(p.surgicalComplication ? 'SI' : 'NO'),           // Comp. Qx
             escape(p.isUPC ? 'SI' : 'NO'),                          // UPC
             escape(p.handoffNote || ''),                            // Nota Entrega

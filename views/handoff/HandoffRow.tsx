@@ -194,7 +194,8 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
                         let deviceDays: number | null = null;
                         const details = patient.deviceDetails;
                         if (details) {
-                            const deviceKey = d as keyof typeof details;
+                            const normalizedDevice = d.includes('VVP') ? 'VVP' : d;
+                            const deviceKey = normalizedDevice as keyof typeof details;
                             const deviceInfo = details[deviceKey];
                             if (deviceInfo?.installationDate) {
                                 const installDate = new Date(deviceInfo.installationDate);

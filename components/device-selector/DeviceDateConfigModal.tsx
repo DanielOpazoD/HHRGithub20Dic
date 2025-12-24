@@ -1,15 +1,16 @@
 import React from 'react';
-import { X, Calendar, Clock } from 'lucide-react';
+import { X, Calendar, Clock, StickyNote } from 'lucide-react';
 import { DeviceInfo } from '../../types';
 
 // Devices that require date tracking (IAAS surveillance)
-export const TRACKED_DEVICES = ['CUP', 'CVC', 'VMI'] as const;
+export const TRACKED_DEVICES = ['CUP', 'CVC', 'VMI', 'VVP'] as const;
 export type TrackedDevice = typeof TRACKED_DEVICES[number];
 
 export const DEVICE_LABELS: Record<TrackedDevice, string> = {
     'CUP': 'Sonda Foley',
     'CVC': 'Catéter Venoso Central',
-    'VMI': 'Ventilación Mecánica Invasiva'
+    'VMI': 'Ventilación Mecánica Invasiva',
+    'VVP': 'Vía Venosa Periférica'
 };
 
 /**
@@ -49,7 +50,7 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm print:hidden">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-xs animate-scale-in">
                 <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50 rounded-t-lg">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -62,7 +63,7 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
                 </div>
 
                 <div className="p-4 space-y-4">
-                    <div>
+                    <div className="space-y-1">
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
                             {device === 'VMI' ? 'Fecha de Inicio' : 'Fecha de Instalación'}
                         </label>
@@ -75,7 +76,7 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
                         />
                     </div>
 
-                    <div>
+                    <div className="space-y-1">
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
                             {device === 'VMI' ? 'Fecha de Término' : 'Fecha de Retiro'}
                             <span className="font-normal text-slate-400 ml-1">(opcional)</span>
@@ -87,6 +88,20 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
                             min={tempDetails.installationDate}
                             max={currentDate}
                             onChange={(e) => setTempDetails({ ...tempDetails, removalDate: e.target.value })}
+                        />
+                    </div>
+
+                    {/* Free note */}
+                    <div className="space-y-1">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1 flex items-center gap-1">
+                            <StickyNote size={12} className="text-medical-500" /> Nota (opcional)
+                        </label>
+                        <textarea
+                            className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none resize-none"
+                            rows={2}
+                            placeholder="Ubicación, calibre, longitud, etc."
+                            value={tempDetails.note || ''}
+                            onChange={(e) => setTempDetails({ ...tempDetails, note: e.target.value })}
                         />
                     </div>
 

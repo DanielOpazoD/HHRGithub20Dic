@@ -3,13 +3,16 @@ import { X, Calendar, Clock } from 'lucide-react';
 import { DeviceInfo } from '../../types';
 
 // Devices that require date tracking (IAAS surveillance)
-export const TRACKED_DEVICES = ['CUP', 'CVC', 'VMI'] as const;
+export const TRACKED_DEVICES = ['CUP', 'CVC', 'VMI', 'VVP#1', 'VVP#2', 'VVP#3'] as const;
 export type TrackedDevice = typeof TRACKED_DEVICES[number];
 
 export const DEVICE_LABELS: Record<TrackedDevice, string> = {
     'CUP': 'Sonda Foley',
     'CVC': 'Catéter Venoso Central',
-    'VMI': 'Ventilación Mecánica Invasiva'
+    'VMI': 'Ventilación Mecánica Invasiva',
+    'VVP#1': 'Vía Venosa Periférica 1',
+    'VVP#2': 'Vía Venosa Periférica 2',
+    'VVP#3': 'Vía Venosa Periférica 3'
 };
 
 /**
@@ -99,6 +102,19 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
                             </span>
                         </div>
                     )}
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                            Nota libre <span className="font-normal text-slate-400">(opcional)</span>
+                        </label>
+                        <textarea
+                            className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none resize-none"
+                            rows={3}
+                            placeholder="Registrar detalles clínicos, ubicación o estado."
+                            value={tempDetails.note || ''}
+                            onChange={(e) => setTempDetails({ ...tempDetails, note: e.target.value })}
+                        />
+                    </div>
                 </div>
 
                 <div className="p-4 border-t border-slate-100 flex justify-end gap-2 bg-slate-50 rounded-b-lg">

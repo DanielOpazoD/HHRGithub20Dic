@@ -42,12 +42,14 @@ export const CudyrScoreSchema = z.object({
 export const DeviceInfoSchema = z.object({
     installationDate: z.string().optional(),
     removalDate: z.string().optional(),
+    note: z.string().optional(),
 });
 
 export const DeviceDetailsSchema = z.object({
     CUP: DeviceInfoSchema.optional(),
     CVC: DeviceInfoSchema.optional(),
     VMI: DeviceInfoSchema.optional(),
+    VVP: z.array(DeviceInfoSchema).max(3).optional(),
 });
 
 // ============================================================================

@@ -46,7 +46,7 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
 
             {isTracked && details?.installationDate && (
                 <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 bg-slate-900 text-white text-[10px] px-2 py-1 rounded shadow-lg whitespace-nowrap z-20 pointer-events-none">
-                    Instalado: {new Date(details.installationDate).toLocaleDateString('es-CL')}
+                    FI: {new Date(details.installationDate).toLocaleDateString('es-CL')}
                 </span>
             )}
         </span>

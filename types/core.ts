@@ -114,6 +114,7 @@ export interface PatientData {
 export interface DeviceInfo {
     installationDate?: string;  // Date device was installed
     removalDate?: string;       // Date device was removed (optional)
+    note?: string;              // Optional note (e.g., device location)
 }
 
 export interface DeviceDetails {

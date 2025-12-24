@@ -113,7 +113,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
             (['VVP1', 'VVP2', 'VVP3'] as const).forEach(key => {
                 if (Object.prototype.hasOwnProperty.call(updates, key)) {
                     const value = updates[key];
-                    if (value?.installationDate || value?.removalDate) {
+                    if (value?.installationDate || value?.removalDate || value?.note) {
                         newDetails[key] = value;
                     } else {
                         delete newDetails[key];
@@ -124,10 +124,15 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
             return;
         }
 
-        onDetailsChange({
-            ...deviceDetails,
-            [editingDevice]: info as DeviceInfo
-        });
+        const payload = info as DeviceInfo;
+        const hasContent = payload.installationDate || payload.removalDate || payload.note;
+        const newDetails = { ...deviceDetails };
+        if (hasContent) {
+            newDetails[editingDevice] = payload;
+        } else {
+            delete newDetails[editingDevice];
+        }
+        onDetailsChange(newDetails);
     };
 
     const isTrackedDevice = (dev: string): dev is TrackedDevice =>
@@ -210,11 +215,11 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                         <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)}></div>
                         <div
                             ref={menuRef}
-                            className="fixed z-50 w-64 bg-white rounded-lg shadow-xl border border-slate-200 animate-scale-in text-left overflow-y-auto"
+                            className="fixed z-50 w-[340px] bg-white rounded-lg shadow-xl border border-slate-200 animate-scale-in text-left overflow-y-auto"
                             style={menuStyle}
                         >
-                            <div className="p-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center rounded-t-lg">
-                                <span className="text-xs font-bold text-slate-700 uppercase">Dispositivos</span>
+                            <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex justify-between items-center rounded-t-lg">
+                                <span className="text-[11px] font-bold text-slate-700 uppercase">Dispositivos</span>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setShowMenu(false); }}
                                     className="text-slate-400 hover:text-slate-600"
@@ -223,127 +228,133 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                                 </button>
                             </div>
 
-                            <div className="p-3 space-y-3">
-                                {/* Special VVP Section */}
-                                <div className="space-y-2 pb-3 border-b border-slate-100">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <label className="text-xs font-semibold text-slate-600 block">Vías Venosas (VVP)</label>
-                                        {selectedVvps.length > 0 && (
-                                            <button
-                                                className="text-slate-500 hover:text-medical-600 text-[11px] flex items-center gap-1"
-                                                onClick={(e) => { e.stopPropagation(); setEditingDevice('VVP'); }}
-                                                title="Configurar fechas VVP"
-                                            >
-                                                <Settings size={12} />
-                                                Configurar
-                                            </button>
-                                        )}
+                            <div className="p-2 space-y-2 text-[11px]">
+                                <div className="grid grid-cols-1 gap-2">
+                                    {/* Special VVP Section */}
+                                    <div className="rounded-md border border-slate-100">
+                                        <div className="flex items-center justify-between px-2 py-1.5 bg-slate-50 rounded-t-md">
+                                            <label className="text-[11px] font-semibold text-slate-600">Vías Venosas (VVP)</label>
+                                            {selectedVvps.length > 0 && (
+                                                <button
+                                                    className="text-slate-500 hover:text-medical-600 text-[11px] flex items-center gap-1"
+                                                    onClick={(e) => { e.stopPropagation(); setEditingDevice('VVP'); }}
+                                                    title="Configurar fechas VVP"
+                                                >
+                                                    <Settings size={12} />
+                                                    Configurar
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-1.5 p-2">
+                                            {VVP_DEVICES.map(vvp => {
+                                                const isSelected = selectedVvps.includes(vvp);
+                                                const detailKey = mapVvpToKey(vvp);
+                                                const hasConfig = !!deviceDetails?.[detailKey]?.installationDate;
+
+                                                return (
+                                                    <label
+                                                        key={vvp}
+                                                        className={clsx(
+                                                            "flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer transition-colors",
+                                                            isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-4 h-4 accent-medical-500"
+                                                            checked={isSelected}
+                                                            onChange={() => toggleVvp(vvp)}
+                                                        />
+                                                        <span className="flex-1 truncate">{vvp}</span>
+                                                        {hasConfig && <Clock size={12} className="text-medical-600" />}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {VVP_DEVICES.map(vvp => {
-                                            const isSelected = selectedVvps.includes(vvp);
-                                            const detailKey = mapVvpToKey(vvp);
-                                            const hasConfig = !!deviceDetails?.[detailKey]?.installationDate;
+                                    {/* Tracked Devices */}
+                                    <div className="rounded-md border border-slate-100">
+                                        <div className="px-2 py-1.5 bg-slate-50 rounded-t-md text-[11px] font-semibold text-slate-600">
+                                            Dispositivos IAAS
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1.5 p-2">
+                                            {TRACKED_DEVICES.map(dev => {
+                                                const isSelected = devices.includes(dev);
+                                                const hasConfig = !!deviceDetails?.[dev]?.installationDate;
 
-                                            return (
-                                                <label
-                                                    key={vvp}
-                                                    className={clsx(
-                                                        "flex items-center gap-2 px-2 py-1.5 rounded border text-[11px] cursor-pointer transition-colors",
-                                                        isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
-                                                    )}
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        className="w-4 h-4 accent-medical-500"
-                                                        checked={isSelected}
-                                                        onChange={() => toggleVvp(vvp)}
-                                                    />
-                                                    <span className="flex-1 truncate">{vvp}</span>
-                                                    {hasConfig && <Clock size={12} className="text-medical-600" />}
-                                                </label>
-                                            );
-                                        })}
+                                                return (
+                                                    <label
+                                                        key={dev}
+                                                        className={clsx(
+                                                            "flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer transition-colors",
+                                                            isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-4 h-4 accent-medical-500"
+                                                            checked={isSelected}
+                                                            onChange={() => toggleDevice(dev)}
+                                                        />
+                                                        <span className="flex-1 truncate">{dev}</span>
+                                                        {hasConfig && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); setEditingDevice(dev as TrackedDevice); }}
+                                                                className="text-medical-600 hover:text-medical-700 p-0.5 rounded"
+                                                                title="Configurar fechas"
+                                                            >
+                                                                <Settings size={12} />
+                                                            </button>
+                                                        )}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Tracked Devices */}
-                                <div className="space-y-2 pb-3 border-b border-slate-100">
-                                    <label className="text-xs font-semibold text-slate-600 block">Dispositivos IAAS</label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {TRACKED_DEVICES.map(dev => {
-                                            const isSelected = devices.includes(dev);
-                                            const hasConfig = !!deviceDetails?.[dev]?.installationDate;
-
-                                            return (
-                                                <label
-                                                    key={dev}
-                                                    className={clsx(
-                                                        "flex items-center gap-2 px-2 py-1.5 rounded border text-[11px] cursor-pointer transition-colors",
-                                                        isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
-                                                    )}
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        className="w-4 h-4 accent-medical-500"
-                                                        checked={isSelected}
-                                                        onChange={() => toggleDevice(dev)}
-                                                    />
-                                                    <span className="flex-1 truncate">{dev}</span>
-                                                    {hasConfig && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); setEditingDevice(dev as TrackedDevice); }}
-                                                            className="text-medical-600 hover:text-medical-700 p-0.5 rounded"
-                                                            title="Configurar fechas"
-                                                        >
-                                                            <Settings size={12} />
-                                                        </button>
-                                                    )}
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* Other Devices */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-slate-600 block">Otros dispositivos</label>
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {otherDevicesList.map(dev => {
-                                            const isSelected = devices.includes(dev);
-                                            return (
-                                                <label
-                                                    key={dev}
-                                                    className={clsx(
-                                                        "flex items-center gap-2 px-2 py-1.5 rounded border text-[11px] cursor-pointer transition-colors",
-                                                        isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
-                                                    )}
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        className="w-4 h-4 accent-medical-500"
-                                                        checked={isSelected}
-                                                        onChange={() => toggleDevice(dev)}
-                                                    />
-                                                    <span className="flex-1 truncate">{dev}</span>
-                                                </label>
-                                            );
-                                        })}
+                                    {/* Other Devices */}
+                                    <div className="rounded-md border border-slate-100">
+                                        <div className="px-2 py-1.5 bg-slate-50 rounded-t-md text-[11px] font-semibold text-slate-600">
+                                            Otros dispositivos
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1.5 p-2">
+                                            {otherDevicesList.map(dev => {
+                                                const isSelected = devices.includes(dev);
+                                                return (
+                                                    <label
+                                                        key={dev}
+                                                        className={clsx(
+                                                            "flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer transition-colors",
+                                                            isSelected ? "bg-slate-50 border-medical-200" : "bg-white border-slate-200 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-4 h-4 accent-medical-500"
+                                                            checked={isSelected}
+                                                            onChange={() => toggleDevice(dev)}
+                                                        />
+                                                        <span className="flex-1 truncate">{dev}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Free Text Custom Device */}
-                                <div className="pt-2 border-t border-slate-100 space-y-2">
-                                    <label className="text-xs font-semibold text-slate-600 block">Otro Dispositivo</label>
-                                    <div className="flex gap-2">
+                                <div className="rounded-md border border-slate-100 p-2 space-y-1.5">
+                                    <label className="text-[11px] font-semibold text-slate-600 block">Otro Dispositivo</label>
+                                    <div className="flex gap-1.5">
                                         <input
                                             type="text"
                                             value={customDevice}
                                             onChange={(e) => setCustomDevice(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && addCustomDevice()}
-                                            className="flex-1 text-xs p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-medical-500 focus:outline-none"
+                                            className="flex-1 text-[11px] p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-medical-500 focus:outline-none"
                                             placeholder="Escribir..."
                                         />
                                         <button
@@ -356,7 +367,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                                     </div>
 
                                     {devices.filter(d => !DEVICE_OPTIONS.includes(d)).length > 0 && (
-                                        <div className="mt-1 flex flex-wrap gap-1">
+                                        <div className="flex flex-wrap gap-1">
                                             {devices.filter(d => !DEVICE_OPTIONS.includes(d)).map(dev => (
                                                 <span
                                                     key={dev}

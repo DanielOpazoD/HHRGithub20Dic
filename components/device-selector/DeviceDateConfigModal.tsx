@@ -105,6 +105,21 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
                         />
                     </div>
 
+                    {device === 'CVC' && (
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                Nota / Ubicación <span className="font-normal text-slate-400 lowercase">(opcional)</span>
+                            </label>
+                            <textarea
+                                className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none resize-none"
+                                rows={2}
+                                placeholder="Ej: subclavia derecha, 2 lúmenes"
+                                value={tempDetails.note || ''}
+                                onChange={(e) => setTempDetails({ ...tempDetails, note: e.target.value })}
+                            />
+                        </div>
+                    )}
+
                     {/* Days counter */}
                     {tempDetails.installationDate && (
                         <div className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-100">
@@ -178,7 +193,7 @@ export const VvpDateConfigModal: React.FC<VvpDateConfigModalProps> = ({
         activeDevices.forEach(dev => {
             const key = mapVvpToKey(dev);
             const info = tempDetails[key];
-            if (info?.installationDate || info?.removalDate) {
+            if (info?.installationDate || info?.removalDate || info?.note) {
                 updates[key] = info;
             } else {
                 updates[key] = undefined;
@@ -235,6 +250,20 @@ export const VvpDateConfigModal: React.FC<VvpDateConfigModalProps> = ({
                                         min={info.installationDate}
                                         max={currentDate}
                                         onChange={(e) => handleChange(key, 'removalDate', e.target.value)}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">
+                                        Nota / Ubicación
+                                        <span className="font-normal text-slate-400 ml-1 lowercase">(opcional)</span>
+                                    </label>
+                                    <textarea
+                                        className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none resize-none"
+                                        rows={2}
+                                        placeholder="Ej: antebrazo izquierdo"
+                                        value={info.note || ''}
+                                        onChange={(e) => handleChange(key, 'note', e.target.value)}
                                     />
                                 </div>
 

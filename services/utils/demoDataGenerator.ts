@@ -5,7 +5,7 @@
  */
 
 import { DailyRecord, PatientData, PatientStatus, Specialty, DischargeData, TransferData } from '../../types';
-import { BEDS, DEVICE_OPTIONS } from '../../constants';
+import { BEDS, DEVICE_OPTIONS, VVP_DEVICE_KEYS } from '../../constants';
 import { createEmptyPatient } from '../factories/patientFactory';
 import { getTimeRoundedToStep } from '../../utils';
 
@@ -72,6 +72,7 @@ const EVACUATION_METHODS = ["FACH", "Aerocardal", "LATAM", "Militar"];
 
 const UTI_BEDS = ['R1', 'R2', 'R3', 'R4'];
 const usedNames = new Set<string>();
+const ALL_DEVICE_OPTIONS = [...VVP_DEVICE_KEYS, ...DEVICE_OPTIONS];
 
 // ============================================================================
 // Helper Functions
@@ -156,7 +157,7 @@ const generateNewPatient = (bedId: string, admissionDate: string): PatientData =
         patient.status = PatientStatus.GRAVE;
         patient.isUPC = true;
         patient.age = (Math.floor(Math.random() * 60) + 20) + "a";
-        patient.devices = [randomItem(['VVP', 'CVC', 'Sonda Foley', 'VM'])];
+        patient.devices = [randomItem(['VVP#1', 'CVC', 'CUP', 'VMI'])];
     }
     // NEO beds -> Neonates
     else if (bedId.startsWith('NEO')) {
@@ -209,7 +210,7 @@ const generateNewPatient = (bedId: string, admissionDate: string): PatientData =
 
     // Random devices for non-UPC
     if (!patient.isUPC && Math.random() > 0.7) {
-        patient.devices = [randomItem(DEVICE_OPTIONS)];
+        patient.devices = [randomItem(ALL_DEVICE_OPTIONS)];
     }
 
     // Generate CUDYR scores

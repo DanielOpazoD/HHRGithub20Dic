@@ -23,7 +23,7 @@ describe('PatientRow Component', () => {
         status: PatientStatus.ESTABLE,
         admissionDate: '2023-01-01',
         hasWristband: true,
-        devices: ['VVP'],
+        devices: ['VVP#1'],
         surgicalComplication: false,
         isUPC: false,
         isBlocked: false,

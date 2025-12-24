@@ -194,15 +194,34 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
                         let deviceDays: number | null = null;
                         const details = patient.deviceDetails;
                         if (details) {
-                            const deviceKey = d as keyof typeof details;
-                            const deviceInfo = details[deviceKey];
-                            if (deviceInfo?.installationDate) {
-                                const installDate = new Date(deviceInfo.installationDate);
+                            if (d.includes('VVP') && details.VVP && details.VVP.length > 0) {
+                                const count = d.startsWith('3') ? 3 : d.startsWith('2') ? 2 : 1;
+                                const entries = details.VVP.slice(0, count);
                                 const reportDateObj = new Date(reportDate);
-                                installDate.setHours(0, 0, 0, 0);
                                 reportDateObj.setHours(0, 0, 0, 0);
-                                const diff = reportDateObj.getTime() - installDate.getTime();
-                                deviceDays = Math.max(0, Math.floor(diff / (1000 * 3600 * 24)));
+                                const dayValues = entries
+                                    .map(entry => {
+                                        if (!entry?.installationDate) return null;
+                                        const installDate = new Date(entry.installationDate);
+                                        installDate.setHours(0, 0, 0, 0);
+                                        const diff = reportDateObj.getTime() - installDate.getTime();
+                                        return Math.max(0, Math.floor(diff / (1000 * 3600 * 24)));
+                                    })
+                                    .filter((v): v is number => v !== null);
+                                if (dayValues.length) {
+                                    deviceDays = Math.max(...dayValues);
+                                }
+                            } else {
+                                const deviceKey = d as keyof typeof details;
+                                const deviceInfo = details[deviceKey];
+                                if (deviceInfo?.installationDate) {
+                                    const installDate = new Date(deviceInfo.installationDate);
+                                    const reportDateObj = new Date(reportDate);
+                                    installDate.setHours(0, 0, 0, 0);
+                                    reportDateObj.setHours(0, 0, 0, 0);
+                                    const diff = reportDateObj.getTime() - installDate.getTime();
+                                    deviceDays = Math.max(0, Math.floor(diff / (1000 * 3600 * 24)));
+                                }
                             }
                         }
                         return (

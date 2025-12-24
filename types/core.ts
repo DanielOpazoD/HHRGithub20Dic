@@ -114,12 +114,14 @@ export interface PatientData {
 export interface DeviceInfo {
     installationDate?: string;  // Date device was installed
     removalDate?: string;       // Date device was removed (optional)
+    note?: string;              // Optional free text for device details (location, caliber, etc.)
 }
 
 export interface DeviceDetails {
     CUP?: DeviceInfo;  // Sonda Foley
     CVC?: DeviceInfo;  // Catéter Venoso Central
     VMI?: DeviceInfo;  // Ventilación Mecánica Invasiva
+    VVP?: DeviceInfo[]; // Vías Venosas Periféricas (up to 3 entries)
 }
 
 export interface DischargeData {

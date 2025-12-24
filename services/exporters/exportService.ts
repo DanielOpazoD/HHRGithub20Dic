@@ -72,10 +72,22 @@ export const exportDataCSV = (record: DailyRecord | null) => {
             escape(p.devices.join('|')),                            // Dispositivos
             escape(formatDateDDMMYYYY(p.deviceDetails?.CUP?.installationDate)),  // CUP F.Instalación
             escape(formatDateDDMMYYYY(p.deviceDetails?.CUP?.removalDate)),       // CUP F.Retiro
+            escape(p.deviceDetails?.CUP?.note || ''),                            // CUP Nota
             escape(formatDateDDMMYYYY(p.deviceDetails?.CVC?.installationDate)),  // CVC F.Instalación
             escape(formatDateDDMMYYYY(p.deviceDetails?.CVC?.removalDate)),       // CVC F.Retiro
+            escape(p.deviceDetails?.CVC?.note || ''),                            // CVC Nota
             escape(formatDateDDMMYYYY(p.deviceDetails?.VMI?.installationDate)),  // VMI F.Inicio
             escape(formatDateDDMMYYYY(p.deviceDetails?.VMI?.removalDate)),       // VMI F.Término
+            escape(p.deviceDetails?.VMI?.note || ''),                            // VMI Nota
+            escape(formatDateDDMMYYYY(p.deviceDetails?.VVP?.[0]?.installationDate)), // VVP1 F.Instalación
+            escape(formatDateDDMMYYYY(p.deviceDetails?.VVP?.[0]?.removalDate)),      // VVP1 F.Retiro
+            escape(p.deviceDetails?.VVP?.[0]?.note || ''),                           // VVP1 Nota
+            escape(formatDateDDMMYYYY(p.deviceDetails?.VVP?.[1]?.installationDate)), // VVP2 F.Instalación
+            escape(formatDateDDMMYYYY(p.deviceDetails?.VVP?.[1]?.removalDate)),      // VVP2 F.Retiro
+            escape(p.deviceDetails?.VVP?.[1]?.note || ''),                           // VVP2 Nota
+            escape(formatDateDDMMYYYY(p.deviceDetails?.VVP?.[2]?.installationDate)), // VVP3 F.Instalación
+            escape(formatDateDDMMYYYY(p.deviceDetails?.VVP?.[2]?.removalDate)),      // VVP3 F.Retiro
+            escape(p.deviceDetails?.VVP?.[2]?.note || ''),                           // VVP3 Nota
             escape(p.surgicalComplication ? 'SI' : 'NO'),           // Comp. Qx
             escape(p.isUPC ? 'SI' : 'NO'),                          // UPC
             escape(p.handoffNote || ''),                            // Nota Entrega

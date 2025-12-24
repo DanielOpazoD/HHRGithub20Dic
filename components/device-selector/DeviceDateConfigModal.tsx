@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calendar, Clock } from 'lucide-react';
 import { DeviceInfo } from '../../types';
 
@@ -48,8 +49,8 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
         onClose();
     };
 
-    return (
-        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
+    return createPortal(
+        <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-xs animate-scale-in">
                 <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50 rounded-t-lg">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -90,6 +91,19 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
                         />
                     </div>
 
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                            Nota del dispositivo <span className="font-normal text-slate-400 lowercase">(opcional)</span>
+                        </label>
+                        <textarea
+                            className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none"
+                            rows={2}
+                            placeholder="Ubicación, calibre, cm, etc."
+                            value={tempDetails.note || ''}
+                            onChange={(e) => setTempDetails({ ...tempDetails, note: e.target.value })}
+                        />
+                    </div>
+
                     {/* Days counter */}
                     {tempDetails.installationDate && (
                         <div className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-100">
@@ -116,6 +130,7 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

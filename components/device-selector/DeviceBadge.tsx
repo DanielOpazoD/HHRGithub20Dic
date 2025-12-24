@@ -16,10 +16,32 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
 }) => {
     let badgeText = device;
     if (device === '2 VVP') badgeText = '2VVP';
+    if (device === '3 VVP') badgeText = '3VVP';
 
     const isTracked = TRACKED_DEVICES.includes(device as TrackedDevice);
+    const isVvp = device.includes('VVP');
     const details = isTracked ? deviceDetails[device as TrackedDevice] : undefined;
-    const days = details?.installationDate ? calculateDeviceDays(details.installationDate, currentDate) : null;
+
+    let days: number | null = null;
+    let noteText: string | undefined;
+
+    if (isVvp) {
+        const count = device.startsWith('3') ? 3 : device.startsWith('2') ? 2 : 1;
+        const vvpDetails = (deviceDetails?.VVP || []).slice(0, count);
+        const dayValues = vvpDetails
+            .map(info => info?.installationDate ? calculateDeviceDays(info.installationDate, currentDate) : null)
+            .filter((v): v is number => v !== null);
+        days = dayValues.length ? Math.max(...dayValues) : null;
+        const notePieces = vvpDetails
+            .map((info, idx) => info.note?.trim() ? `#${idx + 1}: ${info.note.trim()}` : null)
+            .filter(Boolean);
+        if (notePieces.length) {
+            noteText = notePieces.join(' | ');
+        }
+    } else {
+        days = details?.installationDate ? calculateDeviceDays(details.installationDate, currentDate) : null;
+        noteText = details?.note?.trim();
+    }
 
     // Alert colors based on days (IAAS thresholds)
     const isAlert = isTracked && days !== null && (
@@ -36,10 +58,14 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
                     ? "bg-orange-100 text-orange-700 border-orange-200"
                     : "bg-medical-50 text-medical-700 border-medical-100"
             )}
+            title={noteText}
         >
             {badgeText}
             {days !== null && (
                 <span className="text-[8px] opacity-70 ml-0.5">({days}d)</span>
+            )}
+            {noteText && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" aria-hidden />
             )}
         </span>
     );

@@ -31,17 +31,31 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
     const [customDevice, setCustomDevice] = useState('');
     const [editingDevice, setEditingDevice] = useState<TrackedDevice | null>(null);
 
-    // Helper to determine VVP state: 0 (none), 1 (VVP), 2 (2 VVP)
-    const vvpCount = devices.includes('2 VVP') ? 2 : devices.includes('VVP') ? 1 : 0;
+    const isVvp = (dev: string) => dev === 'VVP' || dev === '2 VVP' || dev.startsWith('VVP#');
+
+    // Helper to determine VVP state: 0 to 3
+    const vvpSelected = devices.filter(isVvp);
+    const legacyVvpCount = devices.includes('2 VVP') ? 2 : devices.includes('VVP') ? 1 : 0;
+    const vvpCount = Math.max(vvpSelected.length, legacyVvpCount);
+    const activeVvpDevices = vvpSelected.filter(dev => dev.startsWith('VVP#')).length > 0
+        ? vvpSelected.filter(dev => dev.startsWith('VVP#'))
+        : Array.from({ length: vvpCount }, (_, idx) => `VVP#${idx + 1}`);
+
+    // Normalize legacy VVP strings to new VVP# format for consistent configuration
+    React.useEffect(() => {
+        if (devices.some(dev => dev === 'VVP' || dev === '2 VVP')) {
+            setVVPCount(vvpCount);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [devices]);
 
     // Filter out VVP related strings to get "other" devices
-    const otherDevicesList = DEVICE_OPTIONS.filter(d => d !== 'VVP');
+    const otherDevicesList = DEVICE_OPTIONS.filter(d => !d.startsWith('VVP'));
 
     const setVVPCount = (count: number) => {
-        let newDevices = devices.filter(d => d !== 'VVP' && d !== '2 VVP');
-        if (count === 1) newDevices.push('VVP');
-        if (count === 2) newDevices.push('2 VVP');
-        onChange(newDevices);
+        const cleanedDevices = devices.filter(d => !isVvp(d));
+        const vvpDevices = Array.from({ length: count }, (_, idx) => `VVP#${idx + 1}`);
+        onChange([...cleanedDevices, ...vvpDevices]);
     };
 
     const toggleDevice = (device: string) => {
@@ -120,11 +134,11 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                             {/* Special VVP Section */}
                             <div className="mb-3 pb-3 border-b border-slate-100">
                                 <label className="text-xs font-semibold text-slate-600 mb-2 block">Vías Venosas (VVP)</label>
-                                <div className="flex gap-2">
+                                <div className="grid grid-cols-4 gap-2">
                                     <button
                                         onClick={() => setVVPCount(0)}
                                         className={clsx(
-                                            "flex-1 py-1 text-xs rounded border transition-colors",
+                                            "py-1 text-xs rounded border transition-colors",
                                             vvpCount === 0 ? "bg-slate-200 text-slate-600 border-slate-300 shadow-inner" : "hover:bg-slate-50 text-slate-500"
                                         )}
                                     >
@@ -133,7 +147,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                                     <button
                                         onClick={() => setVVPCount(1)}
                                         className={clsx(
-                                            "flex-1 py-1 text-xs rounded border transition-colors",
+                                            "py-1 text-xs rounded border transition-colors",
                                             vvpCount === 1 ? "bg-medical-600 text-white border-medical-700 shadow-sm" : "hover:bg-medical-50 text-medical-600 border-medical-200"
                                         )}
                                     >
@@ -142,13 +156,50 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                                     <button
                                         onClick={() => setVVPCount(2)}
                                         className={clsx(
-                                            "flex-1 py-1 text-xs rounded border transition-colors",
+                                            "py-1 text-xs rounded border transition-colors",
                                             vvpCount === 2 ? "bg-purple-600 text-white border-purple-700 shadow-sm" : "hover:bg-purple-50 text-purple-600 border-purple-200"
                                         )}
                                     >
                                         2
                                     </button>
+                                    <button
+                                        onClick={() => setVVPCount(3)}
+                                        className={clsx(
+                                            "py-1 text-xs rounded border transition-colors",
+                                            vvpCount === 3 ? "bg-indigo-600 text-white border-indigo-700 shadow-sm" : "hover:bg-indigo-50 text-indigo-600 border-indigo-200"
+                                        )}
+                                    >
+                                        3
+                                    </button>
                                 </div>
+
+                                {vvpCount > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-1">
+                                        {activeVvpDevices.map(vvpName => {
+                                            const details = deviceDetails[vvpName as TrackedDevice];
+                                            const hasConfig = !!details?.installationDate || !!details?.removalDate || !!details?.note;
+                                            return (
+                                                <button
+                                                    key={vvpName}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingDevice(vvpName as TrackedDevice);
+                                                    }}
+                                                    className={clsx(
+                                                        "px-2 py-1 text-[10px] rounded border flex items-center gap-1 transition-colors",
+                                                        hasConfig
+                                                            ? "border-medical-200 text-medical-700 bg-medical-50"
+                                                            : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                                                    )}
+                                                    title="Configurar fechas"
+                                                >
+                                                    {vvpName}
+                                                    <Settings size={10} />
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Other Devices Grid */}
@@ -222,9 +273,9 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                                 </div>
 
                                 {/* Show custom devices (not in DEVICE_OPTIONS) with remove button */}
-                                {devices.filter(d => !DEVICE_OPTIONS.includes(d) && d !== 'VVP' && d !== '2 VVP').length > 0 && (
+                                {devices.filter(d => !DEVICE_OPTIONS.includes(d) && !isVvp(d)).length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-1">
-                                        {devices.filter(d => !DEVICE_OPTIONS.includes(d) && d !== 'VVP' && d !== '2 VVP').map(dev => (
+                                        {devices.filter(d => !DEVICE_OPTIONS.includes(d) && !isVvp(d)).map(dev => (
                                             <span
                                                 key={dev}
                                                 className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium flex items-center gap-1"

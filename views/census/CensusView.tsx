@@ -90,6 +90,9 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
                     onUpdateTens={updateTens}
                     readOnly={readOnly}
                     stats={stats}
+                    discharges={record.discharges || []}
+                    transfers={record.transfers || []}
+                    cmaCount={(record.cma || []).length}
                 />
 
                 {/* 2. Active Patients Table */}

@@ -12,6 +12,9 @@ interface CensusStaffHeaderProps {
     onUpdateTens: (shift: 'day' | 'night', index: number, value: string) => void;
     readOnly?: boolean;
     stats: any; // Using any for stats to avoid tight coupling with calculation return type for now, or import Stats type
+    discharges: DailyRecord['discharges'];
+    transfers: DailyRecord['transfers'];
+    cmaCount: number;
 }
 
 export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
@@ -21,7 +24,10 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
     onUpdateNurse,
     onUpdateTens,
     readOnly = false,
-    stats
+    stats,
+    discharges,
+    transfers,
+    cmaCount
 }) => {
     // Safe arrays with defaults
     const safeNursesDayShift = record.nursesDayShift || [];
@@ -48,7 +54,14 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
             </div>
 
             {/* Right: Stats Summary */}
-            {stats && <SummaryCard stats={stats} />}
+            {stats && (
+                <SummaryCard
+                    stats={stats}
+                    discharges={discharges}
+                    transfers={transfers}
+                    cmaCount={cmaCount}
+                />
+            )}
         </div>
     );
 };

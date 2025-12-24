@@ -156,7 +156,7 @@ const generateNewPatient = (bedId: string, admissionDate: string): PatientData =
         patient.status = PatientStatus.GRAVE;
         patient.isUPC = true;
         patient.age = (Math.floor(Math.random() * 60) + 20) + "a";
-        patient.devices = [randomItem(['VVP', 'CVC', 'Sonda Foley', 'VM'])];
+        patient.devices = [randomItem(['VVP', '2 VVP', '3 VVP', 'CVC', 'Sonda Foley', 'VM'])];
     }
     // NEO beds -> Neonates
     else if (bedId.startsWith('NEO')) {

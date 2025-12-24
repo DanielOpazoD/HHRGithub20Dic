@@ -16,16 +16,19 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
 }) => {
     let badgeText = device;
     if (device === '2 VVP') badgeText = '2VVP';
+    if (device === '3 VVP') badgeText = '3VVP';
 
-    const isTracked = TRACKED_DEVICES.includes(device as TrackedDevice);
-    const details = isTracked ? deviceDetails[device as TrackedDevice] : undefined;
+    const normalizedDevice = device.includes('VVP') ? 'VVP' : device;
+    const isTracked = TRACKED_DEVICES.includes(normalizedDevice as TrackedDevice);
+    const details = isTracked ? deviceDetails[normalizedDevice as TrackedDevice] : undefined;
     const days = details?.installationDate ? calculateDeviceDays(details.installationDate, currentDate) : null;
 
     // Alert colors based on days (IAAS thresholds)
     const isAlert = isTracked && days !== null && (
-        (device === 'CUP' && days >= 5) ||
-        (device === 'CVC' && days >= 7) ||
-        (device === 'VMI' && days >= 5)
+        (normalizedDevice === 'CUP' && days >= 5) ||
+        (normalizedDevice === 'CVC' && days >= 7) ||
+        (normalizedDevice === 'VMI' && days >= 5) ||
+        (normalizedDevice === 'VVP' && days >= 3)
     );
 
     return (

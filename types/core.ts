@@ -90,7 +90,7 @@ export interface PatientData {
     admissionTime?: string;
     hasWristband: boolean;
     devices: string[];
-    deviceDetails?: DeviceDetails; // Dates for CUP, CVC, VMI
+    deviceDetails?: DeviceDetails; // Dates and notes for CUP, CVC, VMI, VVP
     surgicalComplication: boolean;
     isUPC: boolean;
     location?: string;
@@ -114,12 +114,14 @@ export interface PatientData {
 export interface DeviceInfo {
     installationDate?: string;  // Date device was installed
     removalDate?: string;       // Date device was removed (optional)
+    note?: string;              // Free text note for device details (location, gauge, etc.)
 }
 
 export interface DeviceDetails {
     CUP?: DeviceInfo;  // Sonda Foley
     CVC?: DeviceInfo;  // Catéter Venoso Central
     VMI?: DeviceInfo;  // Ventilación Mecánica Invasiva
+    VVP?: DeviceInfo;  // Vías Venosas Periféricas
 }
 
 export interface DischargeData {

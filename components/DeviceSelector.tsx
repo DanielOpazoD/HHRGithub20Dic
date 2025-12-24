@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, X, Check, Settings } from 'lucide-react';
 import clsx from 'clsx';
 import { DEVICE_OPTIONS, VVP_DEVICE_KEYS } from '../constants';
@@ -45,6 +45,8 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
     const [showMenu, setShowMenu] = useState(false);
     const [customDevice, setCustomDevice] = useState('');
     const [editingDevice, setEditingDevice] = useState<TrackedDevice | null>(null);
+    const anchorRef = useRef<HTMLDivElement>(null);
+    const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
     // Normalize legacy VVP representations to the new VVP# format
     useEffect(() => {
@@ -113,12 +115,36 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 
     const vvpDevices = VVP_DEVICE_KEYS.filter(key => devices.includes(key));
 
+    const updateMenuPosition = useCallback(() => {
+        if (!anchorRef.current) return;
+        const rect = anchorRef.current.getBoundingClientRect();
+        const width = 260; // menu width approximation
+        const left = Math.min(rect.left, window.innerWidth - width - 12);
+        setMenuPosition({
+            top: rect.bottom + 6,
+            left
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!showMenu) return;
+        updateMenuPosition();
+        const handle = () => updateMenuPosition();
+        window.addEventListener('resize', handle);
+        window.addEventListener('scroll', handle, true);
+        return () => {
+            window.removeEventListener('resize', handle);
+            window.removeEventListener('scroll', handle, true);
+        };
+    }, [showMenu, updateMenuPosition]);
+
     if (disabled) return null;
 
     return (
         <>
             {/* Device Badges Display */}
             <div
+                ref={anchorRef}
                 className="flex flex-wrap gap-1 min-h-[26px] cursor-pointer items-center justify-start p-1 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors relative"
                 onClick={() => setShowMenu(!showMenu)}
                 title="Haga clic para gestionar dispositivos"
@@ -141,7 +167,10 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
             {/* Dropdown Menu */}
             {showMenu && (
                 <>
-                    <div className="absolute z-50 mt-1 right-0 w-64 bg-white rounded-lg shadow-xl border border-slate-200 animate-scale-in text-left">
+                    <div
+                        className="fixed z-50 w-64 bg-white rounded-lg shadow-xl border border-slate-200 animate-scale-in text-left"
+                        style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+                    >
                         <div className="p-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center rounded-t-lg">
                             <span className="text-xs font-bold text-slate-700 uppercase">Dispositivos</span>
                             <button onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} className="text-slate-400 hover:text-slate-600">

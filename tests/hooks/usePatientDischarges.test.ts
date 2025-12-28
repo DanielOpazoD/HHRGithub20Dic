@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import { DailyRecord, PatientData, PatientStatus, Specialty } from '@/types';
 
@@ -31,6 +31,10 @@ vi.mock('../services/factories/patientFactory', () => ({
 describe('usePatientDischarges', () => {
     const mockSaveAndUpdate = vi.fn();
 
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     const createMockRecord = (bedId: string): DailyRecord => {
         return {
             date: '2023-01-01',
@@ -39,6 +43,7 @@ describe('usePatientDischarges', () => {
                     bedId,
                     patientName: '',
                     rut: '',
+                    age: '',
                     pathology: '',
                     specialty: Specialty.MEDICINA,
                     status: PatientStatus.ESTABLE,
@@ -104,5 +109,98 @@ describe('usePatientDischarges', () => {
 
         // Final name check
         expect(updatedRecord.beds[bedId].patientName).toBe('Juan Perez');
+    });
+
+    it('should add a discharge for a patient', () => {
+        const bedId = 'R1';
+        const record = createMockRecord(bedId);
+        record.beds[bedId].patientName = 'María González';
+        record.beds[bedId].rut = '11.111.111-1';
+        record.beds[bedId].pathology = 'Neumonía';
+
+        const { addDischarge } = usePatientDischarges(record, mockSaveAndUpdate);
+
+        addDischarge(bedId, 'Vivo');
+
+        expect(mockSaveAndUpdate).toHaveBeenCalled();
+        const updatedRecord = mockSaveAndUpdate.mock.calls[0][0] as DailyRecord;
+
+        // Bed should be cleared
+        expect(updatedRecord.beds[bedId].patientName).toBe('');
+        // Discharge should be added
+        expect(updatedRecord.discharges.length).toBe(1);
+        expect(updatedRecord.discharges[0].patientName).toBe('María González');
+        expect(updatedRecord.discharges[0].status).toBe('Vivo');
+    });
+
+    it('should add discharge for patient with clinical crib', () => {
+        const bedId = 'R1';
+        const record = createMockRecord(bedId);
+        record.beds[bedId].patientName = 'Madre López';
+        record.beds[bedId].rut = '22.222.222-2';
+        record.beds[bedId].clinicalCrib = {
+            bedId: `${bedId}-crib`,
+            patientName: 'Bebé López',
+            rut: '33.333.333-3',
+            age: '0',
+            pathology: 'RN',
+            specialty: Specialty.PEDIATRIA,
+            status: PatientStatus.ESTABLE,
+            admissionDate: '2023-01-01',
+            devices: [],
+            isBlocked: false,
+            bedMode: 'Cuna',
+            hasWristband: true,
+            surgicalComplication: false,
+            isUPC: false,
+            hasCompanionCrib: false
+        };
+
+        const { addDischarge } = usePatientDischarges(record, mockSaveAndUpdate);
+
+        addDischarge(bedId, 'Vivo', 'Vivo');
+
+        expect(mockSaveAndUpdate).toHaveBeenCalled();
+        const updatedRecord = mockSaveAndUpdate.mock.calls[0][0] as DailyRecord;
+
+        // Two discharges: mother + baby
+        expect(updatedRecord.discharges.length).toBe(2);
+        expect(updatedRecord.discharges[0].patientName).toBe('Madre López');
+        expect(updatedRecord.discharges[1].patientName).toBe('Bebé López');
+        expect(updatedRecord.discharges[1].isNested).toBe(true);
+    });
+
+    it('should NOT add discharge for empty bed', () => {
+        const bedId = 'R1';
+        const record = createMockRecord(bedId);
+        record.beds[bedId].patientName = ''; // Empty bed
+
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+        const { addDischarge } = usePatientDischarges(record, mockSaveAndUpdate);
+
+        addDischarge(bedId, 'Vivo');
+
+        expect(mockSaveAndUpdate).not.toHaveBeenCalled();
+        expect(consoleSpy).toHaveBeenCalledWith('Attempted to discharge empty bed:', bedId);
+        consoleSpy.mockRestore();
+    });
+
+    it('should delete a discharge', () => {
+        const bedId = 'R1';
+        const record = createMockRecord(bedId);
+        record.discharges = [
+            { id: 'disc-1', patientName: 'Patient 1' } as any,
+            { id: 'disc-2', patientName: 'Patient 2' } as any
+        ];
+
+        const { deleteDischarge } = usePatientDischarges(record, mockSaveAndUpdate);
+
+        deleteDischarge('disc-1');
+
+        expect(mockSaveAndUpdate).toHaveBeenCalled();
+        const updatedRecord = mockSaveAndUpdate.mock.calls[0][0] as DailyRecord;
+
+        expect(updatedRecord.discharges.length).toBe(1);
+        expect(updatedRecord.discharges[0].id).toBe('disc-2');
     });
 });

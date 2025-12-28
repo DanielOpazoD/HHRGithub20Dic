@@ -98,6 +98,7 @@ vi.mock('./services/admin/auditService', () => ({
     logPatientDischarge: vi.fn(),
     logPatientTransfer: vi.fn(),
     logPatientCleared: vi.fn(),
+    logPatientView: vi.fn(),
     logDailyRecordDeleted: vi.fn(),
     logDailyRecordCreated: vi.fn(),
     getAuditLogs: vi.fn().mockResolvedValue([]),
@@ -112,6 +113,7 @@ vi.mock('@/services/admin/auditService', () => ({
     logPatientDischarge: vi.fn(),
     logPatientTransfer: vi.fn(),
     logPatientCleared: vi.fn(),
+    logPatientView: vi.fn(),
     logDailyRecordDeleted: vi.fn(),
     logDailyRecordCreated: vi.fn(),
     getAuditLogs: vi.fn().mockResolvedValue([]),
@@ -120,6 +122,32 @@ vi.mock('@/services/admin/auditService', () => ({
     AUDIT_ACTION_LABELS: {}
 }));
 
+// Mock AuditContext to prevent "must be used within AuditProvider" errors
+const mockAuditContextValue = {
+    logPatientAdmission: vi.fn(),
+    logPatientDischarge: vi.fn(),
+    logPatientTransfer: vi.fn(),
+    logPatientCleared: vi.fn(),
+    logDailyRecordDeleted: vi.fn(),
+    logDailyRecordCreated: vi.fn(),
+    logPatientView: vi.fn(),
+    logEvent: vi.fn(),
+    logDebouncedEvent: vi.fn(),
+    fetchLogs: vi.fn().mockResolvedValue([]),
+    getActionLabel: vi.fn().mockReturnValue(''),
+    userId: 'test-user-123'
+};
+
+vi.mock('./context/AuditContext', () => ({
+    AuditProvider: ({ children }: { children: React.ReactNode }) => children,
+    useAuditContext: () => mockAuditContextValue
+}));
+
+vi.mock('@/context/AuditContext', () => ({
+    AuditProvider: ({ children }: { children: React.ReactNode }) => children,
+    useAuditContext: () => mockAuditContextValue
+}));
+
 // Export mock user for use in tests
-export { mockUser, mockAuth, mockFirestore };
+export { mockUser, mockAuth, mockFirestore, mockAuditContextValue };
 

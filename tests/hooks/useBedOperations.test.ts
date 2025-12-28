@@ -18,7 +18,8 @@ vi.mock('@/services/factories/patientFactory', () => ({
 
 // Mock auditService
 vi.mock('@/services/admin/auditService', () => ({
-    logPatientCleared: vi.fn()
+    logPatientCleared: vi.fn(),
+    logAuditEvent: vi.fn()
 }));
 
 // Mock constants

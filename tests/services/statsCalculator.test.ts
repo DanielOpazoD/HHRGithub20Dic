@@ -198,5 +198,107 @@ describe('statsCalculator.ts - Critical Calculations', () => {
             expect(stats.occupiedBeds).toBe(0);
             expect(stats.blockedBeds).toBe(1);
         });
+
+        // === EDGE CASES ===
+
+        it('should handle all beds blocked scenario', () => {
+            const beds = createEmptyMockBeds();
+
+            // Block ALL beds
+            BEDS.forEach(bed => {
+                beds[bed.id].isBlocked = true;
+            });
+
+            const stats = calculateStats(beds);
+
+            expect(stats.blockedBeds).toBe(BEDS.length);
+            expect(stats.occupiedBeds).toBe(0);
+            expect(stats.availableCapacity).toBe(stats.serviceCapacity - BEDS.length);
+        });
+
+        it('should handle Cuna mode with empty patient name (resource usage)', () => {
+            const beds = createEmptyMockBeds();
+            const ids = BEDS.map(b => b.id);
+
+            // Empty bed in Cuna mode - uses physical crib but no patient
+            beds[ids[0]].bedMode = 'Cuna';
+            beds[ids[0]].patientName = '';
+
+            const stats = calculateStats(beds);
+
+            expect(stats.occupiedBeds).toBe(0);
+            expect(stats.clinicalCribsCount).toBe(0); // No clinical patient
+            expect(stats.totalCribsUsed).toBe(1); // But crib resource is used
+        });
+
+        it('should calculate full capacity correctly', () => {
+            const beds = createEmptyMockBeds();
+
+            // Occupy ALL beds
+            BEDS.forEach(bed => {
+                beds[bed.id].patientName = `Patient in ${bed.id}`;
+            });
+
+            const stats = calculateStats(beds);
+
+            expect(stats.occupiedBeds).toBe(BEDS.length);
+            expect(stats.totalHospitalized).toBe(BEDS.length);
+            expect(stats.availableCapacity).toBe(stats.serviceCapacity - BEDS.length);
+        });
+
+        it('should handle Cuna mode bed with nested clinical crib (double crib)', () => {
+            const beds = createEmptyMockBeds();
+            const ids = BEDS.map(b => b.id);
+
+            // Baby in Cuna mode + nested clinical crib (rare but possible)
+            beds[ids[0]].patientName = 'Bebé Principal';
+            beds[ids[0]].bedMode = 'Cuna';
+            beds[ids[0]].clinicalCrib = {
+                bedId: `${ids[0]}-crib`,
+                isBlocked: false,
+                bedMode: 'Cuna',
+                hasCompanionCrib: false,
+                patientName: 'Bebé Secundario',
+                rut: '',
+                age: '0',
+                pathology: 'RN',
+                specialty: Specialty.PEDIATRIA,
+                status: PatientStatus.ESTABLE,
+                admissionDate: '2025-01-01',
+                hasWristband: true,
+                devices: [],
+                surgicalComplication: false,
+                isUPC: false
+            };
+
+            const stats = calculateStats(beds);
+
+            expect(stats.occupiedBeds).toBe(1);
+            expect(stats.occupiedCribs).toBe(1);
+            expect(stats.totalHospitalized).toBe(2);
+            expect(stats.clinicalCribsCount).toBe(2); // Main Cuna + Nested
+            expect(stats.totalCribsUsed).toBe(2); // Two physical cribs
+        });
+
+        it('should count multiple companion cribs across different beds', () => {
+            const beds = createEmptyMockBeds();
+            const ids = BEDS.map(b => b.id);
+
+            // Three mothers with companion cribs
+            beds[ids[0]].patientName = 'Madre 1';
+            beds[ids[0]].hasCompanionCrib = true;
+
+            beds[ids[1]].patientName = 'Madre 2';
+            beds[ids[1]].hasCompanionCrib = true;
+
+            beds[ids[2]].patientName = 'Madre 3';
+            beds[ids[2]].hasCompanionCrib = true;
+
+            const stats = calculateStats(beds);
+
+            expect(stats.occupiedBeds).toBe(3);
+            expect(stats.companionCribs).toBe(3);
+            expect(stats.totalCribsUsed).toBe(3);
+        });
     });
 });

@@ -1,5 +1,7 @@
 import { DailyRecord } from '../../types';
 import { CENSUS_DEFAULT_RECIPIENTS } from '../../constants/email';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getExportPasswordsPath } from '../../constants/firestorePaths';
 
 interface TriggerEmailParams {
     date: string;
@@ -11,13 +13,45 @@ interface TriggerEmailParams {
     userRole?: string | null;
 }
 
+interface EmailResponse {
+    success: boolean;
+    message: string;
+    gmailId: string;
+    censusDate?: string;
+    exportPassword?: string;
+}
+
 const ENDPOINT = '/.netlify/functions/send-census-email';
 
 // Check if we're in development mode (Vite dev server)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isDevelopment = (import.meta as any).env?.DEV ?? false;
 
-export const triggerCensusEmail = async (params: TriggerEmailParams) => {
+/**
+ * Save export password to Firestore for audit purposes
+ */
+const saveExportPassword = async (date: string, password: string, createdBy?: string): Promise<void> => {
+    try {
+        const db = getFirestore();
+        const passwordsPath = getExportPasswordsPath();
+        const docRef = doc(db, passwordsPath, date);
+
+        await setDoc(docRef, {
+            date,
+            password,
+            createdAt: new Date().toISOString(),
+            createdBy,
+            source: 'email'
+        }, { merge: true });
+
+        console.log(`[CensusEmail] Password saved to Firestore for ${date}`);
+    } catch (error) {
+        console.error('[CensusEmail] Failed to save password to Firestore:', error);
+        // Don't throw - email was sent successfully, this is just for audit
+    }
+};
+
+export const triggerCensusEmail = async (params: TriggerEmailParams): Promise<EmailResponse> => {
     const { date, records, recipients, nursesSignature, body, userEmail, userRole } = params;
 
     // In development, Netlify functions are not available
@@ -54,5 +88,12 @@ export const triggerCensusEmail = async (params: TriggerEmailParams) => {
         throw new Error(errorText || 'No se pudo enviar el correo.');
     }
 
-    return response.json();
+    const result: EmailResponse = await response.json();
+
+    // Save password to Firestore for audit purposes
+    if (result.exportPassword && result.censusDate) {
+        await saveExportPassword(result.censusDate, result.exportPassword, userEmail || undefined);
+    }
+
+    return result;
 };

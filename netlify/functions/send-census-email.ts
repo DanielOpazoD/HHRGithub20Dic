@@ -90,7 +90,14 @@ export const handler = async (event: any) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ success: true, message: 'Correo enviado', gmailId: gmailResponse.id })
+            body: JSON.stringify({
+                success: true,
+                message: 'Correo enviado',
+                gmailId: gmailResponse.id,
+                // Return password and date so client can save to Firestore for audit
+                censusDate: date,
+                exportPassword: password
+            })
         };
     } catch (error: any) {
         console.error('Error enviando correo de censo', error);

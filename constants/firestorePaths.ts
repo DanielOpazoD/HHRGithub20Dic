@@ -35,7 +35,9 @@ export const HOSPITAL_COLLECTIONS = {
     /** Daily census records */
     DAILY_RECORDS: 'dailyRecords',
     /** Settings documents (nurses, tens, etc.) */
-    SETTINGS: 'settings'
+    SETTINGS: 'settings',
+    /** Export passwords for Excel files */
+    EXPORT_PASSWORDS: 'exportPasswords'
 } as const;
 
 // ============================================================================
@@ -83,6 +85,12 @@ export const getSettingsDocPath = (
     docId: keyof typeof SETTINGS_DOCS | string,
     hospitalId: string = HOSPITAL_ID
 ) => `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.SETTINGS}/${docId}` as const;
+
+/**
+ * Build path to export passwords collection
+ */
+export const getExportPasswordsPath = (hospitalId: string = HOSPITAL_ID) =>
+    `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.EXPORT_PASSWORDS}` as const;
 
 // ============================================================================
 // Type Exports

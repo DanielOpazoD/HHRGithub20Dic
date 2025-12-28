@@ -1,15 +1,19 @@
 /**
  * Export Password Service
  * 
- * Generates deterministic, reproducible passwords for census Excel exports.
- * The password is the same for a given census date, regardless of when
- * export or email is triggered.
+ * Manages passwords for census Excel exports.
+ * Passwords are stored permanently in Firestore for auditability.
+ * If a password doesn't exist for a date, it generates one and saves it.
  * 
- * This enables:
+ * This ensures:
  * - Same password for manual downloads and email attachments
- * - Password remains stable if email is re-sent
+ * - Password remains stable if email is re-sent  
  * - Password can be recovered/looked up by date
+ * - Historical passwords are preserved even if algorithm changes
  */
+
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { getExportPasswordsPath } from '../../constants/firestorePaths';
 
 // Secret salt for password generation (should match across client and server)
 const PASSWORD_SALT = 'HHR-CENSO-2025';
@@ -47,33 +51,95 @@ export const generateCensusPassword = (censusDate: string): string => {
 };
 
 /**
- * Get the password for a specific census date.
- * This is a convenience wrapper that makes the intent clear.
+ * Interface for stored password document
+ */
+export interface ExportPasswordRecord {
+    date: string;
+    password: string;
+    createdAt: string;
+    createdBy?: string;
+}
+
+/**
+ * Get or create a password for a census date.
+ * If password exists in Firestore, returns it.
+ * If not, generates one, saves it, and returns it.
  * 
  * @param censusDate - The census date in YYYY-MM-DD format
+ * @param createdBy - Optional user ID who triggered the generation
  * @returns The password for that census date
  */
-export const getCensusPassword = (censusDate: string): string => {
-    return generateCensusPassword(censusDate);
+export const getOrCreateCensusPassword = async (
+    censusDate: string,
+    createdBy?: string
+): Promise<string> => {
+    try {
+        const db = getFirestore();
+        const passwordsPath = getExportPasswordsPath();
+        const docRef = doc(db, passwordsPath, censusDate);
+
+        // Try to get existing password
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data() as ExportPasswordRecord;
+            console.log(`[ExportPassword] Retrieved existing password for ${censusDate}`);
+            return data.password;
+        }
+
+        // Generate and save new password
+        const password = generateCensusPassword(censusDate);
+        const record: ExportPasswordRecord = {
+            date: censusDate,
+            password,
+            createdAt: new Date().toISOString(),
+            createdBy
+        };
+
+        await setDoc(docRef, record);
+        console.log(`[ExportPassword] Created and saved password for ${censusDate}`);
+
+        return password;
+    } catch (error) {
+        console.error(`[ExportPassword] Firestore error for ${censusDate}, using generated password:`, error);
+        // Fallback to generated password if Firestore fails
+        return generateCensusPassword(censusDate);
+    }
 };
 
 /**
- * Generate passwords for a range of dates (for audit display).
+ * Get all stored passwords (for audit display).
+ * Returns passwords from Firestore, ordered by date descending.
  * 
- * @param startDate - Start date in YYYY-MM-DD format
- * @param endDate - End date in YYYY-MM-DD format
- * @returns Map of date to password
+ * @param maxResults - Maximum number of results to return
+ * @returns Array of password records
  */
-export const getCensusPasswordsForRange = (startDate: string, endDate: string): Map<string, string> => {
-    const result = new Map<string, string>();
+export const getStoredPasswords = async (maxResults: number = 30): Promise<ExportPasswordRecord[]> => {
+    try {
+        const db = getFirestore();
+        const passwordsPath = getExportPasswordsPath();
+        const passwordsRef = collection(db, passwordsPath);
+        const q = query(passwordsRef, orderBy('date', 'desc'), limit(maxResults));
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+        const snapshot = await getDocs(q);
+        const records: ExportPasswordRecord[] = [];
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
-        result.set(dateStr, generateCensusPassword(dateStr));
+        snapshot.forEach(doc => {
+            records.push(doc.data() as ExportPasswordRecord);
+        });
+
+        console.log(`[ExportPassword] Retrieved ${records.length} stored passwords`);
+        return records;
+    } catch (error) {
+        console.error('[ExportPassword] Failed to get stored passwords:', error);
+        return [];
     }
+};
 
-    return result;
+/**
+ * Synchronous password generation (for backwards compatibility).
+ * Use getOrCreateCensusPassword when possible for persistence.
+ */
+export const getCensusPassword = (censusDate: string): string => {
+    return generateCensusPassword(censusDate);
 };

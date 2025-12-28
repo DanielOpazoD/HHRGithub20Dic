@@ -11,6 +11,31 @@ import { getMonthRecordsFromFirestore } from '../storage/firestoreService';
 import { getStoredRecords } from '../storage/localStorageService';
 import { isFirestoreEnabled } from '../repositories/DailyRecordRepository';
 import { buildCensusMasterWorkbook, getCensusMasterFilename } from './censusMasterWorkbook';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getExportPasswordsPath } from '../../constants/firestorePaths';
+
+/**
+ * Save export password to Firestore for audit purposes
+ */
+const saveExportPassword = async (date: string, password: string): Promise<void> => {
+    try {
+        const db = getFirestore();
+        const passwordsPath = getExportPasswordsPath();
+        const docRef = doc(db, passwordsPath, date);
+
+        await setDoc(docRef, {
+            date,
+            password,
+            createdAt: new Date().toISOString(),
+            source: 'manual_download'
+        }, { merge: true });
+
+        console.log(`[CensusExport] Password saved to Firestore for ${date}`);
+    } catch (error) {
+        console.error('[CensusExport] Failed to save password to Firestore:', error);
+        // Don't throw - download continues, this is just for audit
+    }
+};
 
 /**
  * Generate and download the Census Master Excel file for a given month.
@@ -54,6 +79,9 @@ export const generateCensusMasterExcel = async (year: number, month: number, sel
     // Get the deterministic password for this census date
     const { generateCensusPassword } = await import('../security/exportPasswordService');
     const password = generateCensusPassword(limitDateStr);
+
+    // Save password to Firestore for audit
+    await saveExportPassword(limitDateStr, password);
 
     // Encrypt the workbook with xlsx-populate
     const XlsxPopulate = await import('xlsx-populate');

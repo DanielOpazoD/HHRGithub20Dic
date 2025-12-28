@@ -25,9 +25,13 @@ export const CENSUS_DEFAULT_RECIPIENTS = [
 ];
 
 // Use simple hyphen to avoid encoding issues
-export const buildCensusEmailSubject = (date: string) => `Censo diario hospitalizados - ${formatDateDDMMYYYY(date)}`;
+export const buildCensusEmailSubject = (date: string) => `Censo diario pacientes hospitalizados - ${formatDateDDMMYYYY(date)}`;
 
-export const buildCensusEmailBody = (date: string, nursesSignature?: string, encryptionPin?: string) => {
+/**
+ * Builds the census email body in HTML format.
+ * Includes a blue-red separator line before the nurse signature.
+ */
+export const buildCensusEmailBody = (date: string, nursesSignature?: string, encryptionPin?: string): string => {
     // Parse date to get day, month name, year
     const [year, month, day] = date.split('-');
     const monthNames = [
@@ -37,21 +41,45 @@ export const buildCensusEmailBody = (date: string, nursesSignature?: string, enc
     const monthName = monthNames[parseInt(month, 10) - 1] || month;
     const dayNum = parseInt(day, 10);
 
-    // Build signature line for night shift nurses
-    const signatureBlock = nursesSignature
-        ? `\n${nursesSignature}\nEnfermería - Servicio de Hospitalizados\nHospital Hanga Roa`
-        : '\nEnfermería - Servicio de Hospitalizados\nHospital Hanga Roa';
-
+    // Security note
     const securityNote = encryptionPin
-        ? `\n\n📌 SEGURIDAD: Este archivo Excel está encriptado para proteger los datos de los pacientes.\nLa clave de apertura es: ${encryptionPin}`
+        ? `<p><strong>Clave Excel:</strong> ${encryptionPin}</p>`
         : '';
 
-    return [
-        'Estimados/as:',
-        '',
-        `Junto con saludar, adjunto el censo diario de pacientes hospitalizados correspondiente al ${dayNum} de ${monthName} de ${year}.`,
-        securityNote,
-        signatureBlock
-    ].join('\n');
+    // Visual separator: blue and red horizontal lines
+    const separator = `
+        <div style="margin: 20px 0 10px 0;">
+            <div style="height: 3px; background-color: #1a237e; width: 200px;"></div>
+            <div style="height: 3px; background-color: #c62828; width: 200px; margin-top: 2px;"></div>
+        </div>
+    `;
+
+    // Nurse signature block
+    const signatureBlock = nursesSignature
+        ? `${separator}
+           <p style="margin: 0;"><strong>${nursesSignature}</strong></p>
+           <p style="margin: 0; color: #555;">Enfermería - Servicio Hospitalizados</p>
+           <p style="margin: 0; color: #555;">Hospital Hanga Roa</p>
+           <p style="margin: 0; color: #555;">Anexo MINSAL 328388</p>`
+        : `${separator}
+           <p style="margin: 0; color: #555;">Enfermería - Servicio Hospitalizados</p>
+           <p style="margin: 0; color: #555;">Hospital Hanga Roa</p>
+           <p style="margin: 0; color: #555;">Anexo MINSAL 328388</p>`;
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.5;">
+    <p>Estimados.</p>
+    <p>Junto con saludar, envío adjunto planilla estadística de pacientes hospitalizados correspondiente al día ${dayNum} de ${monthName} de ${year}.</p>
+    ${securityNote}
+    <p>Saludos cordiales</p>
+    ${signatureBlock}
+</body>
+</html>
+    `.trim();
 };
 

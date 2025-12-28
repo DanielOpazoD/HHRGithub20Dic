@@ -82,9 +82,10 @@ export {
     save,
     subscribe,
     initializeDay,
+    ensureMonthIntegrity,
     DailyRecordRepository
 } from './repositories/DailyRecordRepository';
-export type { IDailyRecordRepository } from './repositories/DailyRecordRepository';
+export type { IDailyRecordRepository, MonthIntegrityResult } from './repositories/DailyRecordRepository';
 
 // ============================================================
 // EXPORT / IMPORT

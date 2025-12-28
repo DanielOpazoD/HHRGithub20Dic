@@ -234,6 +234,10 @@ export const AuditView: React.FC = () => {
     const [showMetadata, setShowMetadata] = useState<Set<string>>(new Set());
     const [showComplianceInfo, setShowComplianceInfo] = useState(false);
 
+    // Pagination state
+    const ITEMS_PER_PAGE = 50;
+    const [currentPage, setCurrentPage] = useState(1);
+
     const fetchLogs = async () => {
         setLoading(true);
         try {
@@ -304,6 +308,18 @@ export const AuditView: React.FC = () => {
             return matchesSearch && matchesFilter && matchesSection && matchesStartDate && matchesEndDate;
         });
     }, [logs, searchTerm, filterAction, activeSection, startDate, endDate]);
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
+    const paginatedLogs = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredLogs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [filteredLogs, currentPage, ITEMS_PER_PAGE]);
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterAction, activeSection, startDate, endDate]);
 
     return (
         <div className="space-y-6 animate-fade-in pb-24 font-sans max-w-[1400px] mx-auto">
@@ -466,7 +482,7 @@ export const AuditView: React.FC = () => {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredLogs.map((log) => {
+                                    paginatedLogs.map((log) => {
                                         // Extract data from details for organized columns
                                         const bedId = (log.details?.bedId as string) || log.entityId;
                                         const patientName = (log.details?.patientName as string) || '';
@@ -618,12 +634,37 @@ export const AuditView: React.FC = () => {
                 </div>
             )}
 
+
             {/* Pagination / Total info */}
-            <div className="flex items-center justify-between text-slate-500 text-xs font-medium px-2">
+            <div className="flex items-center justify-between text-slate-500 text-xs font-medium px-2 py-3 bg-slate-50 rounded-xl border border-slate-100">
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                    Mostrando {filteredLogs.length} de {logs.length} registros totales
+                    Mostrando {paginatedLogs.length} de {filteredLogs.length} filtrados ({logs.length} totales)
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-semibold"
+                        >
+                            ← Anterior
+                        </button>
+                        <span className="text-slate-700 font-bold">
+                            Página {currentPage} de {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-semibold"
+                        >
+                            Siguiente →
+                        </button>
+                    </div>
+                )}
+
                 <div className="flex items-center gap-4 italic text-slate-400">
                     <AlertCircle size={14} />
                     Los registros de auditoría son de solo lectura y no pueden ser modificados.

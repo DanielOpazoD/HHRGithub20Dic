@@ -420,6 +420,80 @@ export const deleteDay = async (date: string): Promise<void> => {
     }
 };
 
+/**
+ * Result of month integrity check
+ */
+export interface MonthIntegrityResult {
+    success: boolean;
+    initializedDays: string[];
+    errors: string[];
+    totalDays: number;
+}
+
+/**
+ * Ensures all days of a month up to a specified day are initialized.
+ * This is CRITICAL for generating complete monthly reports.
+ * 
+ * @param year - Year (e.g., 2024)
+ * @param month - Month (1-12)
+ * @param upToDay - Day of the month to initialize up to (inclusive)
+ * @returns Result with success status, initialized days, and any errors
+ * 
+ * @example
+ * ```typescript
+ * // Ensure days 1-15 of December 2024 exist
+ * const result = await ensureMonthIntegrity(2024, 12, 15);
+ * if (result.success) {
+ *   console.log(`Initialized ${result.initializedDays.length} new days`);
+ * }
+ * ```
+ */
+export const ensureMonthIntegrity = async (
+    year: number,
+    month: number,
+    upToDay: number
+): Promise<MonthIntegrityResult> => {
+    const initializedDays: string[] = [];
+    const errors: string[] = [];
+
+    console.log(`[MonthIntegrity] Checking days 1-${upToDay} of ${month}/${year}`);
+
+    for (let day = 1; day <= upToDay; day++) {
+        // Format date as YYYY-MM-DD
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const existing = getForDate(dateStr);
+
+        if (!existing) {
+            try {
+                // Get previous day to copy from
+                const prevDateStr = day > 1
+                    ? `${year}-${String(month).padStart(2, '0')}-${String(day - 1).padStart(2, '0')}`
+                    : undefined;
+
+                await initializeDay(dateStr, prevDateStr);
+                initializedDays.push(dateStr);
+                console.log(`[MonthIntegrity] Initialized: ${dateStr}`);
+            } catch (error) {
+                console.error(`[MonthIntegrity] Failed to initialize ${dateStr}:`, error);
+                errors.push(dateStr);
+            }
+        }
+    }
+
+    const success = errors.length === 0;
+
+    if (initializedDays.length > 0) {
+        console.log(`[MonthIntegrity] Completed: ${initializedDays.length} days initialized, ${errors.length} errors`);
+    }
+
+    return {
+        success,
+        initializedDays,
+        errors,
+        totalDays: upToDay
+    };
+};
+
 // ============================================================================
 // Catalog Operations (Nurses, TENS)
 // Centralizes all catalog storage in the repository

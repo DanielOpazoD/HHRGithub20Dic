@@ -29,6 +29,24 @@ const COLLECTION_NAME = 'auditLogs';
 // Local storage key for offline fallback
 const AUDIT_STORAGE_KEY = 'hanga_roa_audit_logs';
 
+/**
+ * Users excluded from VIEW auditing (to reduce unnecessary data storage).
+ * These users will still be audited for critical actions (admissions, discharges, transfers).
+ */
+const EXCLUDED_VIEW_AUDIT_EMAILS: string[] = [
+    'daniel.opazo@hospitalhangaroa.cl',
+    'hospitalizados@hospitalhangaroa.cl'
+];
+
+/**
+ * Check if the current user should be excluded from view auditing.
+ * Only applies to visualization logs, NOT to critical patient actions.
+ */
+const shouldExcludeFromViewAudit = (): boolean => {
+    const email = getCurrentUserEmail();
+    return EXCLUDED_VIEW_AUDIT_EMAILS.includes(email);
+};
+
 // Get collection reference
 const getAuditCollection = () => collection(db, 'hospitals', HOSPITAL_ID, COLLECTION_NAME);
 
@@ -249,8 +267,13 @@ export const logDailyRecordCreated = (date: string, copiedFrom?: string): Promis
 
 /**
  * Log patient record view (for legal traceability)
+ * Excluded for admin/nursing users to reduce data storage
  */
 export const logPatientView = (bedId: string, patientName: string, rut: string, recordDate: string): Promise<void> => {
+    // Skip logging for excluded users (admin/nursing)
+    if (shouldExcludeFromViewAudit()) {
+        return Promise.resolve();
+    }
     return logAuditEvent(getCurrentUserEmail(), 'PATIENT_VIEWED', 'patient', bedId, { patientName, bedId }, rut, recordDate);
 };
 

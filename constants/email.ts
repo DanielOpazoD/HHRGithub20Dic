@@ -1,3 +1,33 @@
+/**
+ * Email Constants and Builders
+ * 
+ * ## EMAIL FORMAT SPECIFICATION
+ * 
+ * The census email is sent in **PLAIN TEXT** format for maximum compatibility.
+ * 
+ * **Structure:**
+ * ```
+ * Estimados.
+ * 
+ * Junto con saludar, envío adjunto planilla estadística de pacientes 
+ * hospitalizados correspondiente al día X de [mes] de [año].
+ * 
+ * Clave Excel: XXXXXX (6-digit numeric PIN)
+ * 
+ * Saludos cordiales
+ * 
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ (Unicode separator)
+ * [Nurse Names from Census]
+ * Enfermería - Servicio Hospitalizados
+ * Hospital Hanga Roa
+ * Anexo MINSAL 328388
+ * ```
+ * 
+ * **Important:**
+ * - PIN is a 6-digit number generated deterministically from the date
+ * - Nurse signature comes from `nursesSignature` parameter (typically from Census)
+ * - Plain text format ensures compatibility with all email clients
+ */
 import { formatDateDDMMYYYY } from '../services/utils/dateFormatter';
 
 export const CENSUS_DEFAULT_RECIPIENTS = [
@@ -40,7 +70,7 @@ export const buildCensusEmailBody = (date: string, nursesSignature?: string, enc
     const monthName = monthNames[parseInt(month, 10) - 1] || month;
     const dayNum = parseInt(day, 10);
 
-    // Security note
+    // Security note - simple format without emoji
     const securityNote = encryptionPin
         ? `\nClave Excel: ${encryptionPin}\n`
         : '';
@@ -54,11 +84,11 @@ export const buildCensusEmailBody = (date: string, nursesSignature?: string, enc
         : `${separator}Enfermería - Servicio Hospitalizados\nHospital Hanga Roa\nAnexo MINSAL 328388`;
 
     return [
-        'Estimados.',
+        'Estimados:',
         '',
-        `Junto con saludar, envío adjunto planilla estadística de pacientes hospitalizados correspondiente al día ${dayNum} de ${monthName} de ${year}.`,
+        `Junto con saludar, les envío adjunta la planilla estadística de pacientes hospitalizados correspondiente al ${dayNum} de ${monthName} de ${year}.`,
         securityNote,
-        'Saludos cordiales',
+        'Saludos cordiales,',
         signatureBlock
     ].join('\n');
 };

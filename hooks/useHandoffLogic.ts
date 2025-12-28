@@ -2,6 +2,26 @@
  * useHandoffLogic Hook
  * Extracted from HandoffView.tsx for better separation of concerns.
  * Handles handoff state management, note sync, and WhatsApp integration.
+ * 
+ * ## CRITICAL DESIGN PHILOSOPHY
+ * 
+ * **Census is the Single Source of Truth for Staff**
+ * 
+ * The staff lists displayed in the Handoff view (`deliversList`, `receivesList`, `tensList`)
+ * are derived DIRECTLY from the Census Daily data:
+ * - `nursesDayShift` / `nursesNightShift` → Nurses delivering/receiving
+ * - `tensDayShift` / `tensNightShift` → TENS on duty
+ * 
+ * This design ensures:
+ * 1. No synchronization issues between Census and Handoff views
+ * 2. Staff changes in Census immediately reflect in Handoff
+ * 3. No duplicate data storage that could become inconsistent
+ * 
+ * **DO NOT** create separate handoff-specific staff lists (e.g., `handoffDayDelivers`).
+ * Any such fields should be considered deprecated.
+ * 
+ * @see useNurseManagement - Manages staff updates in the Census
+ * @see useTensManagement - Manages TENS updates in the Census
  */
 
 import { useState, useMemo, useCallback } from 'react';
@@ -53,7 +73,7 @@ export const useHandoffLogic = ({
 
     const hasAnyPatients = useMemo(() => {
         if (!record) return false;
-        return visibleBeds.some(b => record.beds[b.id].patientName || record.beds[b.id].isBlocked);
+        return visibleBeds.some(b => record.beds[b.id]?.patientName || record.beds[b.id]?.isBlocked);
     }, [visibleBeds, record]);
 
     const schedule = useMemo(() => {

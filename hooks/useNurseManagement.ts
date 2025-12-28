@@ -1,3 +1,24 @@
+/**
+ * Nurse and TENS Management Hooks
+ * 
+ * ## CRITICAL DESIGN PHILOSOPHY
+ * 
+ * These hooks manage staff assignments in the **Census Daily** record.
+ * The Census is the SINGLE SOURCE OF TRUTH for staff data.
+ * 
+ * **Data Flow:**
+ * 1. User selects nurse/TENS in Census view (NurseSelector, TensSelector)
+ * 2. `updateNurse`/`updateTens` updates `nursesDayShift`, etc. in the DailyRecord
+ * 3. DailyRecord is synced to Firestore via `patchRecord`
+ * 4. Handoff view reads directly from these fields via `useHandoffLogic`
+ * 
+ * **Important Implementation Details:**
+ * - We send the COMPLETE array to Firestore, not individual indices
+ * - Firestore doesn't handle array index updates via dot notation well
+ * - This ensures atomic updates and prevents race conditions
+ * 
+ * @see useHandoffLogic - Consumes the staff data for display in Handoff view
+ */
 import { DailyRecord } from '../types';
 import { DailyRecordPatchLoose } from './useDailyRecordTypes';
 

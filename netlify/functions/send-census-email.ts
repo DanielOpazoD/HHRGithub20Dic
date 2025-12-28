@@ -67,12 +67,9 @@ export const handler = async (event: any) => {
 
         console.log(`[CensusEmail] Numeric PIN for ${date}: ${password}`);
 
-        // Ensure the PIN is included in the email body, even if a custom body was provided
-        let finalBody = body || '';
-        if (password && !finalBody.includes(password)) {
-            const pinNote = `\n\n📌 CLAVE DE SEGURIDAD EXCEL: ${password}`;
-            finalBody = finalBody ? `${finalBody}${pinNote}` : pinNote;
-        }
+        // The PIN is already included in the email body by buildCensusEmailBody
+        // No need to append it again here
+        const finalBody = body || '';
 
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const XlsxPopulate = require('xlsx-populate');

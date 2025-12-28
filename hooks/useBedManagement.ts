@@ -1,5 +1,7 @@
 import { useCallback } from 'react';
-import { DailyRecord, PatientData, CudyrScore, PatientFieldValue } from '../types';
+import { DailyRecord, PatientData, CudyrScore, PatientFieldValue, AuditAction } from '../types';
+import { useAuditContext } from '../context/AuditContext';
+import { getAttributedAuthors } from '../services/admin/attributionService';
 import { usePatientValidation } from './usePatientValidation';
 import { useBedOperations } from './useBedOperations';
 import { useClinicalCrib } from './useClinicalCrib';
@@ -83,6 +85,7 @@ export const useBedManagement = (
     saveAndUpdate: (updatedRecord: DailyRecord) => void,
     patchRecord: (partial: DailyRecordPatchLoose) => Promise<void>
 ): BedManagementActions => {
+    const { logDebouncedEvent, userId } = useAuditContext();
 
     // ========================================================================
     // Compose Specialized Hooks
@@ -164,10 +167,31 @@ export const useBedManagement = (
     ) => {
         if (!record) return;
 
+        // Audit Log (Smart/Debounced)
+        if (record.beds[bedId].patientName) {
+            // Attribution logic for shared accounts (MINSAL requirement)
+            const authors = getAttributedAuthors(userId, record);
+
+            logDebouncedEvent(
+                'CUDYR_MODIFIED',
+                'dailyRecord',
+                record.date,
+                {
+                    patientName: record.beds[bedId].patientName,
+                    bedId,
+                    field,
+                    value
+                },
+                record.beds[bedId].rut,
+                record.date,
+                authors
+            );
+        }
+
         patchRecord({
             [`beds.${bedId}.cudyr.${field}`]: value
         });
-    }, [record, patchRecord]);
+    }, [record, patchRecord, logDebouncedEvent, userId]);
 
     // ========================================================================
     // Clinical Crib Wrapper (maintains backwards compatibility)

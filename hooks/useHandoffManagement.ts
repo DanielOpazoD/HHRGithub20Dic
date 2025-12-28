@@ -9,6 +9,8 @@ import { BEDS } from '../constants';
 import { useNotification } from '../context/UIContext';
 import { getPreviousDay } from '../services/repositories/DailyRecordRepository';
 import { formatHandoffMessage, sendWhatsAppMessage } from '../services/integrations/whatsapp/whatsappService';
+import { useAuditContext } from '../context/AuditContext';
+import { getAttributedAuthors } from '../services/admin/attributionService';
 
 export interface HandoffManagementActions {
     updateHandoffChecklist: (shift: 'day' | 'night', field: string, value: boolean | string) => void;
@@ -26,6 +28,7 @@ export const useHandoffManagement = (
     patchRecord: (partial: Record<string, any>) => Promise<void>
 ): HandoffManagementActions => {
     const { success, error: notifyError } = useNotification();
+    const { logDebouncedEvent, userId } = useAuditContext();
 
     const updateHandoffChecklist = useCallback((shift: 'day' | 'night', field: string, value: boolean | string) => {
         if (!record) return;
@@ -63,7 +66,20 @@ export const useHandoffManagement = (
 
         updatedRecord.lastUpdated = new Date().toISOString();
         saveAndUpdate(updatedRecord);
-    }, [record, saveAndUpdate]);
+
+        // Audit Log (Smart/Debounced)
+        const authors = getAttributedAuthors(userId, record, shift === 'medical' ? undefined : (shift as 'day' | 'night'));
+
+        logDebouncedEvent(
+            'HANDOFF_NOVEDADES_MODIFIED',
+            'dailyRecord',
+            record.date,
+            { shift, value },
+            undefined,
+            record.date,
+            authors
+        );
+    }, [record, saveAndUpdate, logDebouncedEvent, userId]);
 
     const updateHandoffStaff = useCallback((shift: 'day' | 'night', type: 'delivers' | 'receives', staffList: string[]) => {
         if (!record) return;

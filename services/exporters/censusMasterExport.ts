@@ -5,6 +5,7 @@
  */
 
 import { saveAs } from 'file-saver';
+import { DailyRecord } from '../../types';
 import { MONTH_NAMES } from '../../constants';
 import { getMonthRecordsFromFirestore } from '../storage/firestoreService';
 import { getStoredRecords } from '../storage/localStorageService';
@@ -23,7 +24,7 @@ export const generateCensusMasterExcel = async (year: number, month: number, sel
     const limitDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
     const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
 
-    let allMonthRecords: any[] = [];
+    let allMonthRecords: DailyRecord[] = [];
 
     if (isFirestoreEnabled()) {
         console.log(`📊 Cargando datos del mes ${MONTH_NAMES[month]} ${year} desde Firestore...`);

@@ -11,9 +11,13 @@ interface DemographicsModalProps {
     onClose: () => void;
     data: PatientData;
     onSave: (updatedFields: Partial<PatientData>) => void;
+    bedId: string;
+    recordDate: string;
 }
 
-export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, onClose, data, onSave }) => {
+import { logPatientView } from '../../services/admin/auditService';
+
+export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, onClose, data, onSave, bedId, recordDate }) => {
     const [localData, setLocalData] = useState({
         birthDate: data.birthDate || '',
         insurance: data.insurance || 'Fonasa',
@@ -25,8 +29,12 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, on
     });
     const [error, setError] = useState<string | null>(null);
 
-    // Sync when data changes
+    // Sync when data changes and log view for MINSAL traceability
     useEffect(() => {
+        if (isOpen && data.patientName) {
+            logPatientView(bedId, data.patientName, data.rut, recordDate);
+        }
+
         setLocalData({
             birthDate: data.birthDate || '',
             insurance: data.insurance || 'Fonasa',
@@ -36,7 +44,7 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, on
             isRapanui: data.isRapanui || false,
             biologicalSex: data.biologicalSex || 'Indeterminado'
         });
-    }, [data]);
+    }, [data, isOpen, bedId, recordDate]);
 
     const calculateFormattedAge = (dob: string) => {
         if (!dob) return '';

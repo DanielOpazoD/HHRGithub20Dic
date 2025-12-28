@@ -12,9 +12,18 @@ export const useNurseManagement = (
 
         const field = shift === 'day' ? 'nursesDayShift' : 'nursesNightShift';
 
-        // Use atomic path for reliable sync
-        console.log('[NurseManagement] Calling patchRecord with:', `${field}.${index}`, '=', name);
-        patchRecord({ [`${field}.${index}`]: name });
+        // Get current array and create a new one with the updated value
+        // IMPORTANT: Send the complete array to Firestore, not individual indices
+        // Firestore doesn't handle array index updates via dot notation well
+        const currentArray = [...(record[field] || ['', ''])];
+        // Ensure array has at least index+1 elements
+        while (currentArray.length <= index) {
+            currentArray.push('');
+        }
+        currentArray[index] = name;
+
+        console.log('[NurseManagement] Sending complete array:', field, '=', currentArray);
+        patchRecord({ [field]: currentArray });
     };
 
     return {
@@ -32,8 +41,18 @@ export const useTensManagement = (
 
         const field = shift === 'day' ? 'tensDayShift' : 'tensNightShift';
 
-        // Use atomic path for reliable sync
-        patchRecord({ [`${field}.${index}`]: name });
+        // Get current array and create a new one with the updated value
+        // IMPORTANT: Send the complete array to Firestore, not individual indices
+        // Firestore doesn't handle array index updates via dot notation well
+        const currentArray = [...(record[field] || ['', '', ''])];
+        // Ensure array has at least index+1 elements
+        while (currentArray.length <= index) {
+            currentArray.push('');
+        }
+        currentArray[index] = name;
+
+        console.log('[TensManagement] Sending complete array:', field, '=', currentArray);
+        patchRecord({ [field]: currentArray });
     };
 
     return {

@@ -12,7 +12,8 @@ vi.mock('@/services/repositories/DailyRecordRepository', () => ({
     deleteDay: vi.fn(),
     getForDate: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
-    updatePartial: vi.fn().mockResolvedValue(undefined)
+    updatePartial: vi.fn().mockResolvedValue(undefined),
+    syncWithFirestore: vi.fn().mockResolvedValue(null)
 }));
 
 vi.mock('@/services/storage/localStorageService', () => ({
@@ -35,13 +36,18 @@ describe('Patient Flow Integration', () => {
         vi.mocked(DailyRecordRepository.initializeDay).mockResolvedValue({
             date: '2024-12-11',
             beds: {
-                'R1': { bedId: 'R1', patientName: '', rut: '', pathology: '', specialty: Specialty.MEDICINA, status: PatientStatus.ESTABLE, bedMode: 'Cama', hasCompanionCrib: false, isBlocked: false, admissionDate: '2024-12-11', devices: [], hasWristband: true, surgicalComplication: false, isUPC: false }
+                'R1': { bedId: 'R1', patientName: '', rut: '', pathology: '', specialty: Specialty.MEDICINA, status: PatientStatus.ESTABLE, bedMode: 'Cama', hasCompanionCrib: false, isBlocked: false, admissionDate: '2024-12-11', devices: [], hasWristband: true, surgicalComplication: false, isUPC: false, age: undefined }
             },
             discharges: [],
             transfers: [],
             cma: [],
             lastUpdated: new Date().toISOString(),
-            nurses: []
+            nurses: [],
+            nursesDayShift: ['', ''],
+            nursesNightShift: ['', ''],
+            tensDayShift: ['', '', ''],
+            tensNightShift: ['', '', ''],
+            activeExtraBeds: []
         });
 
         vi.mocked(DailyRecordRepository.getForDate).mockReturnValue(null);

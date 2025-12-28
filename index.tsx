@@ -6,6 +6,7 @@ import { UIProvider } from '@/context/UIContext';
 import { DemoModeProvider } from '@/context/DemoModeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { firebaseReady, mountConfigWarning } from '@/firebaseConfig';
+import { AuditProvider } from '@/context';
 import { queryClient } from '@/config/queryClient';
 
 const rootElement = document.getElementById('root');
@@ -22,7 +23,9 @@ const renderApp = () => {
         <AuthProvider>
           <UIProvider>
             <DemoModeProvider>
-              <App />
+              <AuditProvider userId="anon">
+                <App />
+              </AuditProvider>
             </DemoModeProvider>
           </UIProvider>
         </AuthProvider>

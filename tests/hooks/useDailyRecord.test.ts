@@ -6,7 +6,16 @@ import * as localStorageService from '@/services/storage/localStorageService';
 import { DailyRecord } from '@/types';
 
 // Mock dependencies
-vi.mock('@/services/repositories/DailyRecordRepository');
+vi.mock('@/services/repositories/DailyRecordRepository', () => ({
+    getForDate: vi.fn(),
+    subscribe: vi.fn(() => vi.fn()),
+    save: vi.fn().mockResolvedValue(undefined),
+    updatePartial: vi.fn().mockResolvedValue(undefined),
+    initializeDay: vi.fn().mockResolvedValue({}),
+    deleteDay: vi.fn().mockResolvedValue(undefined),
+    getPreviousDay: vi.fn(),
+    syncWithFirestore: vi.fn().mockResolvedValue(null)
+}));
 vi.mock('@/services/storage/localStorageService');
 vi.mock('@/context/UIContext', () => ({
     useNotification: () => ({

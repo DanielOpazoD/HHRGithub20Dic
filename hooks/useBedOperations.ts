@@ -8,7 +8,7 @@ import { useCallback } from 'react';
 import { DailyRecord, PatientData } from '../types';
 import { createEmptyPatient } from '../services/factories/patientFactory';
 import { BEDS } from '../constants';
-import { logPatientCleared } from '../services/admin/auditService';
+import { logPatientCleared, logAuditEvent } from '../services/admin/auditService';
 import { DailyRecordPatchLoose } from './useDailyRecordTypes';
 
 // ============================================================================
@@ -130,6 +130,22 @@ export const useBedOperations = (
                 [`beds.${sourceBedId}`]: cleanSource
             });
 
+            // Audit
+            logAuditEvent(
+                record.beds[sourceBedId].patientName || 'anonymous',
+                'PATIENT_MODIFIED',
+                'patient',
+                targetBedId,
+                {
+                    action: 'move',
+                    sourceBed: sourceBedId,
+                    targetBed: targetBedId,
+                    patientName: sourceData.patientName
+                },
+                sourceData.rut,
+                record.date
+            );
+
         } else {
             const cloneData = JSON.parse(JSON.stringify(sourceData));
             const targetPatient = {
@@ -141,6 +157,22 @@ export const useBedOperations = (
             patchRecord({
                 [`beds.${targetBedId}`]: targetPatient
             });
+
+            // Audit
+            logAuditEvent(
+                record.beds[sourceBedId].patientName || 'anonymous',
+                'PATIENT_MODIFIED',
+                'patient',
+                targetBedId,
+                {
+                    action: 'copy',
+                    sourceBed: sourceBedId,
+                    targetBed: targetBedId,
+                    patientName: sourceData.patientName
+                },
+                sourceData.rut,
+                record.date
+            );
         }
     }, [record, patchRecord]);
 

@@ -146,7 +146,7 @@ export const AnalyticsView: React.FC = () => {
                         </div>
                         <div className="p-4 bg-orange-50 rounded-lg text-center">
                             <div className="text-3xl font-bold text-orange-600">
-                                {Object.values(latestRecord?.beds || {}).filter((b: any) => b.status === 'Grave').length}
+                                {Object.values(latestRecord?.beds || {}).filter((b) => (b as PatientData).status === 'Grave').length}
                             </div>
                             <div className="text-xs text-orange-800 font-medium uppercase mt-1">Pacientes Graves</div>
                         </div>
@@ -157,8 +157,17 @@ export const AnalyticsView: React.FC = () => {
     );
 };
 
+// Chart data type
+interface TrendDataPoint {
+    date: string;
+    total: number;
+    occupiedBeds: number;
+    occupiedCribs: number;
+    blocked: number;
+}
+
 // Helper component for the area/line chart
-const AreaChartComponent = ({ data }: { data: any[] }) => (
+const AreaChartComponent = ({ data }: { data: TrendDataPoint[] }) => (
     <LineChart data={data} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
         <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#94a3b8" />

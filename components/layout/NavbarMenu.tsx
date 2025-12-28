@@ -1,0 +1,151 @@
+/**
+ * NavbarMenu - Brand dropdown menu component
+ * Extracted from Navbar.tsx for better maintainability.
+ */
+
+import React from 'react';
+import { LayoutList, BarChart2, FileJson, Upload, Settings, ShieldCheck, MessageSquare, FileSpreadsheet, ChevronDown, LucideIcon } from 'lucide-react';
+import clsx from 'clsx';
+import { ModuleType } from './Navbar';
+
+interface MenuItemProps {
+    icon: LucideIcon;
+    label: string;
+    onClick: () => void;
+}
+
+const MenuItem: React.FC<MenuItemProps> = ({ icon: Icon, label, onClick }) => (
+    <button
+        onClick={onClick}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors text-left"
+    >
+        <Icon size={16} className="text-slate-500" />
+        {label}
+    </button>
+);
+
+interface NavbarMenuProps {
+    isOpen: boolean;
+    onToggle: () => void;
+    onClose: () => void;
+    // Module actions
+    currentModule: ModuleType;
+    setModule: (mod: ModuleType) => void;
+    censusViewMode: 'REGISTER' | 'ANALYTICS';
+    setCensusViewMode: (mode: 'REGISTER' | 'ANALYTICS') => void;
+    // File actions
+    onExportJSON: () => void;
+    onImportClick: () => void;
+    onOpenSettings: () => void;
+    // Permissions
+    isUserAdmin: boolean;
+    visibleModules: ModuleType[];
+}
+
+export const NavbarMenu: React.FC<NavbarMenuProps> = ({
+    isOpen,
+    onToggle,
+    onClose,
+    currentModule,
+    setModule,
+    censusViewMode,
+    setCensusViewMode,
+    onExportJSON,
+    onImportClick,
+    onOpenSettings,
+    isUserAdmin,
+    visibleModules
+}) => {
+    const handleModuleChange = (mod: ModuleType) => {
+        setModule(mod);
+        onClose();
+    };
+
+    return (
+        <div className="relative">
+            <button
+                onClick={onToggle}
+                className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-white/10 transition-all duration-200"
+            >
+                <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md border border-white/20 shadow-glass">
+                    <LayoutList size={22} className="text-white" />
+                </div>
+                <div className="text-left">
+                    <h1 className="text-lg font-display font-bold leading-tight tracking-tight">Hospital Hanga Roa</h1>
+                    <p className="text-[10px] font-bold text-white/70 uppercase tracking-[0.2em]">Gestión de Camas</p>
+                </div>
+                <ChevronDown size={16} className={clsx("text-white/50 transition-transform ml-1", isOpen && "rotate-180")} />
+            </button>
+
+            {isOpen && (
+                <>
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={onClose}
+                    />
+
+                    {/* Menu */}
+                    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
+                        <div className="py-1">
+                            <MenuItem
+                                icon={BarChart2}
+                                label="Estadística"
+                                onClick={() => {
+                                    if (currentModule !== 'CENSUS') {
+                                        setModule('CENSUS');
+                                        setCensusViewMode('ANALYTICS');
+                                    } else {
+                                        setCensusViewMode(censusViewMode === 'ANALYTICS' ? 'REGISTER' : 'ANALYTICS');
+                                    }
+                                    onClose();
+                                }}
+                            />
+
+                            {visibleModules.includes('REPORTS') && (
+                                <MenuItem
+                                    icon={FileSpreadsheet}
+                                    label="Reportes"
+                                    onClick={() => handleModuleChange('REPORTS')}
+                                />
+                            )}
+
+                            {isUserAdmin && (
+                                <>
+                                    <div className="h-px bg-slate-200 my-1" />
+                                    <MenuItem
+                                        icon={FileJson}
+                                        label="Exportar Respaldo (JSON)"
+                                        onClick={() => { onExportJSON(); onClose(); }}
+                                    />
+                                    <MenuItem
+                                        icon={Upload}
+                                        label="Importar Respaldo"
+                                        onClick={onImportClick}
+                                    />
+                                    <div className="h-px bg-slate-200 my-1" />
+                                    <MenuItem
+                                        icon={Settings}
+                                        label="Configuración"
+                                        onClick={() => { onOpenSettings(); onClose(); }}
+                                    />
+                                    <div className="h-px bg-slate-200 my-1" />
+                                    <MenuItem
+                                        icon={ShieldCheck}
+                                        label="Auditoría"
+                                        onClick={() => handleModuleChange('AUDIT')}
+                                    />
+                                    <MenuItem
+                                        icon={MessageSquare}
+                                        label="WhatsApp"
+                                        onClick={() => handleModuleChange('WHATSAPP')}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};

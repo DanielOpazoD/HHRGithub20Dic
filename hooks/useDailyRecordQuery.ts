@@ -44,12 +44,14 @@ export const useDailyRecordQuery = (date: string) => {
     useEffect(() => {
         if (!date) return;
 
-        const unsubscribe = subscribe(date, (record) => {
-            // Update the query cache when real-time data arrives
-            queryClient.setQueryData(
-                queryKeys.dailyRecord.byDate(date),
-                record
-            );
+        const unsubscribe = subscribe(date, (record, hasPendingWrites) => {
+            // Only update the query cache if it's not a local echo
+            if (!hasPendingWrites) {
+                queryClient.setQueryData(
+                    queryKeys.dailyRecord.byDate(date),
+                    record
+                );
+            }
         });
 
         return () => unsubscribe();

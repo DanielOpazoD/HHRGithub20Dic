@@ -23,8 +23,8 @@ import { auth } from '../firebaseConfig';
 import { saveRecordLocal } from '../services/storage/localStorageService';
 import { applyPatches } from '../utils/patchUtils';
 
-// Short debounce - only ignore Firebase "echo" updates immediately after saving
-const SYNC_DEBOUNCE_MS = 500;
+// Debounce for sync protection - prevents flickering during rapid local changes
+const SYNC_DEBOUNCE_MS = 1000;
 
 export type SyncStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -67,42 +67,46 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
     useEffect(() => {
         let unsubRepo: (() => void) | null = null;
 
-        // Subscription is now dynamic based on auth state
-        // and doesn't explicitly block if in passport mode (hybrid)
-
         // Wait for auth to be ready before subscribing to Firestore
         const unregisterAuthObserver = auth.onAuthStateChanged((user) => {
             if (user) {
                 if (unsubRepo) unsubRepo();
 
-                unsubRepo = subscribe(currentDateString, (remoteRecord) => {
+                unsubRepo = subscribe(currentDateString, (remoteRecord, hasPendingWrites) => {
                     if (!remoteRecord) {
-                        // Remote record deleted -> Clear local state
                         setRecord(null);
                         setSyncStatus('idle');
-                        import('../services/storage/localStorageService').then(({ deleteRecordLocal }) => {
-                            deleteRecordLocal(currentDateString);
-                        });
                         return;
                     }
 
-                    if (remoteRecord) {
-                        const now = Date.now();
-                        const timeSinceLastChange = now - lastLocalChangeRef.current;
+                    const now = Date.now();
+                    const timeSinceLastChange = now - lastLocalChangeRef.current;
 
-                        // Only ignore updates if we are in the middle of saving (very short window)
-                        if (isSavingRef.current && timeSinceLastChange < 200) {
-                            console.log('[Sync] Ignoring echo during save operation');
-                            return;
-                        }
-
-                        // Always accept remote updates - they are the source of truth
-                        console.log('[Sync] Accepting remote update, nursesDayShift:', remoteRecord.nursesDayShift, 'nursesNightShift:', remoteRecord.nursesNightShift);
-                        setRecord(remoteRecord);
-                        setLastSyncTime(new Date());
-                        setSyncStatus('saved');
-                        saveRecordLocal(remoteRecord);
+                    // 1. If Firestore says it's a pending local write, IGNORE it.
+                    // This is the absolute best way to avoid flickering from our own "echoes".
+                    if (hasPendingWrites) {
+                        console.log('[Sync] Ignoring local pending write (echo protection)');
+                        return;
                     }
+
+                    // 2. If we are currently saving and the change is VERY fresh, ignore to be safe.
+                    // But since hasPendingWrites covers most echos, we can keep this window very short.
+                    if (isSavingRef.current && timeSinceLastChange < 500) {
+                        console.log(`[Sync] Ignoring update due to active saving (${timeSinceLastChange}ms)`);
+                        return;
+                    }
+
+                    // 3. Otherwise, ACCEPT the remote update.
+                    // Our DebouncedInput and DebouncedTextarea components will protect themselves if they are focused.
+                    console.log('[Sync] Applying remote change, lastUpdated:', remoteRecord.lastUpdated);
+                    setRecord(remoteRecord);
+                    setLastSyncTime(new Date());
+                    setSyncStatus('saved');
+
+                    // Mirror to localStorage (if repo didn't already do it)
+                    import('../services/storage/localStorageService').then(({ saveRecordLocal }) => {
+                        saveRecordLocal(remoteRecord);
+                    });
                 });
             }
         });
@@ -190,7 +194,7 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
         } finally {
             setTimeout(() => {
                 isSavingRef.current = false;
-            }, SYNC_DEBOUNCE_MS);
+            }, 1000); // Wait 1s after operation ends to release lock
         }
     }, [error]);
 
@@ -232,7 +236,7 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
         } finally {
             setTimeout(() => {
                 isSavingRef.current = false;
-            }, SYNC_DEBOUNCE_MS);
+            }, 1000); // Wait 1s after operation ends to release lock
         }
     }, [currentDateString, error]);
 

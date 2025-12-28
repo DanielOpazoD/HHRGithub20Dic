@@ -15,6 +15,7 @@ import {
 import { db } from '../../firebaseConfig';
 import { DailyRecord } from '../../types';
 import { DailyRecordSchema } from '../../schemas/zodSchemas';
+import { withRetry } from '../../utils/networkUtils';
 import {
     HOSPITAL_ID,
     COLLECTIONS,
@@ -65,6 +66,35 @@ const sanitizeBeds = (beds: DailyRecord['beds']): DailyRecord['beds'] => {
     return result;
 };
 
+/**
+ * Convert a value to an array, handling both arrays and objects with numeric keys.
+ * This fixes data corrupted when array indices were updated via dot notation.
+ */
+const ensureArray = (value: unknown, defaultLength: number): string[] => {
+    if (Array.isArray(value)) {
+        // Pad with empty strings if needed
+        const result = [...value];
+        while (result.length < defaultLength) {
+            result.push('');
+        }
+        return result.slice(0, defaultLength);
+    }
+
+    // Handle object with numeric keys (corrupted array data)
+    if (value && typeof value === 'object') {
+        const obj = value as Record<string, string>;
+        const result: string[] = [];
+        for (let i = 0; i < defaultLength; i++) {
+            result.push(obj[String(i)] || '');
+        }
+        console.log('[Firestore] Converted object to array:', value, '->', result);
+        return result;
+    }
+
+    // Return default empty array
+    return Array(defaultLength).fill('');
+};
+
 // Convert Firestore data to DailyRecord
 // Preserves ALL data from Firestore with minimal validation
 const docToRecord = (docData: Record<string, unknown>, docId: string): DailyRecord => {
@@ -89,10 +119,11 @@ const docToRecord = (docData: Record<string, unknown>, docId: string): DailyReco
         transfers: (docData.transfers as DailyRecord['transfers']) || [],
         cma: (docData.cma as DailyRecord['cma']) || [],
         nurses: (docData.nurses as string[]) || ['', ''],
-        nursesDayShift: Array.isArray(docData.nursesDayShift) ? [...docData.nursesDayShift, '', ''].slice(0, 2) : ['', ''],
-        nursesNightShift: Array.isArray(docData.nursesNightShift) ? [...docData.nursesNightShift, '', ''].slice(0, 2) : ['', ''],
-        tensDayShift: Array.isArray(docData.tensDayShift) ? [...docData.tensDayShift, '', '', ''].slice(0, 3) : ['', '', ''],
-        tensNightShift: Array.isArray(docData.tensNightShift) ? [...docData.tensNightShift, '', '', ''].slice(0, 3) : ['', '', ''],
+        // Use ensureArray to handle both arrays and corrupted object data
+        nursesDayShift: ensureArray(docData.nursesDayShift, 2),
+        nursesNightShift: ensureArray(docData.nursesNightShift, 2),
+        tensDayShift: ensureArray(docData.tensDayShift, 3),
+        tensNightShift: ensureArray(docData.tensNightShift, 3),
         activeExtraBeds: (docData.activeExtraBeds as string[]) || [],
 
         // === Explicitly preserve/convert medical handoff fields ===
@@ -101,6 +132,32 @@ const docToRecord = (docData: Record<string, unknown>, docId: string): DailyReco
         medicalHandoffSentAt: (docData.medicalHandoffSentAt as string) || undefined,
         medicalSignature: (docData.medicalSignature as DailyRecord['medicalSignature']) || undefined
     } as DailyRecord;
+};
+
+/**
+ * Saves a snapshot of the current record to a history sub-collection.
+ * This ensures compliance with MINSAL "Integrity" pillar (no deletion of clinical data).
+ */
+const saveHistorySnapshot = async (date: string): Promise<void> => {
+    try {
+        const docRef = doc(getRecordsCollection(), date);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const historyRef = doc(collection(docRef, 'history'), new Date().toISOString());
+
+            // Re-package with current timestamp as record of when it was the "active" state
+            await setDoc(historyRef, {
+                ...data,
+                snapshotTimestamp: Timestamp.now()
+            });
+            console.log(`📜 History snapshot created for ${date}`);
+        }
+    } catch (error) {
+        // We log but don't throw to avoid blocking the main save operation
+        console.error('❌ Failed to create history snapshot:', error);
+    }
 };
 
 /**
@@ -119,6 +176,9 @@ export const saveRecordToFirestore = async (record: DailyRecord): Promise<void> 
     try {
         const docRef = doc(getRecordsCollection(), record.date);
 
+        // MINSAL Integrity: Save snapshot of current state before overwriting
+        await saveHistorySnapshot(record.date);
+
         // Sanitize data to convert undefined to null
         // This ensures deletions (like removing clinicalCrib) are properly synced
         const sanitizedRecord = sanitizeForFirestore({
@@ -127,7 +187,9 @@ export const saveRecordToFirestore = async (record: DailyRecord): Promise<void> 
         });
 
         // Use setDoc WITHOUT merge to ensure deletions are reflected
-        await setDoc(docRef, sanitizedRecord as Record<string, unknown>);
+        await withRetry(() => setDoc(docRef, sanitizedRecord as Record<string, unknown>), {
+            onRetry: (err, attempt) => console.warn(`[Firestore] Retry ${attempt} saving record ${record.date}:`, err)
+        });
         console.log('✅ Saved to Firestore:', record.date);
     } catch (error) {
         console.error('❌ Error saving to Firestore:', error);
@@ -152,13 +214,18 @@ export const updateRecordPartial = async (date: string, partialData: Partial<Dai
     try {
         const docRef = doc(getRecordsCollection(), date);
 
+        // MINSAL Integrity: Save snapshot of current state before partial update
+        await saveHistorySnapshot(date);
+
         // Add timestamp and sanitize
         const sanitizedData = sanitizeForFirestore({
             ...partialData,
             lastUpdated: Timestamp.now()
         });
 
-        await updateDoc(docRef, sanitizedData as Record<string, unknown>);
+        await withRetry(() => updateDoc(docRef, sanitizedData as Record<string, unknown>), {
+            onRetry: (err, attempt) => console.warn(`[Firestore] Retry ${attempt} updating record ${date}:`, err)
+        });
         console.log('✅ Partial update to Firestore:', date, Object.keys(partialData));
     } catch (error) {
         console.error('❌ Error in partial update to Firestore:', error);
@@ -191,7 +258,9 @@ export const getRecordFromFirestore = async (date: string): Promise<DailyRecord 
 export const deleteRecordFromFirestore = async (date: string): Promise<void> => {
     try {
         const docRef = doc(getRecordsCollection(), date);
-        await deleteDoc(docRef);
+        await withRetry(() => deleteDoc(docRef), {
+            onRetry: (err, attempt) => console.warn(`[Firestore] Retry ${attempt} deleting record ${date}:`, err)
+        });
         console.log('🗑️ Deleted from Firestore:', date);
     } catch (error) {
         console.error('❌ Error deleting from Firestore:', error);
@@ -241,19 +310,20 @@ export const getMonthRecordsFromFirestore = async (year: number, month: number):
 // Real-time listener for a specific date
 export const subscribeToRecord = (
     date: string,
-    callback: (record: DailyRecord | null) => void
+    callback: (record: DailyRecord | null, hasPendingWrites: boolean) => void
 ): (() => void) => {
     const docRef = doc(getRecordsCollection(), date);
 
-    return onSnapshot(docRef, (docSnap) => {
+    return onSnapshot(docRef, { includeMetadataChanges: true }, (docSnap) => {
+        const hasPendingWrites = docSnap.metadata.hasPendingWrites;
         if (docSnap.exists()) {
-            callback(docToRecord(docSnap.data(), date));
+            callback(docToRecord(docSnap.data(), date), hasPendingWrites);
         } else {
-            callback(null);
+            callback(null, hasPendingWrites);
         }
     }, (error) => {
         console.error('❌ Firestore subscription error:', error);
-        callback(null);
+        callback(null, false);
     });
 };
 
@@ -298,10 +368,10 @@ export const getNurseCatalogFromFirestore = async (): Promise<string[]> => {
 export const saveNurseCatalogToFirestore = async (nurses: string[]): Promise<void> => {
     try {
         const docRef = doc(db, COLLECTIONS.HOSPITALS, HOSPITAL_ID, HOSPITAL_COLLECTIONS.SETTINGS, SETTINGS_DOCS.NURSES);
-        await setDoc(docRef, {
+        await withRetry(() => setDoc(docRef, {
             list: nurses,
             lastUpdated: new Date().toISOString()
-        });
+        }));
         console.log('✅ Nurse catalog saved to Firestore');
     } catch (error) {
         console.error('Error saving nurse catalog to Firestore:', error);
@@ -365,10 +435,10 @@ export const getTensCatalogFromFirestore = async (): Promise<string[]> => {
 export const saveTensCatalogToFirestore = async (tens: string[]): Promise<void> => {
     try {
         const docRef = doc(db, COLLECTIONS.HOSPITALS, HOSPITAL_ID, HOSPITAL_COLLECTIONS.SETTINGS, SETTINGS_DOCS.TENS);
-        await setDoc(docRef, {
+        await withRetry(() => setDoc(docRef, {
             list: tens,
             lastUpdated: new Date().toISOString()
-        });
+        }));
         console.log('✅ TENS catalog saved to Firestore');
     } catch (error) {
         console.error('Error saving TENS catalog to Firestore:', error);

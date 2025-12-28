@@ -13,8 +13,32 @@ interface CudyrViewProps {
     readOnly?: boolean;
 }
 
+import { useAuditContext } from '../../context/AuditContext';
+import { getAttributedAuthors } from '../../services/admin/attributionService';
+import { useEffect } from 'react';
+
 export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     const { record, updateCudyr } = useDailyRecordContext();
+    const { logEvent } = useAuditContext();
+
+    // MINSAL Traceability: Log when patient CUDYR is viewed
+    const { userId } = useAuditContext();
+    useEffect(() => {
+        if (record && record.date) {
+            // Attribution logic for shared accounts (MINSAL requirement)
+            const authors = getAttributedAuthors(userId, record);
+
+            logEvent(
+                'VIEW_CUDYR',
+                'dailyRecord',
+                record.date,
+                { view: 'cudyr' },
+                undefined,
+                record.date,
+                authors
+            );
+        }
+    }, [record?.date, logEvent, userId, record?.nursesDayShift, record?.nursesNightShift]);
 
     if (!record) {
         return <div className="p-8 text-center text-slate-500">Seleccione una fecha con registros para ver el CUDYR.</div>;

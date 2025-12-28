@@ -11,7 +11,16 @@ export type AuditAction =
     | 'PATIENT_CLEARED'
     | 'DAILY_RECORD_DELETED'
     | 'DAILY_RECORD_CREATED'
-    | 'USER_LOGIN';
+    | 'PATIENT_VIEWED'
+    | 'NURSE_HANDOFF_MODIFIED'
+    | 'MEDICAL_HANDOFF_MODIFIED'
+    | 'HANDOFF_NOVEDADES_MODIFIED'
+    | 'CUDYR_MODIFIED'
+    | 'VIEW_CUDYR'
+    | 'VIEW_NURSING_HANDOFF'
+    | 'VIEW_MEDICAL_HANDOFF'
+    | 'USER_LOGIN'
+    | 'USER_LOGOUT';
 
 export interface AuditLogEntry {
     id: string;
@@ -23,6 +32,7 @@ export interface AuditLogEntry {
     details: Record<string, unknown>;  // datos específicos de la acción
     patientIdentifier?: string; // RUT enmascarado (ej: 12.345.***-K)
     recordDate?: string;        // fecha del registro afectado
+    authors?: string;           // Identificación de autores reales (para cuentas compartidas)
 }
 
 /**

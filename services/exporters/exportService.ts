@@ -27,7 +27,7 @@ export const exportDataCSV = (record: DailyRecord | null) => {
 
     // Helper to generate a row string
     const generateRow = (bedId: string, bedName: string, bedType: string, p: PatientData, locationOverride?: string) => {
-        const escape = (val: any) => {
+        const escape = (val: unknown): string => {
             if (val === null || val === undefined) return '';
             const str = String(val);
             if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -118,7 +118,7 @@ export const exportDataCSV = (record: DailyRecord | null) => {
         rows.push(`\n--- ALTAS ---`);
         rows.push("Cama,Tipo,Paciente,RUT,Diagnóstico,Estado,Edad,Previsión");
         record.discharges.forEach(d => {
-            const escape = (val: any) => val ? `"${String(val).replace(/"/g, '""')}"` : '';
+            const escape = (val: unknown): string => val ? `"${String(val).replace(/"/g, '""')}"` : '';
             rows.push(`${d.bedName},${d.bedType},${escape(d.patientName)},${d.rut},${escape(d.diagnosis)},${d.status},${d.age || ''},${d.insurance || ''}`);
         });
     }
@@ -128,7 +128,7 @@ export const exportDataCSV = (record: DailyRecord | null) => {
         rows.push(`\n--- TRASLADOS ---`);
         rows.push("Cama,Tipo,Paciente,RUT,Diagnóstico,Medio,Centro,Acompañante,Edad,Previsión");
         record.transfers.forEach(t => {
-            const escape = (val: any) => val ? `"${String(val).replace(/"/g, '""')}"` : '';
+            const escape = (val: unknown): string => val ? `"${String(val).replace(/"/g, '""')}"` : '';
             const center = t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter;
             rows.push(`${t.bedName},${t.bedType},${escape(t.patientName)},${t.rut},${escape(t.diagnosis)},${t.evacuationMethod},${escape(center)},${escape(t.transferEscort)},${t.age || ''},${t.insurance || ''}`);
         });

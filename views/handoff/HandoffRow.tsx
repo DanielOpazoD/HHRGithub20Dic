@@ -25,55 +25,7 @@ export const calculateHospitalizedDays = (admissionDate?: string, currentDate?: 
     return totalDays >= 1 ? totalDays : 1;
 };
 
-// ============================================================================
-// AutoResizeTextarea Component
-// ============================================================================
-
-interface AutoResizeTextareaProps {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-    className?: string;
-    minRows?: number;
-}
-
-const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
-    value,
-    onChange,
-    className = '',
-    minRows = 2
-}) => {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    const resizeTextarea = useCallback(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.overflow = 'hidden';
-            const lineHeight = 20; // approximate line height in px
-            const minHeight = lineHeight * minRows;
-            textarea.style.height = `${Math.max(textarea.scrollHeight, minHeight)}px`;
-        }
-    }, [minRows]);
-
-    useEffect(() => {
-        resizeTextarea();
-    }, [value, minRows, resizeTextarea]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        resizeTextarea();
-        onChange(e);
-    };
-
-    return (
-        <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={handleChange}
-            className={`overflow-hidden ${className}`}
-            rows={minRows}
-        />
-    );
-};
+import { DebouncedTextarea } from '../../components/ui/DebouncedTextarea';
 
 // ============================================================================
 // HandoffRow Component
@@ -228,11 +180,12 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
                     <>
                         {/* Screen: Editable Textarea */}
                         <div className="print:hidden">
-                            <AutoResizeTextarea
+                            <DebouncedTextarea
                                 value={noteValue}
-                                onChange={(e) => onNoteChange(e.target.value)}
-                                className="w-full p-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none resize-none bg-white"
+                                onChangeValue={onNoteChange}
+                                className="w-full p-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none bg-white"
                                 minRows={2}
+                                debounceMs={1500}
                             />
                         </div>
                         {/* Print: Read-only Div (Ensures full expansion) */}

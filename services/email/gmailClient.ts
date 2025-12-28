@@ -10,6 +10,7 @@ interface SendCensusEmailParams {
     subject?: string;
     body?: string;
     requestedBy?: string;
+    encryptionPin?: string;
 }
 
 const getOAuth2Client = () => {
@@ -33,11 +34,11 @@ const base64UrlEncode = (value: Buffer) => value
     .replace(/=+$/, '');
 
 const buildMimeMessage = (params: SendCensusEmailParams) => {
-    const { date, recipients, attachmentBuffer, attachmentName, nursesSignature, subject, body, requestedBy } = params;
+    const { date, recipients, attachmentBuffer, attachmentName, nursesSignature, subject, body, requestedBy, encryptionPin } = params;
 
     const boundary = '----=_Part_0_123456789.123456789';
     const mailSubject = subject || buildCensusEmailSubject(date);
-    const baseBody = body || buildCensusEmailBody(date, nursesSignature);
+    const baseBody = body || buildCensusEmailBody(date, nursesSignature, encryptionPin);
     // Audit line removed per user request
     const mailBody = baseBody;
     const attachmentBase64 = Buffer.isBuffer(attachmentBuffer)

@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { MessageCircle } from 'lucide-react';
+import { DebouncedTextarea } from '../../components/ui/DebouncedTextarea';
 
 interface HandoffNovedadesProps {
     value: string;
@@ -7,17 +8,6 @@ interface HandoffNovedadesProps {
 }
 
 export const HandoffNovedades: React.FC<HandoffNovedadesProps> = ({ value, onChange }) => {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    // Auto-resize
-    useEffect(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = `${Math.max(textarea.scrollHeight, 100)}px`;
-        }
-    }, [value]);
-
     return (
         <div className="bg-white border border-slate-200 rounded-lg p-4 mt-4 print:border-none print:p-0 print:mt-2 print:bg-transparent">
             <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-sm print:mb-1 print:text-black">
@@ -27,12 +17,12 @@ export const HandoffNovedades: React.FC<HandoffNovedadesProps> = ({ value, onCha
 
             {/* Screen: Textarea */}
             <div className="print:hidden">
-                <textarea
-                    ref={textareaRef}
+                <DebouncedTextarea
                     value={value || ''}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder=""
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-slate-700 min-h-[100px] resize-none"
+                    onChangeValue={onChange}
+                    placeholder="Escriba las novedades del turno aquí..."
+                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-slate-700 min-h-[100px]"
+                    debounceMs={1500}
                 />
             </div>
 

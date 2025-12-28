@@ -21,7 +21,7 @@ export const applyPatches = <T>(obj: T, patches: DailyRecordPatchLoose): T => {
 
     Object.entries(patches).forEach(([path, value]) => {
         const parts = path.split('.');
-        let current: any = newObj;
+        let current: Record<string, unknown> = newObj as Record<string, unknown>;
 
         for (let i = 0; i < parts.length - 1; i++) {
             const part = parts[i];
@@ -29,7 +29,7 @@ export const applyPatches = <T>(obj: T, patches: DailyRecordPatchLoose): T => {
             if (current[part] === undefined || current[part] === null) {
                 current[part] = {};
             }
-            current = current[part];
+            current = current[part] as Record<string, unknown>;
         }
 
         const lastPart = parts[parts.length - 1];

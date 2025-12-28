@@ -78,7 +78,8 @@ export const logAuditEvent = async (
     entityId: string,
     details: Record<string, unknown>,
     patientRut?: string,
-    recordDate?: string
+    recordDate?: string,
+    authors?: string
 ): Promise<void> => {
     const entry: AuditLogEntry = {
         id: generateAuditId(),
@@ -87,9 +88,16 @@ export const logAuditEvent = async (
         action,
         entityType,
         entityId,
-        details,
+        details: {
+            ...details,
+            _metadata: {
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Server',
+                platform: typeof navigator !== 'undefined' ? navigator.platform : 'Unknown'
+            }
+        },
         patientIdentifier: patientRut ? maskRut(patientRut) : undefined,
-        recordDate
+        recordDate,
+        authors
     };
 
     // Always store locally first (immediate)
@@ -180,7 +188,16 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
     'PATIENT_CLEARED': 'Limpieza de Cama',
     'DAILY_RECORD_DELETED': 'Eliminación de Registro',
     'DAILY_RECORD_CREATED': 'Creación de Registro',
-    'USER_LOGIN': 'Inicio de Sesión'
+    'PATIENT_VIEWED': 'Visualización de Ficha',
+    'NURSE_HANDOFF_MODIFIED': 'Nota Enfermería (Entrega)',
+    'MEDICAL_HANDOFF_MODIFIED': 'Nota Médica (Entrega)',
+    'HANDOFF_NOVEDADES_MODIFIED': 'Cambio en Novedades',
+    'CUDYR_MODIFIED': 'Evaluación CUDYR',
+    'USER_LOGIN': 'Inicio de Sesión',
+    'USER_LOGOUT': 'Cierre de Sesión',
+    'VIEW_CUDYR': 'Visualización CUDYR',
+    'VIEW_NURSING_HANDOFF': 'Visualización Entrega Enfermería',
+    'VIEW_MEDICAL_HANDOFF': 'Visualización Entrega Médica'
 };
 
 // ============================================================================
@@ -228,4 +245,71 @@ export const logDailyRecordDeleted = (date: string): Promise<void> => {
  */
 export const logDailyRecordCreated = (date: string, copiedFrom?: string): Promise<void> => {
     return logAuditEvent(getCurrentUserEmail(), 'DAILY_RECORD_CREATED', 'dailyRecord', date, { date, copiedFrom }, undefined, date);
+};
+
+/**
+ * Log patient record view (for legal traceability)
+ */
+export const logPatientView = (bedId: string, patientName: string, rut: string, recordDate: string): Promise<void> => {
+    return logAuditEvent(getCurrentUserEmail(), 'PATIENT_VIEWED', 'patient', bedId, { patientName, bedId }, rut, recordDate);
+};
+
+/**
+ * Log modification of nursing handoff note
+ */
+export const logNurseHandoffModified = (bedId: string, patientName: string, rut: string, shift: string, note: string, recordDate: string): Promise<void> => {
+    return logAuditEvent(getCurrentUserEmail(), 'NURSE_HANDOFF_MODIFIED', 'patient', bedId, { patientName, bedId, shift, note }, rut, recordDate);
+};
+
+/**
+ * Log modification of medical handoff note
+ */
+export const logMedicalHandoffModified = (bedId: string, patientName: string, rut: string, note: string, recordDate: string): Promise<void> => {
+    return logAuditEvent(getCurrentUserEmail(), 'MEDICAL_HANDOFF_MODIFIED', 'patient', bedId, { patientName, bedId, note }, rut, recordDate);
+};
+
+/**
+ * Log modification of general handoff novedades
+ */
+export const logHandoffNovedadesModified = (shift: string, content: string, recordDate: string): Promise<void> => {
+    return logAuditEvent(getCurrentUserEmail(), 'HANDOFF_NOVEDADES_MODIFIED', 'dailyRecord', recordDate, { shift, content }, undefined, recordDate);
+};
+
+/**
+ * Log CUDYR score modification
+ */
+export const logCudyrModified = (bedId: string, patientName: string, rut: string, field: string, value: number, recordDate: string): Promise<void> => {
+    return logAuditEvent(getCurrentUserEmail(), 'CUDYR_MODIFIED', 'patient', bedId, { patientName, bedId, field, value }, rut, recordDate);
+};
+
+/**
+ * Log user login and store start time for duration calculation
+ */
+export const logUserLogin = (email: string): Promise<void> => {
+    // Store login time in sessionStorage to calculate duration on logout
+    if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('hhr_session_start', new Date().toISOString());
+    }
+    return logAuditEvent(email, 'USER_LOGIN', 'user', email, { event: 'login' });
+};
+
+/**
+ * Log user logout and calculate session duration
+ */
+export const logUserLogout = (email: string, reason: 'manual' | 'automatic' = 'manual'): Promise<void> => {
+    let durationSec = 0;
+    if (typeof sessionStorage !== 'undefined') {
+        const start = sessionStorage.getItem('hhr_session_start');
+        if (start) {
+            durationSec = Math.floor((new Date().getTime() - new Date(start).getTime()) / 1000);
+            sessionStorage.removeItem('hhr_session_start');
+        }
+    }
+
+    return logAuditEvent(email, 'USER_LOGOUT', 'user', email, {
+        event: 'logout',
+        reason,
+        durationSeconds: durationSec,
+        durationFormatted: durationSec > 0 ? `${Math.floor(durationSec / 60)}m ${durationSec % 60}s` : 'Unknown'
+    });
 };

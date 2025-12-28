@@ -30,15 +30,48 @@ class HospitalDatabase extends Dexie {
 
 // Singleton instance with safety
 let db: HospitalDatabase;
+
+/**
+ * Mock fallback for HospitalDatabase when initialization fails.
+ * Provides no-op implementations to prevent runtime crashes.
+ */
+const createMockDatabase = (): HospitalDatabase => {
+    const mockTable = {
+        toArray: () => Promise.resolve([]),
+        get: () => Promise.resolve(null),
+        put: () => Promise.resolve(''),
+        delete: () => Promise.resolve(),
+        clear: () => Promise.resolve(),
+        bulkPut: () => Promise.resolve(''),
+        orderBy: () => ({
+            reverse: () => ({
+                keys: () => Promise.resolve([])
+            })
+        }),
+        where: () => ({
+            below: () => ({
+                reverse: () => ({
+                    first: () => Promise.resolve(null)
+                })
+            })
+        })
+    };
+
+    // Return a minimal mock that satisfies HospitalDatabase usage patterns
+    return {
+        dailyRecords: mockTable,
+        catalogs: {
+            get: () => Promise.resolve(null),
+            put: () => Promise.resolve('')
+        }
+    } as unknown as HospitalDatabase;
+};
+
 try {
     db = new HospitalDatabase();
 } catch (e) {
     console.error('Failed to initialize HospitalDatabase:', e);
-    // Create a dummy object or handle if db is accessed when broken
-    db = {
-        dailyRecords: { toArray: () => Promise.resolve([]), get: () => Promise.resolve(null), put: () => Promise.resolve(), delete: () => Promise.resolve(), clear: () => Promise.resolve(), orderBy: () => ({ reverse: () => ({ keys: () => Promise.resolve([]) }) }), where: () => ({ below: () => ({ reverse: () => ({ first: () => Promise.resolve(null) }) }) }) },
-        catalogs: { get: () => Promise.resolve(null), put: () => Promise.resolve() }
-    } as any;
+    db = createMockDatabase();
 }
 
 // ============================================================================

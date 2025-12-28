@@ -9,6 +9,7 @@ import { DailyRecord, PatientData } from '@/types';
 import { BEDS } from '@/constants';
 import { getShiftSchedule } from '@/utils/dateUtils';
 import { getWhatsAppConfig, getMessageTemplates } from '@/services/integrations/whatsapp/whatsappService';
+import { logNurseHandoffModified, logMedicalHandoffModified } from '@/services/admin/auditService';
 
 export type NursingShift = 'day' | 'night';
 
@@ -93,8 +94,12 @@ export const useHandoffLogic = ({
         if (isMedical) {
             if (isNested) {
                 updateClinicalCrib(bedId, 'medicalHandoffNote', value);
+                const p = record?.beds[bedId].clinicalCrib;
+                if (p) logMedicalHandoffModified(bedId, p.patientName || 'Cuna', p.rut || '-', value, record?.date || '');
             } else {
                 updatePatient(bedId, 'medicalHandoffNote', value);
+                const p = record?.beds[bedId];
+                if (p) logMedicalHandoffModified(bedId, p.patientName || 'ANONYMOUS', p.rut || '-', value, record?.date || '');
             }
         } else {
             if (selectedShift === 'day') {
@@ -103,17 +108,25 @@ export const useHandoffLogic = ({
                         handoffNoteDayShift: value,
                         handoffNoteNightShift: value
                     });
+                    const p = record?.beds[bedId].clinicalCrib;
+                    if (p) logNurseHandoffModified(bedId, p.patientName || 'Cuna', p.rut || '-', 'day', value, record?.date || '');
                 } else {
                     updatePatientMultiple(bedId, {
                         handoffNoteDayShift: value,
                         handoffNoteNightShift: value
                     });
+                    const p = record?.beds[bedId];
+                    if (p) logNurseHandoffModified(bedId, p.patientName || 'ANONYMOUS', p.rut || '-', 'day', value, record?.date || '');
                 }
             } else {
                 if (isNested) {
                     updateClinicalCrib(bedId, 'handoffNoteNightShift', value);
+                    const p = record?.beds[bedId].clinicalCrib;
+                    if (p) logNurseHandoffModified(bedId, p.patientName || 'Cuna', p.rut || '-', 'night', value, record?.date || '');
                 } else {
                     updatePatient(bedId, 'handoffNoteNightShift', value);
+                    const p = record?.beds[bedId];
+                    if (p) logNurseHandoffModified(bedId, p.patientName || 'ANONYMOUS', p.rut || '-', 'night', value, record?.date || '');
                 }
             }
         }

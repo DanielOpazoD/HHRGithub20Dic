@@ -27,7 +27,7 @@ export const CENSUS_DEFAULT_RECIPIENTS = [
 // Use simple hyphen to avoid encoding issues
 export const buildCensusEmailSubject = (date: string) => `Censo diario hospitalizados - ${formatDateDDMMYYYY(date)}`;
 
-export const buildCensusEmailBody = (date: string, nursesSignature?: string) => {
+export const buildCensusEmailBody = (date: string, nursesSignature?: string, encryptionPin?: string) => {
     // Parse date to get day, month name, year
     const [year, month, day] = date.split('-');
     const monthNames = [
@@ -42,10 +42,15 @@ export const buildCensusEmailBody = (date: string, nursesSignature?: string) => 
         ? `\n${nursesSignature}\nEnfermería - Servicio de Hospitalizados\nHospital Hanga Roa`
         : '\nEnfermería - Servicio de Hospitalizados\nHospital Hanga Roa';
 
+    const securityNote = encryptionPin
+        ? `\n\n📌 SEGURIDAD: Este archivo Excel está encriptado para proteger los datos de los pacientes.\nLa clave de apertura es: ${encryptionPin}`
+        : '';
+
     return [
         'Estimados/as:',
         '',
         `Junto con saludar, adjunto el censo diario de pacientes hospitalizados correspondiente al ${dayNum} de ${monthName} de ${year}.`,
+        securityNote,
         signatureBlock
     ].join('\n');
 };

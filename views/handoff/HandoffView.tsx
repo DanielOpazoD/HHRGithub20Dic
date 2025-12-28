@@ -20,6 +20,9 @@ import { MovementsSummary } from './MovementsSummary';
 
 import { useNotification } from '@/context/UIContext';
 import { useHandoffLogic } from '@/hooks';
+import { useAuditContext } from '../../context/AuditContext';
+import { getAttributedAuthors } from '../../services/admin/attributionService';
+import { useEffect } from 'react';
 
 interface HandoffViewProps {
     type?: 'nursing' | 'medical';
@@ -42,6 +45,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
     } = useDailyRecordContext();
     const { nursesList } = useStaffContext();
     const { success } = useNotification();
+    const { logEvent } = useAuditContext();
 
     const {
         selectedShift,
@@ -68,6 +72,28 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
         sendMedicalHandoff,
         onSuccess: success,
     });
+
+    // MINSAL Traceability: Log when clinical data is viewed
+    const { userId } = useAuditContext();
+    useEffect(() => {
+        if (record && record.date) {
+            // Attribution logic for shared accounts (MINSAL requirement)
+            const authors = getAttributedAuthors(userId, record, isMedical ? undefined : (selectedShift as 'day' | 'night'));
+
+            logEvent(
+                isMedical ? 'VIEW_MEDICAL_HANDOFF' : 'VIEW_NURSING_HANDOFF',
+                'dailyRecord',
+                record.date,
+                {
+                    view: isMedical ? 'medical_handoff' : 'nursing_handoff',
+                    shift: selectedShift
+                },
+                undefined,
+                record.date,
+                authors
+            );
+        }
+    }, [record?.date, type, selectedShift, isMedical, logEvent, userId, record?.nursesDayShift, record?.nursesNightShift]);
 
 
     const title = isMedical

@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { DailyRecord } from '../../types';
+import { DailyRecord, Statistics } from '../../types';
 import { NurseSelector, TensSelector } from './';
 import { SummaryCard } from '../../components/layout/SummaryCard';
 
@@ -11,7 +11,7 @@ interface CensusStaffHeaderProps {
     onUpdateNurse: (shift: 'day' | 'night', index: number, value: string) => void;
     onUpdateTens: (shift: 'day' | 'night', index: number, value: string) => void;
     readOnly?: boolean;
-    stats: any; // Using any for stats to avoid tight coupling with calculation return type for now, or import Stats type
+    stats: Statistics;
 }
 
 export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({

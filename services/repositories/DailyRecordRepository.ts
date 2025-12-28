@@ -6,6 +6,7 @@
  */
 
 import { DailyRecord, PatientData } from '../../types';
+import { DailyRecordPatchLoose } from '../../hooks/useDailyRecordTypes';
 import { BEDS } from '../../constants';
 import {
     saveRecordLocal,
@@ -57,7 +58,7 @@ export interface IDailyRecordRepository {
     getForDate(date: string): DailyRecord | null;
     getPreviousDay(date: string): DailyRecord | null;
     save(record: DailyRecord): Promise<void>;
-    subscribe(date: string, callback: (r: DailyRecord | null) => void): () => void;
+    subscribe(date: string, callback: (r: DailyRecord | null, hasPendingWrites: boolean) => void): () => void;
     initializeDay(date: string, copyFromDate?: string): Promise<DailyRecord>;
     deleteDay(date: string): Promise<void>;
 }
@@ -170,7 +171,7 @@ export const save = async (record: DailyRecord): Promise<void> => {
  * });
  * ```
  */
-export const updatePartial = async (date: string, partialData: Record<string, any>): Promise<void> => {
+export const updatePartial = async (date: string, partialData: DailyRecordPatchLoose): Promise<void> => {
     console.log('[Repository] updatePartial called:', date, Object.keys(partialData));
 
     // 1. Update local storage (Merge with dot notation support)
@@ -225,23 +226,25 @@ export const updatePartial = async (date: string, partialData: Record<string, an
  */
 export const subscribe = (
     date: string,
-    callback: (r: DailyRecord | null) => void
+    callback: (r: DailyRecord | null, hasPendingWrites: boolean) => void
 ): (() => void) => {
     if (demoModeActive) {
         console.log('⚠️ Subscribing in DEMO MODE (No real-time sync)');
         // Demo mode: no real-time sync, just return no-op
+        callback(getDemoRecordForDate(date), false);
         return () => { };
     }
 
     // Note: firestoreEnabled check removed - auth is verified by caller (useDailyRecordSync)
     console.log('🔌 Subscribing to LIVE Firestore updates:', date);
-    return subscribeToRecord(date, (record) => {
-        console.log('[Repository] Firestore subscription callback for', date, '- record exists:', !!record);
-        if (record) {
+    return subscribeToRecord(date, (record, hasPendingWrites) => {
+        console.log('[Repository] Firestore subscription callback for', date, '- record exists:', !!record, 'hasPendingWrites:', hasPendingWrites);
+        if (record && !hasPendingWrites) {
             // Mirror to localStorage whenever we get an update from Firestore
+            // ONLY if it's not a local echo (hasPendingWrites === false)
             saveRecordLocal(record);
         }
-        callback(record);
+        callback(record, hasPendingWrites);
     });
 };
 

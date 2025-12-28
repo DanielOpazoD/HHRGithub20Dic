@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { DailyRecord } from '../types';
+import { DailyRecord, PatientData } from '../types';
 
 /**
  * Hook to calculate which days in the selected month have patient data
@@ -24,8 +24,8 @@ export const useExistingDays = (
                     if (!dayRecord || !dayRecord.beds) return false;
 
                     // Check if day has any patients
-                    const hasPatients = Object.values(dayRecord.beds).some((bed: any) =>
-                        bed.patientName && bed.patientName.trim() !== ''
+                    const hasPatients = Object.values(dayRecord.beds).some((bed) =>
+                        (bed as PatientData).patientName && (bed as PatientData).patientName.trim() !== ''
                     );
                     return hasPatients;
                 })

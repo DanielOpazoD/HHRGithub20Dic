@@ -53,8 +53,11 @@ const generateRawRow = (
     ];
 };
 
-export const extractRowsFromRecord = (record: DailyRecord) => {
-    const rows: any[][] = [];
+/** Type for a single row of census data */
+type CensusRawRow = (string | boolean | number)[];
+
+export const extractRowsFromRecord = (record: DailyRecord): CensusRawRow[] => {
+    const rows: CensusRawRow[] = [];
     const nurses = record.nurses || (record.nurseName ? [record.nurseName] : []);
     const date = record.date;
     const activeExtras = record.activeExtraBeds || [];

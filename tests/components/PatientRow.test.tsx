@@ -242,7 +242,7 @@ describe('PatientRow Component', () => {
             fireEvent.click(demoBtn);
 
             // Modal is open. Let's find the save button.
-            const saveBtn = screen.getByText(/Guardar Datos/i);
+            const saveBtn = screen.getByText(/Guardar Cambios/i);
             fireEvent.click(saveBtn);
 
             expect(mockContext.updatePatientMultiple).toHaveBeenCalledWith('R1', expect.any(Object));

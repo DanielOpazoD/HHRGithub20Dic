@@ -264,6 +264,8 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                 onClose={() => setShowDemographics(false)}
                 data={data}
                 onSave={handleDemographicsSave}
+                bedId={bed.id}
+                recordDate={currentDateString}
             />
 
             {data.clinicalCrib && (
@@ -272,6 +274,8 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                     onClose={() => setShowCribDemographics(false)}
                     data={data.clinicalCrib}
                     onSave={handleCribDemographicsSave}
+                    bedId={`${bed.id}-cuna`}
+                    recordDate={currentDateString}
                 />
             )}
         </>

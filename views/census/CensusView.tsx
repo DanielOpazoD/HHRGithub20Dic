@@ -27,7 +27,6 @@ interface CensusViewProps {
     readOnly?: boolean;
 }
 
-// Inner component logic is now handled by custom hook
 const CensusViewContent: React.FC<CensusViewProps> = ({
     viewMode,
     selectedDay,

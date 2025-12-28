@@ -30,3 +30,10 @@ dist-ssr
 *storybook.log
 storybook-static
 GitHUBHHR
+
+# Testing
+coverage/
+
+# Misc
+.DS_Store
+.env*

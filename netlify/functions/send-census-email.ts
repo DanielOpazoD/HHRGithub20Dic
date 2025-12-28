@@ -60,13 +60,16 @@ export const handler = async (event: any) => {
         const attachmentBufferRaw = await buildCensusMasterBuffer(monthRecords);
         const attachmentName = getCensusMasterFilename(date);
 
-        // Generate dynamic 6-digit PIN and encrypt workbook
-        const pin = Math.floor(100000 + Math.random() * 900000).toString();
+        // Generate deterministic password based on census date (same for manual downloads and emails)
+        const { generateCensusPassword } = await import('../../services/security/exportPasswordService');
+        const password = generateCensusPassword(date);
+
+        console.log(`[CensusEmail] Password for ${date}: ${password}`);
 
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const XlsxPopulate = require('xlsx-populate');
         const attachmentBuffer = await XlsxPopulate.fromDataAsync(attachmentBufferRaw)
-            .then((workbook: any) => workbook.outputAsync({ password: pin }));
+            .then((workbook: any) => workbook.outputAsync({ password }));
 
         const resolvedRecipients: string[] = Array.isArray(recipients) && recipients.length > 0
             ? recipients
@@ -80,7 +83,7 @@ export const handler = async (event: any) => {
             nursesSignature,
             body,
             requestedBy: requesterEmail,
-            encryptionPin: pin // Pass the PIN so it can be included in the email body
+            encryptionPin: password // Pass the password so it can be included in the email body
         });
 
         console.log('Gmail send response', gmailResponse);

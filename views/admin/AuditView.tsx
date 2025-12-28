@@ -3,7 +3,7 @@ import {
     ClipboardList, Search, RefreshCw, Clock, User,
     FileText, Filter, Download, ChevronDown, ChevronRight,
     Calendar, AlertCircle, CheckCircle2, Trash2, LogIn, Eye, Activity, BarChart3,
-    MapPin, CreditCard, LogOut, GitBranch, MessageSquare, Stethoscope, Info, X
+    MapPin, CreditCard, LogOut, GitBranch, MessageSquare, Stethoscope, Info, X, Key
 } from 'lucide-react';
 import { getAuditLogs, AUDIT_ACTION_LABELS } from '../../services/admin/auditService';
 import { AuditLogEntry, AuditAction } from '../../types/audit';
@@ -105,6 +105,113 @@ const renderHumanDetails = (log: AuditLogEntry) => {
     }
 };
 
+// ============================================================================
+// Export Keys Panel - Shows passwords for census dates
+// ============================================================================
+const ExportKeysPanel: React.FC = () => {
+    const [passwords, setPasswords] = useState<Array<{ date: string; password: string }>>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadPasswords = async () => {
+            setLoading(true);
+            try {
+                // Dynamically import the password service
+                const { generateCensusPassword } = await import('../../services/security/exportPasswordService');
+
+                // Generate passwords for the last 30 days
+                const today = new Date();
+                const result: Array<{ date: string; password: string }> = [];
+
+                for (let i = 0; i < 30; i++) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    result.push({
+                        date: dateStr,
+                        password: generateCensusPassword(dateStr)
+                    });
+                }
+
+                setPasswords(result);
+            } catch (error) {
+                console.error('Failed to load passwords:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadPasswords();
+    }, []);
+
+    const formatDateDisplay = (dateStr: string): string => {
+        const [year, month, day] = dateStr.split('-');
+        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        return `${day} ${monthNames[parseInt(month, 10) - 1]} ${year}`;
+    };
+
+    const copyToClipboard = (password: string) => {
+        navigator.clipboard.writeText(password);
+    };
+
+    if (loading) {
+        return (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+                <RefreshCw size={32} className="animate-spin text-rose-500 mx-auto mb-4" />
+                <p className="text-slate-400">Cargando claves de exportación...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-rose-50 to-pink-50">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-rose-600 flex items-center justify-center shadow-lg shadow-rose-200">
+                        <Key className="text-white" size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-900">Claves de Exportación Excel</h3>
+                        <p className="text-sm text-slate-500">
+                            Contraseñas únicas por fecha de censo. La misma clave aplica para descargas manuales y correos automáticos.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {passwords.map(({ date, password }) => (
+                        <div
+                            key={date}
+                            className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-rose-200 hover:bg-rose-50/30 transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <Calendar size={16} className="text-slate-400" />
+                                <span className="font-medium text-slate-700">{formatDateDisplay(date)}</span>
+                            </div>
+                            <button
+                                onClick={() => copyToClipboard(password)}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 hover:border-rose-300 hover:bg-rose-50 transition-all font-mono text-sm font-bold text-rose-600 group-hover:shadow-sm"
+                                title="Clic para copiar"
+                            >
+                                {password}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-amber-50/50">
+                <div className="flex items-center gap-2 text-amber-700 text-xs font-medium">
+                    <AlertCircle size={14} />
+                    <span>Las claves son determinísticas: siempre serán las mismas para cada fecha de censo, sin importar cuándo se genere el archivo.</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const AuditView: React.FC = () => {
     const [logs, setLogs] = useState<AuditLogEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -154,7 +261,7 @@ export const AuditView: React.FC = () => {
         }
     };
 
-    const [activeSection, setActiveSection] = useState<'ALL' | 'SESSIONS' | 'CENSUS' | 'CUDYR' | 'HANDOFF' | 'HANDOFF_NURSE' | 'HANDOFF_MEDICAL'>('ALL');
+    const [activeSection, setActiveSection] = useState<'ALL' | 'SESSIONS' | 'CENSUS' | 'CUDYR' | 'HANDOFF' | 'HANDOFF_NURSE' | 'HANDOFF_MEDICAL' | 'EXPORT_KEYS'>('ALL');
 
     const sections = {
         'ALL': { label: 'Todos', color: 'bg-slate-100 text-slate-600' },
@@ -162,7 +269,8 @@ export const AuditView: React.FC = () => {
         'CENSUS': { label: 'Censo Diario', color: 'bg-emerald-100 text-emerald-700', actions: ['PATIENT_ADMITTED', 'PATIENT_DISCHARGED', 'PATIENT_TRANSFERRED', 'PATIENT_MODIFIED', 'PATIENT_CLEARED', 'DAILY_RECORD_CREATED', 'DAILY_RECORD_DELETED'] },
         'CUDYR': { label: 'CUDYR', color: 'bg-amber-100 text-amber-700', actions: ['CUDYR_MODIFIED', 'VIEW_CUDYR'] },
         'HANDOFF_NURSE': { label: 'Entrega Enfermería', color: 'bg-purple-100 text-purple-700', actions: ['NURSE_HANDOFF_MODIFIED', 'VIEW_NURSING_HANDOFF', 'HANDOFF_NOVEDADES_MODIFIED'] },
-        'HANDOFF_MEDICAL': { label: 'Entrega Médica', color: 'bg-sky-100 text-sky-700', actions: ['MEDICAL_HANDOFF_MODIFIED', 'VIEW_MEDICAL_HANDOFF', 'HANDOFF_NOVEDADES_MODIFIED'] }
+        'HANDOFF_MEDICAL': { label: 'Entrega Médica', color: 'bg-sky-100 text-sky-700', actions: ['MEDICAL_HANDOFF_MODIFIED', 'VIEW_MEDICAL_HANDOFF', 'HANDOFF_NOVEDADES_MODIFIED'] },
+        'EXPORT_KEYS': { label: 'Claves Excel', color: 'bg-rose-100 text-rose-700', actions: [] }
     };
 
     const filteredLogs = useMemo(() => {
@@ -306,192 +414,199 @@ export const AuditView: React.FC = () => {
                 </div>
             </div>
 
+            {/* Export Keys Panel - Special Section */}
+            {activeSection === 'EXPORT_KEYS' && (
+                <ExportKeysPanel />
+            )}
+
             {/* Logs Table: Modern Striped with Details */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-slate-50/50 border-b border-slate-100">
-                            <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                                <th className="px-6 py-4 text-left w-6"></th>
-                                <th className="px-4 py-4 text-left">Timestamp</th>
-                                <th className="px-4 py-4 text-left">Operador</th>
-                                <th className="px-4 py-4 text-left">Acción Realizada</th>
-                                <th className="px-4 py-4 text-left">Cama</th>
-                                <th className="px-4 py-4 text-left">Nombre Paciente</th>
-                                <th className="px-4 py-4 text-left">RUT</th>
-                                <th className="px-4 py-4 text-left">Vista rápida</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={8} className="px-4 py-20 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <RefreshCw size={40} className="animate-spin text-indigo-500 opacity-20" />
-                                            <p className="text-slate-400 font-medium animate-pulse">Sincronizando registros clínicos...</p>
-                                        </div>
-                                    </td>
+            {activeSection !== 'EXPORT_KEYS' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-slate-50/50 border-b border-slate-100">
+                                <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                                    <th className="px-6 py-4 text-left w-6"></th>
+                                    <th className="px-4 py-4 text-left">Timestamp</th>
+                                    <th className="px-4 py-4 text-left">Operador</th>
+                                    <th className="px-4 py-4 text-left">Acción Realizada</th>
+                                    <th className="px-4 py-4 text-left">Cama</th>
+                                    <th className="px-4 py-4 text-left">Nombre Paciente</th>
+                                    <th className="px-4 py-4 text-left">RUT</th>
+                                    <th className="px-4 py-4 text-left">Vista rápida</th>
                                 </tr>
-                            ) : filteredLogs.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="px-4 py-20 text-center">
-                                        <div className="flex flex-col items-center gap-3 opacity-30">
-                                            <Search size={48} className="text-slate-300" />
-                                            <p className="text-slate-500 font-bold">No se encontraron rastros para los filtros aplicados</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredLogs.map((log) => {
-                                    // Extract data from details for organized columns
-                                    const bedId = (log.details?.bedId as string) || log.entityId;
-                                    const patientName = (log.details?.patientName as string) || '';
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={8} className="px-4 py-20 text-center">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <RefreshCw size={40} className="animate-spin text-indigo-500 opacity-20" />
+                                                <p className="text-slate-400 font-medium animate-pulse">Sincronizando registros clínicos...</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : filteredLogs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={8} className="px-4 py-20 text-center">
+                                            <div className="flex flex-col items-center gap-3 opacity-30">
+                                                <Search size={48} className="text-slate-300" />
+                                                <p className="text-slate-500 font-bold">No se encontraron rastros para los filtros aplicados</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredLogs.map((log) => {
+                                        // Extract data from details for organized columns
+                                        const bedId = (log.details?.bedId as string) || log.entityId;
+                                        const patientName = (log.details?.patientName as string) || '';
 
-                                    return (
-                                        <React.Fragment key={log.id}>
-                                            <tr
-                                                className={clsx(
-                                                    "group hover:bg-slate-50/80 transition-all cursor-pointer",
-                                                    expandedRows.has(log.id) ? "bg-indigo-50/20" : ""
-                                                )}
-                                                onClick={() => toggleRow(log.id)}
-                                            >
-                                                <td className="px-6 py-4">
-                                                    {expandedRows.has(log.id)
-                                                        ? <ChevronDown size={18} className="text-indigo-500" />
-                                                        : <ChevronRight size={18} className="text-slate-300 group-hover:text-slate-500" />
-                                                    }
-                                                </td>
-                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-slate-900 font-bold">{formatTimestamp(log.timestamp).split(' ')[0]}</span>
-                                                        <span className="text-[10px] text-slate-400 font-mono">{formatTimestamp(log.timestamp).split(' ')[1]}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                                            {(log.userId || 'U').charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-semibold text-slate-700 truncate max-w-[120px]" title={log.userId || 'Usuario desconocido'}>
-                                                                {(log.userId || 'anon@hhr.cl').split('@')[0]}
-                                                            </span>
-                                                            {log.authors && (
-                                                                <span className="text-[10px] text-slate-400 italic truncate max-w-[120px]" title={`Autores: ${log.authors}`}>
-                                                                    {log.authors}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className={clsx(
-                                                            "inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg border shadow-sm",
-                                                            actionColors[log.action]
-                                                        )}>
-                                                            {actionIcons[log.action]}
-                                                            {AUDIT_ACTION_LABELS[log.action]}
-                                                        </span>
-                                                        {log.action === 'USER_LOGOUT' && log.details?.durationFormatted && (
-                                                            <span className="text-[9px] text-slate-400 font-medium ml-1">
-                                                                Duración: {log.details.durationFormatted as string}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    {log.entityType === 'user' ? (
-                                                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">Sistema</span>
-                                                    ) : (
-                                                        <div className="flex items-center gap-1.5 font-bold text-slate-700">
-                                                            <MapPin size={12} className="text-slate-400" />
-                                                            {bedId && (bedId as string).length < 15 ? bedId : '-'}
-                                                        </div>
+                                        return (
+                                            <React.Fragment key={log.id}>
+                                                <tr
+                                                    className={clsx(
+                                                        "group hover:bg-slate-50/80 transition-all cursor-pointer",
+                                                        expandedRows.has(log.id) ? "bg-indigo-50/20" : ""
                                                     )}
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]">
-                                                        {log.entityType === 'user' ? '-' : (patientName || '-')}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    {log.patientIdentifier ? (
-                                                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-2 py-1 rounded-md inline-block">
-                                                            <CreditCard size={10} className="text-slate-400" />
-                                                            <span className="text-[10px] font-mono text-slate-600">{log.patientIdentifier}</span>
+                                                    onClick={() => toggleRow(log.id)}
+                                                >
+                                                    <td className="px-6 py-4">
+                                                        {expandedRows.has(log.id)
+                                                            ? <ChevronDown size={18} className="text-indigo-500" />
+                                                            : <ChevronRight size={18} className="text-slate-300 group-hover:text-slate-500" />
+                                                        }
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-slate-900 font-bold">{formatTimestamp(log.timestamp).split(' ')[0]}</span>
+                                                            <span className="text-[10px] text-slate-400 font-mono">{formatTimestamp(log.timestamp).split(' ')[1]}</span>
                                                         </div>
-                                                    ) : <span className="text-slate-300">-</span>}
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <span className="text-[10px] text-slate-400 italic truncate block max-w-[120px]">
-                                                        {JSON.stringify(log.details || {}).slice(0, 40)}...
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                            {/* EXPANSIBLE DETAILS: HUMAN FRIENDLY */}
-                                            {expandedRows.has(log.id) && (
-                                                <tr className="bg-slate-50/50">
-                                                    <td colSpan={8} className="px-12 py-6 border-l-4 border-indigo-500/30">
-                                                        <div className="space-y-4">
-                                                            <div className="flex items-center justify-between">
-                                                                <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                                                    <FileText size={16} className="text-indigo-500" />
-                                                                    <div className="flex flex-col">
-                                                                        <span>{renderHumanDetails(log)}</span>
-                                                                        {log.authors && (
-                                                                            <span className="text-[10px] font-medium text-slate-400 italic">
-                                                                                Responsables: {log.authors}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </h4>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const newSet = new Set(showMetadata);
-                                                                        if (newSet.has(log.id)) newSet.delete(log.id);
-                                                                        else newSet.add(log.id);
-                                                                        setShowMetadata(newSet);
-                                                                    }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-500 hover:bg-slate-50 transition-colors shadow-sm"
-                                                                >
-                                                                    <Activity size={12} />
-                                                                    {showMetadata.has(log.id) ? 'Ocultar Metadata' : 'Ver Metadata Técnica'}
-                                                                </button>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                                                {(log.userId || 'U').charAt(0).toUpperCase()}
                                                             </div>
-
-                                                            {showMetadata.has(log.id) && (
-                                                                <div className="bg-slate-900 p-4 rounded-xl shadow-inner font-mono text-[10px] leading-relaxed overflow-x-auto text-sky-400">
-                                                                    <div className="flex items-center gap-2 mb-3 border-b border-slate-800 pb-2">
-                                                                        <AlertCircle size={12} />
-                                                                        <span className="uppercase tracking-widest font-bold">Detalles Técnicos / Sistema</span>
-                                                                    </div>
-                                                                    <pre className="opacity-90">
-                                                                        {JSON.stringify(log.details || {}, null, 2)}
-                                                                    </pre>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex gap-6 pt-2">
-                                                                <div>
-                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID Registro</p>
-                                                                    <p className="text-[10px] text-slate-400 font-mono mt-1">{log.id}</p>
-                                                                </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-semibold text-slate-700 truncate max-w-[120px]" title={log.userId || 'Usuario desconocido'}>
+                                                                    {(log.userId || 'anon@hhr.cl').split('@')[0]}
+                                                                </span>
+                                                                {log.authors && (
+                                                                    <span className="text-[10px] text-slate-400 italic truncate max-w-[120px]" title={`Autores: ${log.authors}`}>
+                                                                        {log.authors}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </td>
+                                                    <td className="px-4 py-4">
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className={clsx(
+                                                                "inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg border shadow-sm",
+                                                                actionColors[log.action]
+                                                            )}>
+                                                                {actionIcons[log.action]}
+                                                                {AUDIT_ACTION_LABELS[log.action]}
+                                                            </span>
+                                                            {log.action === 'USER_LOGOUT' && log.details?.durationFormatted && (
+                                                                <span className="text-[9px] text-slate-400 font-medium ml-1">
+                                                                    Duración: {log.details.durationFormatted as string}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        {log.entityType === 'user' ? (
+                                                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">Sistema</span>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                                                                <MapPin size={12} className="text-slate-400" />
+                                                                {bedId && (bedId as string).length < 15 ? bedId : '-'}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]">
+                                                            {log.entityType === 'user' ? '-' : (patientName || '-')}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        {log.patientIdentifier ? (
+                                                            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-2 py-1 rounded-md inline-block">
+                                                                <CreditCard size={10} className="text-slate-400" />
+                                                                <span className="text-[10px] font-mono text-slate-600">{log.patientIdentifier}</span>
+                                                            </div>
+                                                        ) : <span className="text-slate-300">-</span>}
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <span className="text-[10px] text-slate-400 italic truncate block max-w-[120px]">
+                                                            {JSON.stringify(log.details || {}).slice(0, 40)}...
+                                                        </span>
+                                                    </td>
                                                 </tr>
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
+                                                {/* EXPANSIBLE DETAILS: HUMAN FRIENDLY */}
+                                                {expandedRows.has(log.id) && (
+                                                    <tr className="bg-slate-50/50">
+                                                        <td colSpan={8} className="px-12 py-6 border-l-4 border-indigo-500/30">
+                                                            <div className="space-y-4">
+                                                                <div className="flex items-center justify-between">
+                                                                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                                                        <FileText size={16} className="text-indigo-500" />
+                                                                        <div className="flex flex-col">
+                                                                            <span>{renderHumanDetails(log)}</span>
+                                                                            {log.authors && (
+                                                                                <span className="text-[10px] font-medium text-slate-400 italic">
+                                                                                    Responsables: {log.authors}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </h4>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const newSet = new Set(showMetadata);
+                                                                            if (newSet.has(log.id)) newSet.delete(log.id);
+                                                                            else newSet.add(log.id);
+                                                                            setShowMetadata(newSet);
+                                                                        }}
+                                                                        className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-500 hover:bg-slate-50 transition-colors shadow-sm"
+                                                                    >
+                                                                        <Activity size={12} />
+                                                                        {showMetadata.has(log.id) ? 'Ocultar Metadata' : 'Ver Metadata Técnica'}
+                                                                    </button>
+                                                                </div>
+
+                                                                {showMetadata.has(log.id) && (
+                                                                    <div className="bg-slate-900 p-4 rounded-xl shadow-inner font-mono text-[10px] leading-relaxed overflow-x-auto text-sky-400">
+                                                                        <div className="flex items-center gap-2 mb-3 border-b border-slate-800 pb-2">
+                                                                            <AlertCircle size={12} />
+                                                                            <span className="uppercase tracking-widest font-bold">Detalles Técnicos / Sistema</span>
+                                                                        </div>
+                                                                        <pre className="opacity-90">
+                                                                            {JSON.stringify(log.details || {}, null, 2)}
+                                                                        </pre>
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex gap-6 pt-2">
+                                                                    <div>
+                                                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID Registro</p>
+                                                                        <p className="text-[10px] text-slate-400 font-mono mt-1">{log.id}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Pagination / Total info */}
             <div className="flex items-center justify-between text-slate-500 text-xs font-medium px-2">

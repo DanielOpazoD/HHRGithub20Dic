@@ -47,11 +47,25 @@ export const generateCensusMasterExcel = async (year: number, month: number, sel
 
     console.log(`✅ Se encontraron ${monthRecords.length} días con datos`);
 
+    // Generate the workbook
     const workbook = buildCensusMasterWorkbook(monthRecords);
     const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
+
+    // Get the deterministic password for this census date
+    const { generateCensusPassword } = await import('../security/exportPasswordService');
+    const password = generateCensusPassword(limitDateStr);
+
+    // Encrypt the workbook with xlsx-populate
+    const XlsxPopulate = await import('xlsx-populate');
+    const encryptedWorkbook = await XlsxPopulate.default.fromDataAsync(buffer);
+    const encryptedBuffer = await encryptedWorkbook.outputAsync({ password });
+
+    const blob = new Blob([encryptedBuffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
     const filename = getCensusMasterFilename(limitDateStr);
     saveAs(blob, filename);
+
+    // Show the password to the user
+    alert(`📌 ARCHIVO PROTEGIDO\n\nEl archivo Excel ha sido descargado con protección.\n\nClave de apertura: ${password}\n\nGuarde esta clave en un lugar seguro.`);
 };

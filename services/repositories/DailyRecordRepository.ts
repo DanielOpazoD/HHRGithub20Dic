@@ -233,13 +233,10 @@ export const subscribe = (
         return () => { };
     }
 
-    if (!firestoreEnabled) {
-        console.log('⚠️ Subscribing in OFFLINE MODE (No real-time sync)');
-        return () => { };
-    }
-
+    // Note: firestoreEnabled check removed - auth is verified by caller (useDailyRecordSync)
     console.log('🔌 Subscribing to LIVE Firestore updates:', date);
     return subscribeToRecord(date, (record) => {
+        console.log('[Repository] Firestore subscription callback for', date, '- record exists:', !!record);
         if (record) {
             // Mirror to localStorage whenever we get an update from Firestore
             saveRecordLocal(record);

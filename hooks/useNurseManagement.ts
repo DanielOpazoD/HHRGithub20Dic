@@ -7,11 +7,13 @@ export const useNurseManagement = (
 ) => {
 
     const updateNurse = (shift: 'day' | 'night', index: number, name: string) => {
+        console.log('[NurseManagement] updateNurse called:', shift, index, name, 'record:', !!record);
         if (!record) return;
 
         const field = shift === 'day' ? 'nursesDayShift' : 'nursesNightShift';
 
         // Use atomic path for reliable sync
+        console.log('[NurseManagement] Calling patchRecord with:', `${field}.${index}`, '=', name);
         patchRecord({ [`${field}.${index}`]: name });
     };
 

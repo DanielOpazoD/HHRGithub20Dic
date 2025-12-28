@@ -97,7 +97,7 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
                         }
 
                         // Always accept remote updates - they are the source of truth
-                        console.log('[Sync] Accepting remote update');
+                        console.log('[Sync] Accepting remote update, nursesDayShift:', remoteRecord.nursesDayShift, 'nursesNightShift:', remoteRecord.nursesNightShift);
                         setRecord(remoteRecord);
                         setLastSyncTime(new Date());
                         setSyncStatus('saved');

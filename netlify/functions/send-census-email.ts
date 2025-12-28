@@ -70,19 +70,19 @@ export const handler = async (event: any) => {
         // Ensure the PIN is included in the email body in the correct position
         let finalBody = body || '';
         if (password && !finalBody.includes(password)) {
-            const pinLine = `\nClave Excel: ${password}\n`;
+            const pinLine = `Clave Excel: ${password}`;
 
             // Try to insert before "Saludos cordiales,"
             if (finalBody.includes('Saludos cordiales,')) {
-                finalBody = finalBody.replace('Saludos cordiales,', `${pinLine}\nSaludos cordiales,`);
+                finalBody = finalBody.replace('Saludos cordiales,', `${pinLine}\n\nSaludos cordiales,`);
             }
             // Fallback: insert before the signature separator
             else if (finalBody.includes('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')) {
-                finalBody = finalBody.replace('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', `${pinLine}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+                finalBody = finalBody.replace('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', `${pinLine}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
             }
             // Absolute fallback: append at the end
             else {
-                finalBody = finalBody ? `${finalBody}\n${pinLine}` : pinLine;
+                finalBody = finalBody ? `${finalBody}\n\n${pinLine}` : pinLine;
             }
         }
 

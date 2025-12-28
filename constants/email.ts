@@ -72,7 +72,7 @@ export const buildCensusEmailBody = (date: string, nursesSignature?: string, enc
 
     // Security note - simple format without emoji
     const securityNote = encryptionPin
-        ? `\nClave Excel: ${encryptionPin}\n`
+        ? `Clave Excel: ${encryptionPin}`
         : '';
 
     // Visual separator using Unicode horizontal lines

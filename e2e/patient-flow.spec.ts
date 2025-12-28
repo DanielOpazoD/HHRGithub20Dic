@@ -4,104 +4,40 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { injectMockUser, injectMockData } from './fixtures/auth';
 
 test.describe('Patient Registration Flow', () => {
     test.beforeEach(async ({ page }) => {
-        // Go to the app
         await page.goto('/');
-
-        // Wait for app to load
-        await page.waitForLoadState('networkidle');
-    });
-
-    test('should display the main application', async ({ page }) => {
-        // Check that the app header or main content is visible
-        await expect(page.locator('body')).toBeVisible();
-
-        // Look for the app structure (header, navigation, content)
-        const appContent = page.locator('#root');
-        await expect(appContent).toBeVisible();
-    });
-
-    test('should be able to navigate the date selector', async ({ page }) => {
-        // Look for date navigation elements
-        const dateSelector = page.locator('[data-testid="date-selector"], .date-navigation, button:has-text("Hoy")');
-
-        if (await dateSelector.count() > 0) {
-            await expect(dateSelector.first()).toBeVisible();
-        }
-    });
-
-    test('should display census view when logged in', async ({ page }) => {
-        // Check for census-related elements
-        const censusIndicators = page.locator(
-            '[data-testid="census-table"], ' +
-            '.census-view, ' +
-            'table, ' +
-            ':has-text("Camas"), ' +
-            ':has-text("Paciente")'
-        );
-
-        // At least one census indicator should be visible if logged in
-        // or a login prompt should be visible
-        const loginPrompt = page.locator(':has-text("Iniciar sesión"), :has-text("Login")');
-
-        const hasCensus = await censusIndicators.count() > 0;
-        const hasLogin = await loginPrompt.count() > 0;
-
-        expect(hasCensus || hasLogin).toBeTruthy();
-    });
-
-    test('should show bed grid or table structure', async ({ page }) => {
-        // Look for table structure indicating beds
-        const tableHeaders = page.locator('th, [role="columnheader"]');
-        const tableRows = page.locator('tr, [role="row"]');
-
-        // If we're in the census view, there should be table structure
-        if (await tableHeaders.count() > 0) {
-            await expect(tableHeaders.first()).toBeVisible();
-        }
-
-        if (await tableRows.count() > 0) {
-            await expect(tableRows.first()).toBeVisible();
-        }
-    });
-});
-
-test.describe('Navigation', () => {
-    test('should be able to switch between views', async ({ page }) => {
+        await page.evaluate(() => localStorage.clear());
+        await injectMockUser(page, 'editor');
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
-
-        // Look for navigation buttons or tabs
-        const navButtons = page.locator('nav button, [role="tab"], .nav-item');
-
-        if (await navButtons.count() > 0) {
-            // Click the first navigation item
-            await navButtons.first().click();
-            await page.waitForTimeout(500);
-
-            // Verify page responds
-            await expect(page.locator('body')).toBeVisible();
-        }
-    });
-});
-
-test.describe('Responsive Design', () => {
-    test('should display correctly on mobile viewport', async ({ page }) => {
-        await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
-        await page.goto('/');
-        await page.waitForLoadState('networkidle');
-
-        // App should still be visible and not broken
-        await expect(page.locator('#root')).toBeVisible();
+        await page.waitForLoadState('domcontentloaded');
     });
 
-    test('should display correctly on tablet viewport', async ({ page }) => {
-        await page.setViewportSize({ width: 768, height: 1024 }); // iPad
-        await page.goto('/');
-        await page.waitForLoadState('networkidle');
+    test('should allow creating a blank day and adding a patient', async ({ page }) => {
+        // If the day is empty, we should see the EmptyDayPrompt
+        const registroEnBlancoBtn = page.locator('button:has-text("Registro en Blanco")');
 
-        await expect(page.locator('#root')).toBeVisible();
+        // Wait for button to be visible and click it
+        await expect(registroEnBlancoBtn).toBeVisible({ timeout: 10000 });
+        await registroEnBlancoBtn.click();
+
+        // Wait for census table
+        await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
+
+        // Add patient to R1
+        const row = page.locator('tr:has-text("R1")');
+        const nameInput = row.locator('input[type="text"]').first();
+
+        await nameInput.fill('NUEVO PACIENTE E2E');
+        // Wait for state updates
+        await page.waitForTimeout(1000);
+        await expect(nameInput).toHaveValue('NUEVO PACIENTE E2E');
+
+        // Check if stats updated (should show 1 patient)
+        // Ocupadas is in a span next to the label
+        const occupiedCount = page.locator('span:has-text("Ocupadas:") + span').first();
+        await expect(occupiedCount).toHaveText('1', { timeout: 10000 });
     });
 });

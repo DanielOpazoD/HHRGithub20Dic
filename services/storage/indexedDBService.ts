@@ -28,8 +28,18 @@ class HospitalDatabase extends Dexie {
     }
 }
 
-// Singleton instance
-const db = new HospitalDatabase();
+// Singleton instance with safety
+let db: HospitalDatabase;
+try {
+    db = new HospitalDatabase();
+} catch (e) {
+    console.error('Failed to initialize HospitalDatabase:', e);
+    // Create a dummy object or handle if db is accessed when broken
+    db = {
+        dailyRecords: { toArray: () => Promise.resolve([]), get: () => Promise.resolve(null), put: () => Promise.resolve(), delete: () => Promise.resolve(), clear: () => Promise.resolve(), orderBy: () => ({ reverse: () => ({ keys: () => Promise.resolve([]) }) }), where: () => ({ below: () => ({ reverse: () => ({ first: () => Promise.resolve(null) }) }) }) },
+        catalogs: { get: () => Promise.resolve(null), put: () => Promise.resolve() }
+    } as any;
+}
 
 // ============================================================================
 // Daily Records Operations

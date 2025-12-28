@@ -7,6 +7,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import clsx from 'clsx';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 // ============================================================================
 // Types
@@ -153,6 +154,9 @@ const Dialog: React.FC<{
     };
 
     const styles = variantStyles[dialog.variant];
+
+    // Manage body scroll lock
+    useScrollLock(dialog.isOpen);
 
     if (!dialog.isOpen) return null;
 

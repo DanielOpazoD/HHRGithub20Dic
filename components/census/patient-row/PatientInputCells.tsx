@@ -6,6 +6,7 @@ import { ArrowRight, Baby } from 'lucide-react';
 import { DeviceSelector } from '../../DeviceSelector';
 import { DebouncedInput } from '../../ui/DebouncedInput';
 import { RutPassportInput } from './RutPassportInput';
+import { PatientInputSchema } from '../../../schemas/inputSchemas';
 
 interface PatientInputCellsProps {
     data: PatientData;
@@ -52,14 +53,15 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
     return (
         <>
             {/* Name */}
-            <td className="p-1 border-r border-slate-200 min-w-[150px]">
+            <td className="p-1 border-r border-slate-200 w-[110px]">
                 <div className="relative">
                     {isSubRow && <div className="absolute left-[-15px] top-2 text-slate-300"><ArrowRight size={14} /></div>}
                     <DebouncedInput
                         type="text"
                         className={clsx(
                             "w-full p-0.5 h-9 border rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-[13px] font-medium",
-                            isSubRow ? "border-pink-100 bg-white text-xs h-8" : "border-slate-200 bg-white"
+                            isSubRow ? "border-pink-100 bg-white text-xs h-8" : "border-slate-200 bg-white",
+                            !PatientInputSchema.pick({ patientName: true }).safeParse({ patientName: data.patientName }).success && data.patientName && "border-red-400 focus:border-red-500 focus:ring-red-100"
                         )}
                         placeholder={isSubRow ? "Nombre RN / Niño" : (isEmpty ? "" : "Nombre Paciente")}
                         value={data.patientName || ''}
@@ -75,35 +77,45 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                 value={data.rut || ''}
                 documentType={data.documentType || 'RUT'}
                 isSubRow={isSubRow}
+                isEmpty={isEmpty}
                 onChange={handleDebouncedText('rut')}
                 onToggleType={onChange.toggleDocType}
                 readOnly={readOnly}
+                hasError={!PatientInputSchema.pick({ rut: true }).safeParse({ rut: data.rut }).success && !!data.rut}
             />
 
             {/* AGE */}
             <td className="p-1 border-r border-slate-200 w-14 relative">
-                <input
-                    type="text"
-                    className={clsx(
-                        "w-full h-9 px-1 border border-slate-200 bg-slate-50 text-slate-600 rounded text-center cursor-pointer font-bold text-xs",
-                        isSubRow && "h-8"
-                    )}
-                    placeholder="Edad"
-                    value={data.age || ''}
-                    readOnly
-                    onClick={onDemo}
-                />
+                {isEmpty && !isSubRow ? (
+                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                ) : (
+                    <input
+                        type="text"
+                        className={clsx(
+                            "w-full h-9 px-1 border border-slate-200 bg-slate-50 text-slate-600 rounded text-center cursor-pointer font-bold text-xs transition-all",
+                            isSubRow && "h-8",
+                            !PatientInputSchema.pick({ age: true }).safeParse({ age: data.age }).success && data.age && "border-red-400 bg-red-50 text-red-700"
+                        )}
+                        placeholder="Edad"
+                        value={data.age || ''}
+                        readOnly
+                        onClick={onDemo}
+                    />
+                )}
             </td>
 
             {/* DIAGNOSTICO */}
-            <td className="p-1 border-r border-slate-200 min-w-[200px]">
+            <td className="p-1 border-r border-slate-200 w-[140px]">
                 {isEmpty && !isSubRow ? (
                     <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <DebouncedInput
                         type="text"
                         className={clsx(
-                            "w-full p-0.5 h-9 border border-slate-200 rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-[13px]",
+                            "w-full p-0.5 h-9 border rounded transition-all duration-200 focus:ring-2 focus:outline-none text-[13px]",
+                            !PatientInputSchema.pick({ pathology: true }).safeParse({ pathology: data.pathology }).success && data.pathology
+                                ? "border-red-400 focus:ring-red-200 focus:border-red-500"
+                                : "border-slate-200 focus:ring-medical-500/20 focus:border-medical-500",
                             isSubRow && "text-xs h-8"
                         )}
                         placeholder="Diagnóstico"
@@ -203,22 +215,34 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
 
             {/* Devices */}
             <td className="p-1 border-r border-slate-200 w-32 relative">
-                <DeviceSelector
-                    devices={data.devices || []}
-                    deviceDetails={data.deviceDetails}
-                    onChange={onChange.devices}
-                    onDetailsChange={onChange.deviceDetails}
-                    currentDate={currentDateString}
-                    disabled={readOnly || false}
-                />
+                {isEmpty && !isSubRow ? (
+                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                ) : (
+                    <DeviceSelector
+                        devices={data.devices || []}
+                        deviceDetails={data.deviceDetails}
+                        onChange={onChange.devices}
+                        onDetailsChange={onChange.deviceDetails}
+                        currentDate={currentDateString}
+                        disabled={readOnly || false}
+                    />
+                )}
             </td>
 
             <td className="p-0.5 border-r border-slate-200 text-center w-10">
-                <input type="checkbox" checked={data.surgicalComplication || false} onChange={handleCheck('surgicalComplication')} className="w-4 h-4 text-red-600 rounded" title="Comp. Qx" disabled={readOnly} />
+                {isEmpty && !isSubRow ? (
+                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                ) : (
+                    <input type="checkbox" checked={data.surgicalComplication || false} onChange={handleCheck('surgicalComplication')} className="w-4 h-4 text-red-600 rounded" title="Comp. Qx" disabled={readOnly} />
+                )}
             </td>
 
             <td className="p-0.5 text-center w-10">
-                <input type="checkbox" checked={data.isUPC || false} onChange={handleCheck('isUPC')} className="w-4 h-4 text-purple-600 rounded" title="UPC" disabled={readOnly} />
+                {isEmpty && !isSubRow ? (
+                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                ) : (
+                    <input type="checkbox" checked={data.isUPC || false} onChange={handleCheck('isUPC')} className="w-4 h-4 text-purple-600 rounded" title="UPC" disabled={readOnly} />
+                )}
             </td>
         </>
     );

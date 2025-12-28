@@ -1,9 +1,10 @@
-
-
 import React, { useState, useEffect } from 'react';
-import { User, X, Calculator } from 'lucide-react';
+import { User, Calculator } from 'lucide-react';
 import { PatientData } from '../../types';
 import { ADMISSION_ORIGIN_OPTIONS } from '../../constants';
+import { BaseModal, ModalSection } from '../shared/BaseModal';
+import { PatientInputSchema } from '../../schemas/inputSchemas';
+import clsx from 'clsx';
 
 interface DemographicsModalProps {
     isOpen: boolean;
@@ -22,6 +23,7 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, on
         isRapanui: data.isRapanui || false,
         biologicalSex: data.biologicalSex || 'Indeterminado'
     });
+    const [error, setError] = useState<string | null>(null);
 
     // Sync when data changes
     useEffect(() => {
@@ -35,8 +37,6 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, on
             biologicalSex: data.biologicalSex || 'Indeterminado'
         });
     }, [data]);
-
-    if (!isOpen) return null;
 
     const calculateFormattedAge = (dob: string) => {
         if (!dob) return '';
@@ -66,6 +66,15 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, on
     };
 
     const handleSave = () => {
+        // Validate birthDate if present
+        if (localData.birthDate) {
+            const result = PatientInputSchema.pick({ birthDate: true }).safeParse({ birthDate: localData.birthDate });
+            if (!result.success) {
+                setError(result.error.issues[0].message);
+                return;
+            }
+        }
+
         const age = localData.birthDate ? calculateFormattedAge(localData.birthDate) : data.age;
 
         onSave({
@@ -82,44 +91,56 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, on
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in print:hidden">
-            <div className="glass rounded-2xl shadow-premium w-full max-w-sm animate-scale-in max-h-[90vh] overflow-hidden flex flex-col border border-white/40">
-                <div className="flex justify-between items-center p-4 border-b border-white/20 bg-white/30 sticky top-0 z-10">
-                    <h3 className="font-display font-bold text-slate-800 flex items-center gap-2 tracking-tight">
-                        <User size={18} className="text-medical-600" /> Datos Demográficos
-                    </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-                        <X size={18} />
-                    </button>
+        <BaseModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Datos Demográficos"
+            icon={<User size={16} />}
+            size="md"
+            headerIconColor="text-blue-600"
+            variant="white"
+        >
+            <div className="space-y-6">
+                {/* Patient Header Summary - Minimalist */}
+                <div className="pb-4 border-b border-slate-100">
+                    <p className="text-lg font-display font-bold text-slate-900 leading-tight">
+                        {data.patientName || "Paciente Sin Nombre"}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                        {data.rut || "Sin RUT"}
+                    </p>
                 </div>
 
-                <div className="p-5 space-y-4 overflow-y-auto">
-                    <div className="bg-white/40 p-3 rounded-xl border border-white/50 shadow-sm">
-                        <p className="text-sm font-display font-bold text-medical-800 leading-tight">{data.patientName || "Paciente Sin Nombre"}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">{data.rut || "Sin RUT"}</p>
-                    </div>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                    {/* Column 1: Demographic Info */}
+                    <div className="space-y-6">
+                        <div className="space-y-1.5">
+                            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Fecha de Nacimiento</label>
+                            <input
+                                type="date"
+                                className={clsx(
+                                    "w-full p-2 bg-slate-50 border rounded-lg text-sm focus:ring-2 focus:outline-none transition-all",
+                                    error ? "border-red-300 focus:ring-red-100" : "border-slate-200 focus:ring-blue-500/20 focus:border-blue-500"
+                                )}
+                                value={localData.birthDate}
+                                onChange={(e) => {
+                                    setLocalData({ ...localData, birthDate: e.target.value });
+                                    setError(null);
+                                }}
+                            />
+                            {error ? (
+                                <p className="text-[9px] text-red-500 mt-1 font-medium pl-1">{error}</p>
+                            ) : localData.birthDate && (
+                                <p className="text-[10px] text-emerald-600 mt-1 font-semibold pl-1">
+                                    Edad: {calculateFormattedAge(localData.birthDate)}
+                                </p>
+                            )}
+                        </div>
 
-                    <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Fecha Nacimiento</label>
-                        <input
-                            type="date"
-                            className="w-full p-2.5 bg-white/60 border border-white/60 rounded-xl text-sm focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none transition-all shadow-sm"
-                            value={localData.birthDate}
-                            onChange={(e) => setLocalData({ ...localData, birthDate: e.target.value })}
-                        />
-                        {localData.birthDate && (
-                            <div className="text-sm text-medical-700 mt-2.5 flex items-center gap-2 bg-medical-50/50 backdrop-blur-sm p-2.5 rounded-xl border border-medical-100/50 shadow-sm">
-                                <Calculator size={14} className="text-medical-500" />
-                                <span>Edad calculada: <strong className="font-display">{calculateFormattedAge(localData.birthDate)}</strong></span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Previsión</label>
+                        <div className="space-y-1.5">
+                            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Previsión</label>
                             <select
-                                className="w-full p-2.5 bg-white/60 border border-white/60 rounded-xl text-sm focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none transition-all shadow-sm cursor-pointer"
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all cursor-pointer"
                                 value={localData.insurance}
                                 onChange={(e) => setLocalData({ ...localData, insurance: e.target.value as any })}
                             >
@@ -128,75 +149,101 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({ isOpen, on
                                 <option value="Particular">Particular</option>
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Sexo Biológico</label>
-                            <select
-                                className="w-full p-2.5 bg-white/60 border border-white/60 rounded-xl text-sm focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none transition-all shadow-sm cursor-pointer"
-                                value={localData.biologicalSex}
-                                onChange={(e) => setLocalData({ ...localData, biologicalSex: e.target.value as any })}
-                            >
-                                <option value="Indeterminado">Indeterminado</option>
-                                <option value="Masculino">Masculino</option>
-                                <option value="Femenino">Femenino</option>
-                            </select>
+
+                        <div className="space-y-1.5">
+                            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Sexo Biológico</label>
+                            <div className="flex gap-4 pl-1">
+                                {['Masculino', 'Femenino', 'Indeterminado'].map((sex) => (
+                                    <label key={sex} className="flex items-center gap-2 cursor-pointer group">
+                                        <input
+                                            type="radio"
+                                            name="biologicalSex"
+                                            checked={localData.biologicalSex === sex}
+                                            onChange={() => setLocalData({ ...localData, biologicalSex: sex as any })}
+                                            className="w-4 h-4 text-blue-600 focus:ring-blue-500/20"
+                                        />
+                                        <span className={clsx("text-xs transition-colors", localData.biologicalSex === sex ? "font-bold text-slate-900" : "text-slate-500 group-hover:text-slate-700")}>
+                                            {sex === 'Indeterminado' ? 'Indet.' : sex.slice(0, 4) + '.'}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
-                    {/* NEW: Admission Origin */}
-                    <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Origen del Ingreso</label>
-                        <select
-                            className="w-full p-2.5 bg-white/60 border border-white/60 rounded-xl text-sm focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none transition-all shadow-sm cursor-pointer"
-                            value={localData.admissionOrigin}
-                            onChange={(e) => setLocalData({ ...localData, admissionOrigin: e.target.value as any })}
-                        >
-                            <option value="">-- Seleccionar --</option>
-                            {ADMISSION_ORIGIN_OPTIONS.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </select>
-                        {localData.admissionOrigin === 'Otro' && (
-                            <input
-                                type="text"
-                                className="w-full p-2.5 bg-white/60 border border-white/60 rounded-xl text-sm focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none transition-all shadow-sm mt-2.5"
-                                placeholder="Describa el origen..."
-                                value={localData.admissionOriginDetails}
-                                onChange={(e) => setLocalData({ ...localData, admissionOriginDetails: e.target.value })}
-                            />
-                        )}
-                    </div>
+                    {/* Column 2: Origin & Permanence */}
+                    <div className="space-y-6">
+                        <div className="space-y-1.5">
+                            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Origen del Ingreso</label>
+                            <div className="space-y-2">
+                                <select
+                                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all cursor-pointer"
+                                    value={localData.admissionOrigin}
+                                    onChange={(e) => setLocalData({ ...localData, admissionOrigin: e.target.value as any })}
+                                >
+                                    <option value="">-- Seleccionar --</option>
+                                    {ADMISSION_ORIGIN_OPTIONS.map(opt => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                </select>
+                                {localData.admissionOrigin === 'Otro' && (
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all mt-1 shadow-sm"
+                                        placeholder="Especifique origen..."
+                                        value={localData.admissionOriginDetails}
+                                        onChange={(e) => setLocalData({ ...localData, admissionOriginDetails: e.target.value })}
+                                        autoFocus
+                                    />
+                                )}
+                            </div>
+                        </div>
 
-                    {/* UPDATED LABEL: Condición de permanencia */}
-                    <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Condición de permanencia</label>
-                        <select
-                            className="w-full p-2.5 bg-white/60 border border-white/60 rounded-xl text-sm focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none transition-all shadow-sm cursor-pointer"
-                            value={localData.origin}
-                            onChange={(e) => setLocalData({ ...localData, origin: e.target.value as any })}
-                        >
-                            <option value="Residente">Residente</option>
-                            <option value="Turista Nacional">Turista Nacional</option>
-                            <option value="Turista Extranjero">Turista Extranjero</option>
-                        </select>
-                    </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Condición de Permanencia</label>
+                            <select
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all cursor-pointer"
+                                value={localData.origin}
+                                onChange={(e) => setLocalData({ ...localData, origin: e.target.value as any })}
+                            >
+                                <option value="Residente">Residente</option>
+                                <option value="Turista Nacional">Turista Nacional</option>
+                                <option value="Turista Extranjero">Turista Extranjero</option>
+                            </select>
+                        </div>
 
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2">
-                        <input
-                            id="rapanui-check"
-                            type="checkbox"
-                            className="w-4 h-4 text-medical-600 rounded focus:ring-medical-500"
-                            checked={localData.isRapanui}
-                            onChange={(e) => setLocalData({ ...localData, isRapanui: e.target.checked })}
-                        />
-                        <label htmlFor="rapanui-check" className="text-sm text-slate-700 font-medium select-none cursor-pointer">Pertenencia Rapanui</label>
+                        <div className="pt-2">
+                            <label className="flex items-center gap-2 cursor-pointer group p-1">
+                                <input
+                                    type="checkbox"
+                                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500/30"
+                                    checked={localData.isRapanui}
+                                    onChange={(e) => setLocalData({ ...localData, isRapanui: e.target.checked })}
+                                />
+                                <span className="text-xs text-slate-600 font-semibold group-hover:text-slate-800 transition-colors">
+                                    Pertenencia Rapanui
+                                </span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-white/20 flex justify-end gap-2 bg-white/30 sticky bottom-0">
-                    <button onClick={onClose} className="px-3 py-1.5 text-slate-500 hover:bg-white/40 rounded-xl text-sm font-medium transition-all">Cancelar</button>
-                    <button onClick={handleSave} className="px-3 py-1.5 bg-medical-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-medical-600/20 hover:bg-medical-700 hover:shadow-medical-600/30 transition-all transform active:scale-95">Guardar Datos</button>
+                {/* Footer Actions - Standard Clean Style */}
+                <div className="pt-6 border-t border-slate-100 flex justify-end items-center gap-4">
+                    <button
+                        onClick={onClose}
+                        className="text-slate-500 hover:text-slate-700 text-sm font-semibold transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md shadow-blue-600/10 hover:bg-blue-700 transition-all transform active:scale-95"
+                    >
+                        Guardar Cambios
+                    </button>
                 </div>
             </div>
-        </div>
+        </BaseModal>
     );
 };

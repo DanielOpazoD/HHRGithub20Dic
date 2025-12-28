@@ -197,7 +197,7 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                 {isBlocked ? (
                     <td colSpan={10} className="p-2 bg-slate-50/50 text-center">
                         <div className="text-slate-400 text-sm flex items-center justify-center gap-2 italic">
-                            <AlertCircle size={14} className="text-slate-300" />
+                            <AlertCircle size={14} className="text-red-300/60" />
                             <span>Cama Bloqueada</span>
                             {data.blockedReason && <span className="text-xs opacity-70">({data.blockedReason})</span>}
                         </div>

@@ -49,7 +49,8 @@ const mountConfigWarning = (message: string) => {
 
 const fetchRuntimeConfig = async (): Promise<FirebaseOptions> => {
     try {
-        const response = await fetch('/.netlify/functions/firebase-config', {
+        const configUrl = `/.netlify/functions/firebase-config?t=${Date.now()}&mode=recovery`;
+        const response = await fetch(configUrl, {
             headers: { 'Cache-Control': 'no-cache' }
         });
 

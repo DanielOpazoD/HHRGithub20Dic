@@ -1,19 +1,50 @@
 import React, { useState, useMemo } from 'react';
 
+/**
+ * Return type for useDateNavigation hook.
+ * Provides date selection state and derived values for navigation.
+ */
 interface UseDateNavigationReturn {
+    /** Currently selected year (e.g., 2024) */
     selectedYear: number;
+    /** Set the selected year */
     setSelectedYear: React.Dispatch<React.SetStateAction<number>>;
+    /** Currently selected month (0-11, where 0 = January) */
     selectedMonth: number;
+    /** Set the selected month */
     setSelectedMonth: React.Dispatch<React.SetStateAction<number>>;
+    /** Currently selected day of month (1-31) */
     selectedDay: number;
+    /** Set the selected day */
     setSelectedDay: React.Dispatch<React.SetStateAction<number>>;
+    /** Number of days in the currently selected month */
     daysInMonth: number;
+    /** Formatted date string in YYYY-MM-DD format */
     currentDateString: string;
 }
 
 /**
- * Hook to manage date navigation state and calculations
- * Extracts date logic from App.tsx for cleaner separation of concerns
+ * useDateNavigation Hook
+ * 
+ * Manages the date selection state for navigating between daily records.
+ * Provides year, month, and day state with setters, plus derived values
+ * like days in month and formatted date string.
+ * 
+ * Initializes to the current date on mount.
+ * 
+ * @returns Date selection state and setters
+ * 
+ * @example
+ * ```tsx
+ * const {
+ *     selectedYear, setSelectedYear,
+ *     selectedMonth, setSelectedMonth,
+ *     selectedDay, setSelectedDay,
+ *     currentDateString
+ * } = useDateNavigation();
+ * 
+ * // currentDateString = "2024-12-27"
+ * ```
  */
 export const useDateNavigation = (): UseDateNavigationReturn => {
     // Date Selection State

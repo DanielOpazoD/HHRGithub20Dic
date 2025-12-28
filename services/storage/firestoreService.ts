@@ -88,7 +88,11 @@ const docToRecord = (docData: Record<string, unknown>, docId: string): DailyReco
         discharges: (docData.discharges as DailyRecord['discharges']) || [],
         transfers: (docData.transfers as DailyRecord['transfers']) || [],
         cma: (docData.cma as DailyRecord['cma']) || [],
-        nurses: (docData.nurses as DailyRecord['nurses']) || ['', ''],
+        nurses: (docData.nurses as string[]) || ['', ''],
+        nursesDayShift: Array.isArray(docData.nursesDayShift) ? [...docData.nursesDayShift, '', ''].slice(0, 2) : ['', ''],
+        nursesNightShift: Array.isArray(docData.nursesNightShift) ? [...docData.nursesNightShift, '', ''].slice(0, 2) : ['', ''],
+        tensDayShift: Array.isArray(docData.tensDayShift) ? [...docData.tensDayShift, '', '', ''].slice(0, 3) : ['', '', ''],
+        tensNightShift: Array.isArray(docData.tensNightShift) ? [...docData.tensNightShift, '', '', ''].slice(0, 3) : ['', '', ''],
         activeExtraBeds: (docData.activeExtraBeds as string[]) || [],
 
         // === Explicitly preserve/convert medical handoff fields ===
@@ -323,6 +327,9 @@ export const subscribeToNurseCatalog = (callback: (nurses: string[]) => void): (
         callback([]);
     });
 };
+
+
+
 
 // ============================================================================
 // TENS Catalog Persistence

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createEmptyPatient } from '@/services/factories/patientFactory';
+import { logPatientAdmission } from '@/services/admin/auditService';
 import { useBedManagement } from '@/hooks/useBedManagement';
 import { DailyRecord, PatientData, Specialty, PatientStatus } from '@/types';
 
@@ -26,6 +28,11 @@ vi.mock('@/services/factories/patientFactory', () => ({
         ...patient,
         bedId: newBedId
     }))
+}));
+
+vi.mock('@/services/admin/auditService', () => ({
+    logPatientAdmission: vi.fn(),
+    logPatientCleared: vi.fn()
 }));
 
 describe('useBedManagement', () => {
@@ -167,6 +174,43 @@ describe('useBedManagement', () => {
             expect(mockPatchRecord).toHaveBeenCalledWith({
                 activeExtraBeds: ['E1']
             });
+        });
+    });
+
+    describe('updateCudyr', () => {
+        it('should update Cudyr score field via patchRecord', () => {
+            const patient = createMockPatient('R1');
+            const record = createMockRecord({ R1: patient });
+
+            const { result } = renderHook(() => useBedManagement(record, mockSaveAndUpdate, mockPatchRecord));
+
+            act(() => {
+                result.current.updateCudyr('R1', 'changeClothes', 3);
+            });
+
+            expect(mockPatchRecord).toHaveBeenCalledWith({
+                'beds.R1.cudyr.changeClothes': 3
+            });
+        });
+    });
+
+    describe('Audit Logging', () => {
+        it('should log patient admission when patientName is set for the first time', () => {
+            const emptyPatient = createEmptyPatient('R1');
+            const record = createMockRecord({ R1: emptyPatient });
+
+            const { result } = renderHook(() => useBedManagement(record, mockSaveAndUpdate, mockPatchRecord));
+
+            act(() => {
+                result.current.updatePatient('R1', 'patientName', 'New Admission');
+            });
+
+            expect(logPatientAdmission).toHaveBeenCalledWith(
+                'R1',
+                'New Admission',
+                emptyPatient.rut,
+                record.date
+            );
         });
     });
 });

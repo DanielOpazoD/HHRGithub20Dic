@@ -1,26 +1,18 @@
 import { DailyRecord } from '../types';
+import { DailyRecordPatchLoose } from './useDailyRecordTypes';
 
 export const useNurseManagement = (
     record: DailyRecord | null,
-    saveAndUpdate: (updatedRecord: DailyRecord) => void
+    patchRecord: (partial: DailyRecordPatchLoose) => void
 ) => {
 
     const updateNurse = (shift: 'day' | 'night', index: number, name: string) => {
         if (!record) return;
 
-        if (shift === 'day') {
-            const currentNurses = record.nursesDayShift?.length === 2
-                ? [...record.nursesDayShift]
-                : ["", ""];
-            currentNurses[index] = name;
-            saveAndUpdate({ ...record, nursesDayShift: currentNurses });
-        } else {
-            const currentNurses = record.nursesNightShift?.length === 2
-                ? [...record.nursesNightShift]
-                : ["", ""];
-            currentNurses[index] = name;
-            saveAndUpdate({ ...record, nursesNightShift: currentNurses });
-        }
+        const field = shift === 'day' ? 'nursesDayShift' : 'nursesNightShift';
+
+        // Use atomic path for reliable sync
+        patchRecord({ [`${field}.${index}`]: name });
     };
 
     return {
@@ -30,25 +22,16 @@ export const useNurseManagement = (
 
 export const useTensManagement = (
     record: DailyRecord | null,
-    saveAndUpdate: (updatedRecord: DailyRecord) => void
+    patchRecord: (partial: DailyRecordPatchLoose) => void
 ) => {
 
     const updateTens = (shift: 'day' | 'night', index: number, name: string) => {
         if (!record) return;
 
-        if (shift === 'day') {
-            const currentTens = record.tensDayShift?.length === 3
-                ? [...record.tensDayShift]
-                : ["", "", ""];
-            currentTens[index] = name;
-            saveAndUpdate({ ...record, tensDayShift: currentTens });
-        } else {
-            const currentTens = record.tensNightShift?.length === 3
-                ? [...record.tensNightShift]
-                : ["", "", ""];
-            currentTens[index] = name;
-            saveAndUpdate({ ...record, tensNightShift: currentTens });
-        }
+        const field = shift === 'day' ? 'tensDayShift' : 'tensNightShift';
+
+        // Use atomic path for reliable sync
+        patchRecord({ [`${field}.${index}`]: name });
     };
 
     return {

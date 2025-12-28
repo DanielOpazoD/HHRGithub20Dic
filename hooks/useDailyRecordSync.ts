@@ -15,7 +15,9 @@ import {
     getForDate,
     save,
     updatePartial,
-    subscribe
+    subscribe,
+    DailyRecordRepository,
+    syncWithFirestore
 } from '../services/repositories/DailyRecordRepository';
 import { auth } from '../firebaseConfig';
 import { saveRecordLocal } from '../services/storage/localStorageService';
@@ -40,7 +42,7 @@ export interface UseDailyRecordSyncResult {
 /**
  * Hook that manages sync state and real-time updates from Firebase.
  */
-export const useDailyRecordSync = (currentDateString: string): UseDailyRecordSyncResult => {
+export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boolean = false): UseDailyRecordSyncResult => {
     const [record, setRecord] = useState<DailyRecord | null>(null);
     const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
@@ -64,6 +66,9 @@ export const useDailyRecordSync = (currentDateString: string): UseDailyRecordSyn
     // ========================================================================
     useEffect(() => {
         let unsubRepo: (() => void) | null = null;
+
+        // Subscription is now dynamic based on auth state
+        // and doesn't explicitly block if in passport mode (hybrid)
 
         // Wait for auth to be ready before subscribing to Firestore
         const unregisterAuthObserver = auth.onAuthStateChanged((user) => {
@@ -126,6 +131,45 @@ export const useDailyRecordSync = (currentDateString: string): UseDailyRecordSyn
             unregisterAuthObserver();
             if (unsubRepo) unsubRepo();
         };
+    }, [currentDateString]);
+
+    // ========================================================================
+    // Initial / Reconnection Sync
+    // ========================================================================
+    useEffect(() => {
+        // This effect runs once when date changes and auth is ready.
+        // It implements offline-first: local changes take priority.
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user && navigator.onLine) {
+                const localRecord = getForDate(currentDateString);
+
+                // If we have local data, sync TO Firestore (push local changes)
+                if (localRecord) {
+                    console.log('[useDailyRecordSync] Auth ready + online - pushing local changes to Firestore for:', currentDateString);
+                    save(localRecord).then(() => {
+                        console.log('[useDailyRecordSync] ✅ Pushed local record to Firestore:', currentDateString);
+                        setSyncStatus('saved');
+                        setLastSyncTime(new Date());
+                    }).catch((err) => {
+                        console.warn('[useDailyRecordSync] Failed to push local to Firestore:', err);
+                    });
+                } else {
+                    // No local data, pull from Firestore
+                    console.log('[useDailyRecordSync] No local data - pulling from Firestore for:', currentDateString);
+                    syncWithFirestore(currentDateString).then((syncedRecord: DailyRecord | null) => {
+                        if (syncedRecord) {
+                            setRecord(syncedRecord);
+                            setSyncStatus('saved');
+                            setLastSyncTime(new Date());
+                            console.log('[useDailyRecordSync] ✅ Pulled record from Firestore to LocalStorage:', currentDateString);
+                        }
+                    });
+                }
+            }
+        });
+
+        // Cleanup to avoid memory leaks if effect re-runs
+        return () => unsubscribe();
     }, [currentDateString]);
 
     // ========================================================================

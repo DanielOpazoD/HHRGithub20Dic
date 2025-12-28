@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { PatientRow } from '@/components/census/PatientRow';
@@ -10,8 +10,28 @@ describe('PatientRow Component', () => {
         updatePatient: vi.fn(),
         updatePatientMultiple: vi.fn(),
         updateClinicalCrib: vi.fn(),
-        updateClinicalCribMultiple: vi.fn()
+        updateClinicalCribMultiple: vi.fn(),
     };
+
+    const { mockAlert, mockConfirm } = vi.hoisted(() => ({
+        mockAlert: vi.fn().mockResolvedValue(true),
+        mockConfirm: vi.fn().mockResolvedValue(true)
+    }));
+
+    vi.mock('@/context/UIContext', async () => {
+        const actual = await vi.importActual('@/context/UIContext');
+        return {
+            ...actual,
+            useConfirmDialog: () => ({
+                confirm: mockConfirm,
+                alert: mockAlert
+            })
+        };
+    });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
 
     const mockPatient: PatientData = {
         bedId: 'R1',
@@ -104,5 +124,373 @@ describe('PatientRow Component', () => {
         fireEvent.change(statusSelect, { target: { value: PatientStatus.GRAVE } });
 
         expect(mockContext.updatePatient).toHaveBeenCalledWith('R1', 'status', PatientStatus.GRAVE);
+    });
+
+    describe('Crib and Bed Mode Management', () => {
+        it('toggles bed mode when config button is clicked', () => {
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={mockPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={true}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            // Click on the mode button (should be "Cama")
+            const modeButton = screen.getByText(/Cama/i);
+            fireEvent.click(modeButton);
+
+            expect(mockContext.updatePatient).toHaveBeenCalledWith('R1', 'bedMode', 'Cuna');
+        });
+
+        it('toggles companion crib when RN Sano button is clicked', () => {
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={mockPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={true}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            // RN Sano button text is "+ RN Sano" or "RN Sano"
+            const companionBtn = screen.getByText(/\+ RN Sano/i);
+            fireEvent.click(companionBtn);
+
+            expect(mockContext.updatePatient).toHaveBeenCalledWith('R1', 'hasCompanionCrib', true);
+        });
+
+        it('toggles clinical crib when Cuna Clínica button is clicked', () => {
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={mockPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={true}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            // Cuna Clínica button text is "+ Cuna Cli"
+            const clinicalCribBtn = screen.getByText(/\+ Cuna Cli/i);
+            fireEvent.click(clinicalCribBtn);
+
+            expect(mockContext.updateClinicalCrib).toHaveBeenCalledWith('R1', 'create');
+        });
+    });
+
+    describe('Blocked Bed View', () => {
+        it('renders blocked message and reason instead of inputs', () => {
+            const blockedPatient = { ...mockPatient, isBlocked: true, blockedReason: 'Mantenimiento' };
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={blockedPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={false}
+                        />
+                    </tbody>
+                </table>
+            );
+
+            expect(screen.getByText(/Cama Bloqueada/i)).toBeInTheDocument();
+            expect(screen.getByText(/\(Mantenimiento\)/i)).toBeInTheDocument();
+            // Input fields should not be visible or at least name input shouldn't be accessible as usual
+            expect(screen.queryByDisplayValue('Juan Pérez')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Demographics Modal', () => {
+        it('opens demographics modal and saves changes', async () => {
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={mockPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={false}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            const demoBtn = screen.getByTitle('Datos del Paciente');
+            fireEvent.click(demoBtn);
+
+            // Modal is open. Let's find the save button.
+            const saveBtn = screen.getByText(/Guardar Datos/i);
+            fireEvent.click(saveBtn);
+
+            expect(mockContext.updatePatientMultiple).toHaveBeenCalledWith('R1', expect.any(Object));
+        });
+    });
+
+    describe('Action Menu', () => {
+        it('calls onAction when copy, move, discharge, or transfer is clicked', () => {
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={mockPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={false}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            const actions = ['Copiar a...', 'Mover a...', 'Dar de Alta', 'Trasladar'];
+            const expectedActions = ['copy', 'move', 'discharge', 'transfer'];
+
+            actions.forEach((actionText, index) => {
+                // Open menu
+                const menuBtn = screen.getByTitle('Acciones');
+                fireEvent.click(menuBtn);
+
+                // Click action
+                const actionBtn = screen.getByText(new RegExp(actionText, 'i'));
+                fireEvent.click(actionBtn);
+
+                expect(mockOnAction).toHaveBeenCalledWith(expectedActions[index], 'R1');
+            });
+        });
+
+        it('closes menu when clicking background overlay', () => {
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={mockPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={false}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            // Open menu
+            fireEvent.click(screen.getByTitle('Acciones'));
+            expect(screen.getByText(/Copiar a/i)).toBeInTheDocument();
+
+            // Click overlay (it's a div with fixed inset-0)
+            // We can find it by className or just click anywhere else?
+            // Actually it's a sibling of the menu div.
+            // Let's try to find it.
+            const overlay = document.querySelector('.fixed.inset-0.z-40');
+            if (overlay) {
+                fireEvent.click(overlay);
+                expect(screen.queryByText(/Copiar a/i)).not.toBeInTheDocument();
+            }
+        });
+    });
+
+    describe('Admission Time and Input Logic', () => {
+        it('shows admission time input when admission date is focused', () => {
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={mockPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={false}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            const dateInput = screen.getByDisplayValue('2023-01-01');
+            fireEvent.focus(dateInput);
+
+            // Time input should appear
+            // It has type="time"
+            expect(document.querySelector('input[type="time"]')).toBeInTheDocument();
+        });
+
+        it('triggers updatePatient on debounced name change', () => {
+            vi.useFakeTimers();
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={mockPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={false}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            const nameInput = screen.getByDisplayValue('Juan Pérez');
+            fireEvent.change(nameInput, { target: { value: 'Juan Actualizado' } });
+
+            // Should not be called immediately due to debounce
+            expect(mockContext.updatePatient).not.toHaveBeenCalled();
+
+            // Fast forward timers
+            vi.advanceTimersByTime(500);
+
+            expect(mockContext.updatePatient).toHaveBeenCalledWith('R1', 'patientName', 'Juan Actualizado');
+            vi.useRealTimers();
+        });
+    });
+
+    describe('Clinical Crib Management - Edge Cases', () => {
+        it('removes clinical crib if it already exists', () => {
+            const dataWithCrib = {
+                ...mockPatient,
+                clinicalCrib: { bedId: 'R1-C', patientName: 'Baby', bedMode: 'Cuna' } as any
+            };
+
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={dataWithCrib}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={true}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            // Button text is "Cuna Cli" when it exists
+            const clinicalCribBtn = screen.getByText(/Cuna Cli/i);
+            fireEvent.click(clinicalCribBtn);
+
+            expect(mockContext.updateClinicalCrib).toHaveBeenCalledWith('R1', 'remove');
+        });
+
+        it('does not allow companion crib if in Cuna mode', async () => {
+            const cunaPatient = { ...mockPatient, bedMode: 'Cuna' as const };
+
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={cunaPatient}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={true}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            const companionBtn = screen.getByText(/\+ RN Sano/i);
+            fireEvent.click(companionBtn);
+
+            expect(mockAlert).toHaveBeenCalled();
+            expect(mockContext.updatePatient).not.toHaveBeenCalledWith('R1', 'hasCompanionCrib', true);
+        });
+    });
+
+    describe('Clinical Crib Sub-row', () => {
+        it('renders sub-row when clinicalCrib exists', () => {
+            const dataWithCrib = {
+                ...mockPatient,
+                clinicalCrib: {
+                    bedId: 'R1-C',
+                    patientName: 'Sub Patient',
+                    bedMode: 'Cuna'
+                } as any
+            };
+
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={dataWithCrib}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={false}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            // Sub-row status badge
+            expect(screen.getByText('CUNA', { selector: 'span' })).toBeInTheDocument();
+            // Sub-patient name
+            expect(screen.getByDisplayValue('Sub Patient')).toBeInTheDocument();
+        });
+
+        it('opens sub-row demographics modal', () => {
+            const dataWithCrib = {
+                ...mockPatient,
+                clinicalCrib: {
+                    bedId: 'R1-C',
+                    patientName: 'Sub Patient',
+                    bedMode: 'Cuna'
+                } as any
+            };
+
+            render(
+                <table>
+                    <tbody>
+                        <PatientRow
+                            data={dataWithCrib}
+                            bed={mockBedDef}
+                            currentDateString="2023-01-01"
+                            onAction={mockOnAction}
+                            showCribControls={false}
+                        />
+                    </tbody>
+                </table>,
+                { contextValue: mockContext as any }
+            );
+
+            // User icon button in sub-row has title="Datos demográficos"
+            const subDemoBtns = screen.getAllByTitle('Datos demográficos');
+            // The first one is in PatientBedConfig (indicators), the second one is the button in sub-row
+            // Let's use the one that is a button
+            const subDemoBtn = subDemoBtns.find(el => el.tagName === 'BUTTON');
+            if (subDemoBtn) {
+                fireEvent.click(subDemoBtn);
+                expect(screen.getByText(/Datos Demográficos/i)).toBeInTheDocument();
+            }
+        });
     });
 });

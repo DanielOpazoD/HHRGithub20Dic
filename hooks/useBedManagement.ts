@@ -55,6 +55,7 @@ export interface BedManagementActions {
      * Toggles the blocked status of a bed with an optional reason.
      */
     toggleBlockBed: (bedId: string, reason?: string) => void;
+    updateBlockedReason: (bedId: string, reason: string) => void;
 
     /**
      * Toggles an extra bed visibility.
@@ -212,6 +213,7 @@ export const useBedManagement = (
         clearAllBeds: bedOperations.clearAllBeds,
         moveOrCopyPatient: bedOperations.moveOrCopyPatient,
         toggleBlockBed: bedOperations.toggleBlockBed,
+        updateBlockedReason: bedOperations.updateBlockedReason,
         toggleExtraBed: bedOperations.toggleExtraBed
     };
 };

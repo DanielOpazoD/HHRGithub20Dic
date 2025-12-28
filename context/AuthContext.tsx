@@ -1,17 +1,22 @@
 /**
  * AuthContext
  * Manages authentication state and user roles across the application.
- * Roles: 'viewer' (read-only) | 'editor' (full access)
+ * Uses useAuthState hook internally as the single source of truth.
+ * 
+ * Supports both Firebase auth and offline passport authentication.
+ * Roles: 'viewer' (read-only) | 'editor' (full access) | 'admin' (full access + admin features)
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AuthUser, onAuthChange, signOut as authSignOut } from '../services/auth/authService';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { AuthUser } from '../services/auth/authService';
+import { useAuthState, UserRole } from '../hooks/useAuthState';
+
+// Re-export UserRole for consumers that import from AuthContext
+export type { UserRole } from '../hooks/useAuthState';
 
 // ============================================================================
 // Types
 // ============================================================================
-
-export type UserRole = 'viewer' | 'editor' | 'admin';
 
 export interface AuthContextType {
     user: AuthUser | null;
@@ -20,7 +25,12 @@ export interface AuthContextType {
     isAuthenticated: boolean;
     isEditor: boolean;
     isViewer: boolean;
+    isOfflineMode: boolean;
+    isFirebaseConnected: boolean;
     signOut: () => Promise<void>;
+    // Passport utilities
+    canDownloadPassport: boolean;
+    handleDownloadPassport: () => boolean;
 }
 
 // ============================================================================
@@ -37,39 +47,26 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
+/**
+ * AuthProvider wraps the application and provides authentication state.
+ * Internally uses useAuthState hook - this ensures a single source of truth.
+ */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-    const [user, setUser] = useState<AuthUser | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        // Subscribe to auth state changes
-        const unsubscribe = onAuthChange((authUser) => {
-            setUser(authUser);
-            setIsLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, []);
-
-    const handleSignOut = async () => {
-        await authSignOut();
-        setUser(null);
-    };
-
-    // Derive role from user object (set by authService from Firestore)
-    const role: UserRole = (user?.role as UserRole) || 'viewer';
-    const isAuthenticated = user !== null;
-    const isEditor = role === 'editor' || role === 'admin';
-    const isViewer = role === 'viewer';
+    // Use the hook as the single source of truth
+    const authState = useAuthState();
 
     const value: AuthContextType = {
-        user,
-        role,
-        isLoading,
-        isAuthenticated,
-        isEditor,
-        isViewer,
-        signOut: handleSignOut,
+        user: authState.user,
+        role: authState.role,
+        isLoading: authState.authLoading,
+        isAuthenticated: authState.user !== null,
+        isEditor: authState.isEditor,
+        isViewer: authState.isViewer,
+        isOfflineMode: authState.isOfflineMode,
+        isFirebaseConnected: authState.isFirebaseConnected,
+        signOut: authState.handleLogout,
+        canDownloadPassport: authState.canDownloadPassport,
+        handleDownloadPassport: authState.handleDownloadPassport,
     };
 
     return (
@@ -80,9 +77,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 };
 
 // ============================================================================
-// Hook
+// Hooks
 // ============================================================================
 
+/**
+ * Hook to access authentication context.
+ * Must be used within an AuthProvider.
+ */
 export const useAuth = (): AuthContextType => {
     const context = useContext(AuthContext);
     if (!context) {
@@ -92,10 +93,11 @@ export const useAuth = (): AuthContextType => {
 };
 
 /**
- * Convenience hook to check if user can edit
- * Usage: const canEdit = useCanEdit();
+ * Convenience hook to check if user can edit.
+ * @returns true if user has edit permissions
  */
 export const useCanEdit = (): boolean => {
     const { isEditor } = useAuth();
     return isEditor;
 };
+

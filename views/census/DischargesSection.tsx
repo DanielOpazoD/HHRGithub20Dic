@@ -18,7 +18,7 @@ export const DischargesSection: React.FC<DischargesSectionProps> = ({
     const { handleEditDischarge } = useCensusActions();
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 print:p-2 print:border-t-2 print:border-slate-800 print:shadow-none">
+        <div className="card p-6 print:p-2 print:border-t-2 print:border-slate-800 print:shadow-none">
             <h3 className="font-bold text-lg text-slate-700 mb-4 flex items-center gap-2 print:text-black">
                 <CheckCircle className="text-green-600 print:text-black" /> Pacientes dados de Alta
             </h3>

@@ -14,8 +14,8 @@ interface HandoffChecklistDayProps {
 
 export const HandoffChecklistDay: React.FC<HandoffChecklistDayProps> = ({ data = {}, onUpdate, readOnly = false }) => {
     return (
-        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 print:bg-transparent print:border-none print:p-0">
-            <h3 className="text-indigo-800 font-bold text-xs mb-2 flex items-center gap-2 print:text-black print:text-[9px] print:mb-1">
+        <div className="bg-sky-50/50 border border-sky-100 rounded-lg p-3 print:bg-transparent print:border-none print:p-0">
+            <h3 className="text-sky-700 font-bold text-xs mb-2 flex items-center gap-2 print:text-black print:text-[9px] print:mb-1">
                 <ClipboardCheck size={14} className="print:w-3 print:h-3" />
                 Checklist Turno Largo
             </h3>
@@ -24,7 +24,7 @@ export const HandoffChecklistDay: React.FC<HandoffChecklistDayProps> = ({ data =
                     <div className="relative flex items-center">
                         <input
                             type="checkbox"
-                            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-indigo-300 shadow transition-all checked:border-indigo-600 checked:bg-indigo-600 focus:ring-2 focus:ring-indigo-200 print:w-3 print:h-3 print:border-slate-400"
+                            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-sky-300 shadow transition-all checked:border-sky-600 checked:bg-sky-600 focus:ring-2 focus:ring-sky-200 print:w-3 print:h-3 print:border-slate-400"
                             checked={!!data.escalaBraden}
                             onChange={(e) => onUpdate('escalaBraden', e.target.checked)}
                             disabled={readOnly}
@@ -35,14 +35,14 @@ export const HandoffChecklistDay: React.FC<HandoffChecklistDayProps> = ({ data =
                             </svg>
                         </span>
                     </div>
-                    <span className="text-slate-700 font-medium group-hover:text-indigo-700 transition-colors text-xs print:text-[8px] print:text-black">Escala Braden</span>
+                    <span className="text-slate-700 font-medium group-hover:text-sky-700 transition-colors text-xs print:text-[8px] print:text-black">Escala Braden</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer group">
                     <div className="relative flex items-center">
                         <input
                             type="checkbox"
-                            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-indigo-300 shadow transition-all checked:border-indigo-600 checked:bg-indigo-600 focus:ring-2 focus:ring-indigo-200 print:w-3 print:h-3 print:border-slate-400"
+                            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-sky-300 shadow transition-all checked:border-sky-600 checked:bg-sky-600 focus:ring-2 focus:ring-sky-200 print:w-3 print:h-3 print:border-slate-400"
                             checked={!!data.escalaRiesgoCaidas}
                             onChange={(e) => onUpdate('escalaRiesgoCaidas', e.target.checked)}
                             disabled={readOnly}
@@ -53,14 +53,14 @@ export const HandoffChecklistDay: React.FC<HandoffChecklistDayProps> = ({ data =
                             </svg>
                         </span>
                     </div>
-                    <span className="text-slate-700 font-medium group-hover:text-indigo-700 transition-colors text-xs print:text-[8px] print:text-black">Escala Riesgo Caídas</span>
+                    <span className="text-slate-700 font-medium group-hover:text-sky-700 transition-colors text-xs print:text-[8px] print:text-black">Escala Riesgo Caídas</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer group">
                     <div className="relative flex items-center">
                         <input
                             type="checkbox"
-                            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-indigo-300 shadow transition-all checked:border-indigo-600 checked:bg-indigo-600 focus:ring-2 focus:ring-indigo-200 print:w-3 print:h-3 print:border-slate-400"
+                            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-sky-300 shadow transition-all checked:border-sky-600 checked:bg-sky-600 focus:ring-2 focus:ring-sky-200 print:w-3 print:h-3 print:border-slate-400"
                             checked={!!data.escalaRiesgoLPP}
                             onChange={(e) => onUpdate('escalaRiesgoLPP', e.target.checked)}
                             disabled={readOnly}
@@ -71,7 +71,7 @@ export const HandoffChecklistDay: React.FC<HandoffChecklistDayProps> = ({ data =
                             </svg>
                         </span>
                     </div>
-                    <span className="text-slate-700 font-medium group-hover:text-indigo-700 transition-colors text-xs print:text-[8px] print:text-black">Evaluación LPP</span>
+                    <span className="text-slate-700 font-medium group-hover:text-sky-700 transition-colors text-xs print:text-[8px] print:text-black">Evaluación LPP</span>
                 </label>
             </div>
         </div>

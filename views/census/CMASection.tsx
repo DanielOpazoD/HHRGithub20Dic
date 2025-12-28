@@ -4,6 +4,8 @@ import { useDailyRecordContext } from '../../context/DailyRecordContext';
 import { Trash2, Save, X, Plus, Scissors } from 'lucide-react';
 import { SPECIALTY_OPTIONS } from '../../constants';
 import { DebouncedInput } from '../../components/ui/DebouncedInput';
+import { PatientInputSchema } from '../../schemas/inputSchemas';
+import clsx from 'clsx';
 
 const INTERVENTION_TYPES = [
     'Cirugía Mayor Ambulatoria',
@@ -139,7 +141,12 @@ export const CMASection: React.FC = () => {
                                     <td className="p-2 font-medium">
                                         <DebouncedInput
                                             type="text"
-                                            className="w-full p-1 border border-transparent hover:border-slate-300 rounded focus:border-orange-400 focus:ring-1 focus:ring-orange-400 text-xs font-bold text-slate-700 transition-colors"
+                                            className={clsx(
+                                                "w-full p-1 border rounded text-xs font-bold text-slate-700 transition-colors focus:ring-1",
+                                                !PatientInputSchema.pick({ patientName: true }).safeParse({ patientName: item.patientName }).success && item.patientName
+                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400"
+                                                    : "border-transparent hover:border-slate-300 focus:border-orange-400 focus:ring-orange-400"
+                                            )}
                                             value={item.patientName}
                                             onChange={(val) => handleUpdate(item.id, 'patientName', val)}
                                         />
@@ -147,7 +154,12 @@ export const CMASection: React.FC = () => {
                                     <td className="p-2">
                                         <DebouncedInput
                                             type="text"
-                                            className="w-full p-1 border border-transparent hover:border-slate-300 rounded focus:border-orange-400 focus:ring-1 focus:ring-orange-400 text-xs transition-colors"
+                                            className={clsx(
+                                                "w-full p-1 border rounded text-xs transition-colors focus:ring-1",
+                                                !PatientInputSchema.pick({ rut: true }).safeParse({ rut: item.rut }).success && item.rut
+                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400"
+                                                    : "border-transparent hover:border-slate-300 focus:border-orange-400 focus:ring-orange-400"
+                                            )}
                                             value={item.rut}
                                             onChange={(val) => handleUpdate(item.id, 'rut', val)}
                                         />
@@ -156,7 +168,12 @@ export const CMASection: React.FC = () => {
                                         <DebouncedInput
                                             type="text"
                                             placeholder="Edad"
-                                            className="w-full p-1 border border-transparent hover:border-slate-300 rounded focus:border-orange-400 focus:ring-1 focus:ring-orange-400 text-xs text-center transition-colors"
+                                            className={clsx(
+                                                "w-full p-1 border rounded text-xs text-center transition-colors focus:ring-1",
+                                                !PatientInputSchema.pick({ age: true }).safeParse({ age: item.age }).success && item.age
+                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400"
+                                                    : "border-transparent hover:border-slate-300 focus:border-orange-400 focus:ring-orange-400"
+                                            )}
                                             value={item.age}
                                             onChange={(val) => handleUpdate(item.id, 'age', val)}
                                         />
@@ -164,7 +181,12 @@ export const CMASection: React.FC = () => {
                                     <td className="p-2">
                                         <DebouncedInput
                                             type="text"
-                                            className="w-full p-1 border border-transparent hover:border-slate-300 rounded focus:border-orange-400 focus:ring-1 focus:ring-orange-400 text-xs transition-colors"
+                                            className={clsx(
+                                                "w-full p-1 border rounded text-xs transition-colors focus:ring-1",
+                                                !PatientInputSchema.pick({ pathology: true }).safeParse({ pathology: item.diagnosis }).success && item.diagnosis
+                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400"
+                                                    : "border-transparent hover:border-slate-300 focus:border-orange-400 focus:ring-orange-400"
+                                            )}
                                             value={item.diagnosis}
                                             onChange={(val) => handleUpdate(item.id, 'diagnosis', val)}
                                         />
@@ -224,7 +246,12 @@ export const CMASection: React.FC = () => {
                                         <input
                                             type="text"
                                             placeholder="Nombre Paciente (Req)"
-                                            className="w-full p-1.5 border border-orange-200 rounded text-xs focus:outline-none focus:border-orange-400 font-medium"
+                                            className={clsx(
+                                                "w-full p-1.5 border rounded text-xs focus:outline-none transition-all font-medium",
+                                                !PatientInputSchema.pick({ patientName: true }).safeParse({ patientName: newEntry.patientName }).success && newEntry.patientName
+                                                    ? "border-red-400 focus:border-red-500"
+                                                    : "border-orange-200 focus:border-orange-400"
+                                            )}
                                             value={newEntry.patientName || ''}
                                             onChange={(e) => setNewEntry({ ...newEntry, patientName: e.target.value })}
                                         />
@@ -233,7 +260,12 @@ export const CMASection: React.FC = () => {
                                         <input
                                             type="text"
                                             placeholder="RUT"
-                                            className="w-full p-1.5 border border-orange-200 rounded text-xs focus:outline-none focus:border-orange-400"
+                                            className={clsx(
+                                                "w-full p-1.5 border rounded text-xs focus:outline-none transition-all",
+                                                !PatientInputSchema.pick({ rut: true }).safeParse({ rut: newEntry.rut }).success && newEntry.rut
+                                                    ? "border-red-400 focus:border-red-500"
+                                                    : "border-orange-200 focus:border-orange-400"
+                                            )}
                                             value={newEntry.rut || ''}
                                             onChange={(e) => setNewEntry({ ...newEntry, rut: e.target.value })}
                                         />
@@ -242,7 +274,12 @@ export const CMASection: React.FC = () => {
                                         <input
                                             type="text"
                                             placeholder="Edad"
-                                            className="w-full p-1.5 border border-orange-200 rounded text-xs focus:outline-none focus:border-orange-400 text-center"
+                                            className={clsx(
+                                                "w-full p-1.5 border rounded text-xs focus:outline-none focus:border-orange-400 text-center transition-all",
+                                                !PatientInputSchema.pick({ age: true }).safeParse({ age: newEntry.age }).success && newEntry.age
+                                                    ? "border-red-400 focus:border-red-500"
+                                                    : "border-orange-200 focus:border-orange-400"
+                                            )}
                                             value={newEntry.age || ''}
                                             onChange={(e) => setNewEntry({ ...newEntry, age: e.target.value })}
                                         />
@@ -251,7 +288,12 @@ export const CMASection: React.FC = () => {
                                         <input
                                             type="text"
                                             placeholder="Diagnóstico"
-                                            className="w-full p-1.5 border border-orange-200 rounded text-xs focus:outline-none focus:border-orange-400"
+                                            className={clsx(
+                                                "w-full p-1.5 border rounded text-xs focus:outline-none transition-all",
+                                                !PatientInputSchema.pick({ pathology: true }).safeParse({ pathology: newEntry.diagnosis }).success && newEntry.diagnosis
+                                                    ? "border-red-400 focus:border-red-500"
+                                                    : "border-orange-200 focus:border-orange-400"
+                                            )}
                                             value={newEntry.diagnosis || ''}
                                             onChange={(e) => setNewEntry({ ...newEntry, diagnosis: e.target.value })}
                                         />

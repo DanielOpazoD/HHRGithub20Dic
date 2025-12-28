@@ -1,7 +1,9 @@
-import ExcelJS from 'exceljs';
+import type { Workbook } from 'exceljs';
 import { DailyRecord, PatientData } from '../../types';
 import { BEDS } from '../../constants';
 import { formatDateDDMMYYYY } from '../utils/dateFormatter';
+import { createWorkbook } from './excelUtils';
+
 
 const getRawHeader = () => [
     'FECHA', 'CAMA', 'TIPO_CAMA', 'UBICACION', 'MODO_CAMA', 'TIENE_ACOMPANANTE',
@@ -87,8 +89,8 @@ export const extractRowsFromRecord = (record: DailyRecord) => {
     return rows;
 };
 
-export const buildCensusDailyRawWorkbook = (record: DailyRecord) => {
-    const workbook = new ExcelJS.Workbook();
+export const buildCensusDailyRawWorkbook = (record: DailyRecord): Workbook => {
+    const workbook = createWorkbook();
     const sheet = workbook.addWorksheet('Censo Diario');
 
     sheet.addRow(getRawHeader());

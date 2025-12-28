@@ -169,7 +169,24 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
     // Render
     // ========================================================================
 
-    if (disabled) return null;
+    // When disabled, show badges in read-only mode (no interaction)
+    if (disabled) {
+        return (
+            <div className="flex flex-wrap gap-1 min-h-[26px] items-center justify-start p-1 rounded border border-transparent">
+                {devices.length === 0 && (
+                    <span className="text-slate-300 text-xs">-</span>
+                )}
+                {devices.map((dev, i) => (
+                    <DeviceBadge
+                        key={i}
+                        device={dev}
+                        deviceDetails={deviceDetails}
+                        currentDate={currentDate}
+                    />
+                ))}
+            </div>
+        );
+    }
 
     return (
         <>

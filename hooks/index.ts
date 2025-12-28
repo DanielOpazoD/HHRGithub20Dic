@@ -8,6 +8,12 @@
 // Authentication
 export { useAuthState } from './useAuthState';
 
+// UI State Management
+export { useModal } from './useModal';
+export type { UseModalReturn } from './useModal';
+export { useAppState } from './useAppState';
+export type { UseAppStateReturn } from './useAppState';
+
 // Daily Record Management
 export { useDailyRecord } from './useDailyRecord';
 export { useBedManagement } from './useBedManagement';

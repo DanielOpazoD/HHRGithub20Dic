@@ -5,7 +5,8 @@ import {
     signOut as firebaseSignOut,
     onAuthStateChanged,
     User,
-    createUserWithEmailAndPassword
+    createUserWithEmailAndPassword,
+    signInAnonymously
 } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '../../firebaseConfig';
@@ -266,4 +267,38 @@ export const isCurrentUserAllowed = async (): Promise<boolean> => {
     if (!user) return false;
     const { allowed } = await checkEmailInFirestore(user.email || '');
     return allowed;
+};
+
+// ============================================================================
+// Anonymous Auth for Passport Users (Hybrid Mode)
+// ============================================================================
+/**
+ * Sign in anonymously to Firebase for passport users.
+ * This allows passport users to write to Firestore when online.
+ * The role/permissions come from the passport, not Firebase.
+ * 
+ * @returns The Firebase user UID if successful, null if failed
+ */
+export const signInAnonymouslyForPassport = async (): Promise<string | null> => {
+    try {
+        // Check if already signed in
+        if (auth.currentUser) {
+            console.log('[Auth] Already signed in, uid:', auth.currentUser.uid);
+            return auth.currentUser.uid;
+        }
+
+        const result = await signInAnonymously(auth);
+        console.log('[Auth] Signed in anonymously for passport user, uid:', result.user.uid);
+        return result.user.uid;
+    } catch (error) {
+        console.warn('[Auth] Anonymous sign-in failed:', error);
+        return null;
+    }
+};
+
+/**
+ * Check if there's an active Firebase auth session (including anonymous).
+ */
+export const hasActiveFirebaseSession = (): boolean => {
+    return auth.currentUser !== null;
 };

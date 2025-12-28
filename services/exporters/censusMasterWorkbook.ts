@@ -1,41 +1,30 @@
-import ExcelJS from 'exceljs';
+import type { Workbook, Worksheet, Fill, Borders, Font } from 'exceljs';
 import { DailyRecord, PatientData, DischargeData, TransferData, CMAData } from '../../types';
 import { BEDS, MONTH_NAMES } from '../../constants';
 import { calculateStats, CensusStatistics } from '../calculations/statsCalculator';
+import { createWorkbook, BORDER_THIN, HEADER_FILL } from './excelUtils';
 
-const BORDER_THIN: Partial<ExcelJS.Borders> = {
-    top: { style: 'thin' },
-    left: { style: 'thin' },
-    bottom: { style: 'thin' },
-    right: { style: 'thin' }
-};
-
-const HEADER_FILL: ExcelJS.Fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFF5F5F5' }
-};
-
-const FREE_FILL: ExcelJS.Fill = {
+// Local styles specific to this workbook
+const FREE_FILL: Fill = {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: 'FFF7F7F7' }
 };
 
-const TITLE_STYLE = { bold: true, size: 11 } satisfies Partial<ExcelJS.Font>;
+const TITLE_STYLE = { bold: true, size: 11 } satisfies Partial<Font>;
 
 /**
  * Build the formatted "Censo Maestro" workbook from an array of daily records.
  * The records should contain one entry per day of the month (up to the selected day),
  * sorted ascending by date.
  */
-export const buildCensusMasterWorkbook = (records: DailyRecord[]): ExcelJS.Workbook => {
+export const buildCensusMasterWorkbook = (records: DailyRecord[]): Workbook => {
     if (!records || records.length === 0) {
         throw new Error('No hay registros disponibles para generar el Excel maestro.');
     }
 
     const sortedRecords = [...records].sort((a, b) => a.date.localeCompare(b.date));
-    const workbook = new ExcelJS.Workbook();
+    const workbook = createWorkbook();
     workbook.creator = 'Hospital Hanga Roa';
     workbook.created = new Date();
 
@@ -73,7 +62,7 @@ export const getCensusMasterFilename = (date: string): string => {
 /**
  * Create a worksheet for a single day's record
  */
-function createDaySheet(workbook: ExcelJS.Workbook, record: DailyRecord): void {
+function createDaySheet(workbook: Workbook, record: DailyRecord): void {
     // Sheet name: "DD-MM-YYYY" format (e.g., 15-12-2025)
     const [year, month, day] = record.date.split('-');
     const sheetName = `${day}-${month}-${year}`;
@@ -121,7 +110,7 @@ function createDaySheet(workbook: ExcelJS.Workbook, record: DailyRecord): void {
 // HEADER SECTION
 // ============================================================================
 
-function addHeaderSection(sheet: ExcelJS.Worksheet, record: DailyRecord, startRow: number): number {
+function addHeaderSection(sheet: Worksheet, record: DailyRecord, startRow: number): number {
     const [year, month, day] = record.date.split('-');
     const formattedDate = `${day}-${month}-${year}`;
 
@@ -140,7 +129,7 @@ function addHeaderSection(sheet: ExcelJS.Worksheet, record: DailyRecord, startRo
     const nurses = record.nursesNightShift?.filter(n => n && n.trim()) || [];
     const nurseText = nurses.length > 0 ? nurses.join(', ') : 'Sin asignar';
     const nurseRow = sheet.getRow(startRow + 2);
-    nurseRow.getCell(1).value = `Enfermeras Turno Noche: ${nurseText}`;
+    nurseRow.getCell(1).value = `Enfermeros/as Turno Noche: ${nurseText}`;
     nurseRow.getCell(1).font = { italic: true };
 
     return startRow + 3;
@@ -151,7 +140,7 @@ function addHeaderSection(sheet: ExcelJS.Worksheet, record: DailyRecord, startRo
 // ============================================================================
 
 function addSummarySection(
-    sheet: ExcelJS.Worksheet,
+    sheet: Worksheet,
     record: DailyRecord,
     stats: CensusStatistics,
     startRow: number
@@ -211,7 +200,7 @@ function addSummarySection(
 // CENSUS TABLE
 // ============================================================================
 
-function addCensusTable(sheet: ExcelJS.Worksheet, record: DailyRecord, startRow: number): number {
+function addCensusTable(sheet: Worksheet, record: DailyRecord, startRow: number): number {
     const titleRow = sheet.getRow(startRow);
     titleRow.getCell(1).value = 'TABLA DE PACIENTES HOSPITALIZADOS';
     titleRow.getCell(1).font = TITLE_STYLE;
@@ -249,7 +238,7 @@ function addCensusTable(sheet: ExcelJS.Worksheet, record: DailyRecord, startRow:
 }
 
 function addCensusRow(
-    sheet: ExcelJS.Worksheet,
+    sheet: Worksheet,
     rowNumber: number,
     index: number,
     bedId: string,
@@ -319,7 +308,7 @@ function addCensusRow(
 // DISCHARGES TABLE
 // ============================================================================
 
-function addDischargesTable(sheet: ExcelJS.Worksheet, discharges: DischargeData[], startRow: number): number {
+function addDischargesTable(sheet: Worksheet, discharges: DischargeData[], startRow: number): number {
     const titleRow = sheet.getRow(startRow);
     titleRow.getCell(1).value = 'ALTAS DEL DÍA';
     titleRow.getCell(1).font = TITLE_STYLE;
@@ -376,7 +365,7 @@ function addDischargesTable(sheet: ExcelJS.Worksheet, discharges: DischargeData[
 // TRANSFERS TABLE
 // ============================================================================
 
-function addTransfersTable(sheet: ExcelJS.Worksheet, transfers: TransferData[], startRow: number): number {
+function addTransfersTable(sheet: Worksheet, transfers: TransferData[], startRow: number): number {
     const titleRow = sheet.getRow(startRow);
     titleRow.getCell(1).value = 'TRASLADOS DEL DÍA';
     titleRow.getCell(1).font = TITLE_STYLE;
@@ -434,7 +423,7 @@ function addTransfersTable(sheet: ExcelJS.Worksheet, transfers: TransferData[], 
 // CMA TABLE
 // ============================================================================
 
-function addCMATable(sheet: ExcelJS.Worksheet, cma: CMAData[], startRow: number): number {
+function addCMATable(sheet: Worksheet, cma: CMAData[], startRow: number): number {
     const titleRow = sheet.getRow(startRow);
     titleRow.getCell(1).value = 'HOSPITALIZACIÓN DIURNA (CMA)';
     titleRow.getCell(1).font = TITLE_STYLE;

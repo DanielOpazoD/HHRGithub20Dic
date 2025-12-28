@@ -4,7 +4,9 @@ import { BEDS } from '../../constants';
 import { PatientRow } from '../../components/census/PatientRow';
 import { useCensusActions } from './CensusActionsContext';
 import { useConfirmDialog } from '../../context/UIContext';
-import { Trash2, Baby } from 'lucide-react';
+import { useTableConfig, TableColumnConfig } from '../../context/TableConfigContext';
+import { ResizableHeader } from '../../components/ui/ResizableHeader';
+import { Trash2, Baby, Settings2 } from 'lucide-react';
 import clsx from 'clsx';
 
 interface CensusTableProps {
@@ -22,6 +24,8 @@ export const CensusTable: React.FC<CensusTableProps> = ({
 }) => {
     const { showCribConfig, setShowCribConfig, handleRowAction } = useCensusActions();
     const { confirm } = useConfirmDialog();
+    const { config, isEditMode, setEditMode, updateColumnWidth } = useTableConfig();
+    const { columns } = config;
 
     // Filter beds to display: All normal beds + Enabled extra beds
     const visibleBeds = useMemo(() => {
@@ -43,26 +47,42 @@ export const CensusTable: React.FC<CensusTableProps> = ({
         }
     }, [confirm, onResetDay]);
 
+    const handleColumnResize = useCallback((column: keyof TableColumnConfig) => (width: number) => {
+        updateColumnWidth(column, width);
+    }, [updateColumnWidth]);
+
+    // Common header classes
+    const headerClass = "sticky top-0 z-20 bg-slate-50 py-1 px-1 border-r border-slate-100 text-center text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm";
+
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 print:border-none print:shadow-none flex flex-col">
-            <div className="relative">
-                <table className="w-full text-left border-collapse print:text-xs relative text-[12px] leading-tight">
+        <div className="card print:border-none print:shadow-none flex flex-col">
+            <div className="relative overflow-x-auto">
+                <table className="w-full text-left border-collapse print:text-xs relative text-[12px] leading-tight table-fixed">
                     <thead>
                         <tr className="border-b border-slate-200 print:static">
-                            {!readOnly ? (
-                                <th className="sticky top-16 z-10 bg-slate-50 py-1.5 px-1 border-r border-slate-100 text-center w-8 print:hidden shadow-sm">
-                                    <button
-                                        onClick={handleClearAll}
-                                        className="p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
-                                        title="Limpiar todos los datos del día"
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-                                </th>
-                            ) : (
-                                <th className="sticky top-16 z-10 bg-slate-50 py-1.5 px-1 border-r border-slate-100 text-center w-8 print:hidden shadow-sm" />
-                            )}
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 text-center w-20 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">
+                            {/* Action column - resizable */}
+                            <ResizableHeader
+                                width={columns.actions}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('actions')}
+                                className={clsx(headerClass, "print:hidden")}
+                            >
+                                <button
+                                    onClick={handleClearAll}
+                                    className="p-1 rounded-md bg-slate-500/20 hover:bg-slate-500/40 text-slate-400 hover:text-slate-600 transition-all mx-auto block"
+                                    title="Limpiar todos los datos del día"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
+                            </ResizableHeader>
+
+                            {/* Bed column */}
+                            <ResizableHeader
+                                width={columns.bed}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('bed')}
+                                className={headerClass}
+                            >
                                 <div className="flex flex-col items-center gap-0.5">
                                     <span>Cama</span>
                                     {!readOnly && (
@@ -78,18 +98,119 @@ export const CensusTable: React.FC<CensusTableProps> = ({
                                         </button>
                                     )}
                                 </div>
-                            </th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 text-center w-14 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">Tipo</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 min-w-[150px] text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">Nombre Paciente</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 w-24 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">RUT</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 w-12 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">Edad</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 min-w-[190px] text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">Diagnóstico</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 w-24 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">Especialidad</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 w-24 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">Estado</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 w-24 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">Ingreso</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 w-24 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm" title="Dispositivos médicos invasivos">DMI</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 border-r border-slate-100 text-center w-8 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm" title="Comp. Quirurgica">C.QX</th>
-                            <th className="sticky top-16 z-10 bg-slate-50 py-1 px-1.5 text-center w-8 text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm">UPC</th>
+                            </ResizableHeader>
+
+                            {/* Type column */}
+                            <ResizableHeader
+                                width={columns.type}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('type')}
+                                className={headerClass}
+                            >
+                                Tipo
+                            </ResizableHeader>
+
+                            {/* Name column */}
+                            <ResizableHeader
+                                width={columns.name}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('name')}
+                                className={headerClass}
+                            >
+                                Nombre Paciente
+                            </ResizableHeader>
+
+                            {/* RUT column */}
+                            <ResizableHeader
+                                width={columns.rut}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('rut')}
+                                className={headerClass}
+                            >
+                                RUT
+                            </ResizableHeader>
+
+                            {/* Age column */}
+                            <ResizableHeader
+                                width={columns.age}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('age')}
+                                className={headerClass}
+                            >
+                                Edad
+                            </ResizableHeader>
+
+                            {/* Diagnosis column */}
+                            <ResizableHeader
+                                width={columns.diagnosis}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('diagnosis')}
+                                className={headerClass}
+                            >
+                                Diagnóstico
+                            </ResizableHeader>
+
+                            {/* Specialty column */}
+                            <ResizableHeader
+                                width={columns.specialty}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('specialty')}
+                                className={headerClass}
+                            >
+                                Esp
+                            </ResizableHeader>
+
+                            {/* Status column */}
+                            <ResizableHeader
+                                width={columns.status}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('status')}
+                                className={headerClass}
+                            >
+                                Estado
+                            </ResizableHeader>
+
+                            {/* Admission column */}
+                            <ResizableHeader
+                                width={columns.admission}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('admission')}
+                                className={headerClass}
+                            >
+                                Ingreso
+                            </ResizableHeader>
+
+                            {/* DMI column */}
+                            <ResizableHeader
+                                width={columns.dmi}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('dmi')}
+                                className={headerClass}
+                                title="Dispositivos médicos invasivos"
+                            >
+                                DMI
+                            </ResizableHeader>
+
+                            {/* C.QX column */}
+                            <ResizableHeader
+                                width={columns.cqx}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('cqx')}
+                                className={headerClass}
+                                title="Comp. Quirurgica"
+                            >
+                                C.QX
+                            </ResizableHeader>
+
+                            {/* UPC column */}
+                            <ResizableHeader
+                                width={columns.upc}
+                                isEditMode={isEditMode}
+                                onResize={handleColumnResize('upc')}
+                                className={clsx(headerClass, "border-r-0")}
+                            >
+                                UPC
+                            </ResizableHeader>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

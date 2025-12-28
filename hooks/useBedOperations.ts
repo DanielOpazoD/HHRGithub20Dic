@@ -35,6 +35,7 @@ export interface BedOperationsActions {
      * Toggle bed blocked status
      */
     toggleBlockBed: (bedId: string, reason?: string) => void;
+    updateBlockedReason: (bedId: string, reason: string) => void;
 
     /**
      * Toggle extra bed activation
@@ -158,6 +159,19 @@ export const useBedOperations = (
         });
     }, [record, patchRecord]);
 
+    /**
+     * Update the blocked reason for an already blocked bed without toggling the block state.
+     */
+    const updateBlockedReason = useCallback((bedId: string, reason: string) => {
+        if (!record) return;
+        const currentBed = record.beds[bedId];
+        if (!currentBed.isBlocked) return; // Only update if already blocked
+
+        patchRecord({
+            [`beds.${bedId}.blockedReason`]: reason || ''
+        });
+    }, [record, patchRecord]);
+
     const toggleExtraBed = useCallback((bedId: string) => {
         if (!record) return;
         const currentExtras = record.activeExtraBeds || [];
@@ -177,6 +191,7 @@ export const useBedOperations = (
         clearAllBeds,
         moveOrCopyPatient,
         toggleBlockBed,
+        updateBlockedReason,
         toggleExtraBed
     };
 };

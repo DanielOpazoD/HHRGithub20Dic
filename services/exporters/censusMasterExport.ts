@@ -7,11 +7,13 @@
 import { saveAs } from 'file-saver';
 import { MONTH_NAMES } from '../../constants';
 import { getMonthRecordsFromFirestore } from '../storage/firestoreService';
+import { getStoredRecords } from '../storage/localStorageService';
+import { isFirestoreEnabled } from '../repositories/DailyRecordRepository';
 import { buildCensusMasterWorkbook, getCensusMasterFilename } from './censusMasterWorkbook';
 
 /**
  * Generate and download the Census Master Excel file for a given month.
- * Fetches data directly from Firestore to ensure all days are included.
+ * Fetches data from Firestore if available, otherwise falls back to localStorage.
  * Creates one worksheet per day that has data, from the first day up to the selected day.
  * @param year - Year (e.g., 2025)
  * @param month - Month (0-indexed, e.g., 11 for December)
@@ -19,16 +21,26 @@ import { buildCensusMasterWorkbook, getCensusMasterFilename } from './censusMast
  */
 export const generateCensusMasterExcel = async (year: number, month: number, selectedDay: number): Promise<void> => {
     const limitDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
 
-    console.log(`📊 Cargando datos del mes ${MONTH_NAMES[month]} ${year} desde Firestore...`);
-    const allMonthRecords = await getMonthRecordsFromFirestore(year, month);
+    let allMonthRecords: any[] = [];
+
+    if (isFirestoreEnabled()) {
+        console.log(`📊 Cargando datos del mes ${MONTH_NAMES[month]} ${year} desde Firestore...`);
+        allMonthRecords = await getMonthRecordsFromFirestore(year, month);
+    } else {
+        console.log(`📊 Cargando datos del mes ${MONTH_NAMES[month]} ${year} desde almacenamiento local...`);
+        const localRecords = getStoredRecords();
+        allMonthRecords = Object.values(localRecords).filter(r => r.date.startsWith(monthPrefix));
+    }
 
     const monthRecords = allMonthRecords
         .filter(record => record.date <= limitDateStr)
         .sort((a, b) => a.date.localeCompare(b.date));
 
     if (monthRecords.length === 0) {
-        alert(`No hay datos para ${MONTH_NAMES[month]} ${year}`);
+        console.warn(`No hay datos para ${MONTH_NAMES[month]} ${year}`);
+        alert(`No hay datos registrados para las fechas seleccionadas en ${MONTH_NAMES[month]} ${year}`);
         return;
     }
 

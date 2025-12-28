@@ -17,7 +17,7 @@ export const EmptyDayPrompt: React.FC<EmptyDayPromptProps> = ({
     onCreateDay
 }) => {
     return (
-        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-sm border border-slate-200 mt-8 print:hidden animate-fade-in">
+        <div className="card flex flex-col items-center justify-center py-16 mt-8 print:hidden animate-fade-in">
             <div className="bg-slate-50 p-6 rounded-full mb-6">
                 <Calendar size={64} className="text-medical-200" />
             </div>
@@ -32,9 +32,9 @@ export const EmptyDayPrompt: React.FC<EmptyDayPromptProps> = ({
                 {previousRecordAvailable && (
                     <button
                         onClick={() => onCreateDay(true)}
-                        className="group relative bg-white border-2 border-medical-600 text-medical-700 hover:bg-medical-50 px-6 py-4 rounded-xl font-bold shadow-sm flex flex-col items-center gap-2 transition-all w-64"
+                        className="btn group !p-6 !h-auto border-2 border-medical-600 text-medical-700 hover:bg-medical-50 bg-white shadow-sm flex-col w-64"
                     >
-                        <div className="flex items-center gap-2 text-lg">
+                        <div className="flex items-center gap-2 text-lg font-bold">
                             <Copy size={20} />
                             <span>Copiar del Anterior</span>
                         </div>
@@ -46,9 +46,9 @@ export const EmptyDayPrompt: React.FC<EmptyDayPromptProps> = ({
 
                 <button
                     onClick={() => onCreateDay(false)}
-                    className="group bg-medical-600 hover:bg-medical-700 text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-medical-500/30 flex flex-col items-center gap-2 transition-all w-64"
+                    className="btn btn-primary group !p-6 !h-auto shadow-lg shadow-medical-500/30 flex-col w-64"
                 >
-                    <div className="flex items-center gap-2 text-lg">
+                    <div className="flex items-center gap-2 text-lg font-bold">
                         <Plus size={20} />
                         <span>Registro en Blanco</span>
                     </div>

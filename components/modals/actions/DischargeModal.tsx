@@ -1,6 +1,9 @@
 import React from 'react';
-import { Baby } from 'lucide-react';
+import { Baby, LogOut, Clock, UserCheck } from 'lucide-react';
 import { getTimeRoundedToStep } from '../../../utils';
+import { BaseModal, ModalSection } from '../../shared/BaseModal';
+import { TimeSchema, ActionNoteSchema } from '../../../schemas/inputSchemas';
+import clsx from 'clsx';
 
 export interface DischargeModalProps {
     isOpen: boolean;
@@ -31,6 +34,7 @@ export const DischargeModal: React.FC<DischargeModalProps> = ({
     const [dischargeType, setDischargeType] = React.useState<'Domicilio (Habitual)' | 'Voluntaria' | 'Fuga' | 'Otra'>((initialType as any) || 'Domicilio (Habitual)');
     const [otherDetails, setOtherDetails] = React.useState(initialOtherDetails || '');
     const [dischargeTime, setDischargeTime] = React.useState('');
+    const [errors, setErrors] = React.useState<{ time?: string, other?: string }>({});
 
     // Reset state when modal opens or initial props change
     React.useEffect(() => {
@@ -42,9 +46,28 @@ export const DischargeModal: React.FC<DischargeModalProps> = ({
         }
     }, [isOpen, initialType, initialOtherDetails, initialTime]);
 
-    if (!isOpen) return null;
-
     const handleConfirm = () => {
+        const newErrors: { time?: string, other?: string } = {};
+
+        // Validate Time
+        const timeResult = TimeSchema.safeParse(dischargeTime);
+        if (!timeResult.success) {
+            newErrors.time = timeResult.error.issues[0].message;
+        }
+
+        // Validate Other Details if selected
+        if (status === 'Vivo' && dischargeType === 'Otra') {
+            const otherResult = ActionNoteSchema.safeParse(otherDetails);
+            if (!otherResult.success) {
+                newErrors.other = otherResult.error.issues[0].message;
+            }
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
         onConfirm({
             status,
             type: status === 'Vivo' ? dischargeType : undefined,
@@ -54,133 +77,151 @@ export const DischargeModal: React.FC<DischargeModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm print:hidden">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
-                <h3 className="font-bold text-lg mb-4 text-green-700">Confirmar Alta Médica</h3>
-
-                {/* Main Patient */}
-                <div className="mb-6">
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Estado Madre / Paciente</label>
-                    <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors">
-                            <input
-                                type="radio" name="status" value="Vivo"
-                                checked={status === 'Vivo'}
-                                onChange={() => onStatusChange('Vivo')}
-                                className="text-medical-600 focus:ring-medical-500"
-                            />
-                            <span className={status === 'Vivo' ? 'font-bold text-slate-800' : 'text-slate-600'}>Vivo</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors">
-                            <input
-                                type="radio" name="status" value="Fallecido"
-                                checked={status === 'Fallecido'}
-                                onChange={() => onStatusChange('Fallecido')}
-                                className="text-red-600 focus:ring-red-500"
-                            />
-                            <span className={status === 'Fallecido' ? 'font-bold text-slate-800' : 'text-slate-600'}>Fallecido</span>
-                        </label>
+        <BaseModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={isEditing ? 'Editar Alta Médica' : 'Confirmar Alta Médica'}
+            icon={<LogOut size={16} />}
+            size="md"
+            headerIconColor="text-emerald-600"
+            variant="white"
+        >
+            <div className="space-y-5">
+                {/* Main Patient Section - Minimalist */}
+                <div className="space-y-4">
+                    <div className="space-y-1.5">
+                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Estado Madre / Paciente</label>
+                        <div className="flex gap-6 pl-1">
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <input
+                                    type="radio" name="status" value="Vivo"
+                                    checked={status === 'Vivo'}
+                                    onChange={() => onStatusChange('Vivo')}
+                                    className="w-4 h-4 text-emerald-600 focus:ring-emerald-500/20"
+                                />
+                                <span className={clsx("text-sm transition-colors", status === 'Vivo' ? "font-bold text-slate-900" : "text-slate-500 group-hover:text-slate-700")}>Vivo</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <input
+                                    type="radio" name="status" value="Fallecido"
+                                    checked={status === 'Fallecido'}
+                                    onChange={() => onStatusChange('Fallecido')}
+                                    className="w-4 h-4 text-red-600 focus:ring-red-500/20"
+                                />
+                                <span className={clsx("text-sm transition-colors", status === 'Fallecido' ? "font-bold text-slate-900" : "text-slate-500 group-hover:text-slate-700")}>Fallecido</span>
+                            </label>
+                        </div>
                     </div>
 
                     {/* Discharge Sub-Types (Only if Alive) */}
                     {status === 'Vivo' && (
-                        <div className="mt-4 pl-2 border-l-2 border-medical-100 space-y-2 animate-fade-in">
-                            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Tipo de Alta</label>
-
-                            <label className="flex items-center gap-2 cursor-pointer text-sm">
-                                <input type="radio" name="dischargeType"
-                                    checked={dischargeType === 'Domicilio (Habitual)'}
-                                    onChange={() => setDischargeType('Domicilio (Habitual)')}
-                                    className="text-medical-600" />
-                                Alta a domicilio (Habitual)
-                            </label>
-
-                            <label className="flex items-center gap-2 cursor-pointer text-sm">
-                                <input type="radio" name="dischargeType"
-                                    checked={dischargeType === 'Voluntaria'}
-                                    onChange={() => setDischargeType('Voluntaria')}
-                                    className="text-medical-600" />
-                                Alta voluntaria
-                            </label>
-
-                            <label className="flex items-center gap-2 cursor-pointer text-sm">
-                                <input type="radio" name="dischargeType"
-                                    checked={dischargeType === 'Fuga'}
-                                    onChange={() => setDischargeType('Fuga')}
-                                    className="text-medical-600" />
-                                Fuga
-                            </label>
-
-                            <label className="flex items-center gap-2 cursor-pointer text-sm">
-                                <input type="radio" name="dischargeType"
-                                    checked={dischargeType === 'Otra'}
-                                    onChange={() => setDischargeType('Otra')}
-                                    className="text-medical-600" />
-                                Otra
-                            </label>
+                        <div className="space-y-2.5 pt-2 border-l-2 border-emerald-50 pl-4 animate-fade-in">
+                            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Tipo de Alta</label>
+                            <div className="space-y-2">
+                                {[
+                                    { id: 'Domicilio (Habitual)', label: 'Alta a domicilio (Habitual)' },
+                                    { id: 'Voluntaria', label: 'Alta voluntaria' },
+                                    { id: 'Fuga', label: 'Fuga' },
+                                    { id: 'Otra', label: 'Otra' }
+                                ].map((item) => (
+                                    <label key={item.id} className="flex items-center gap-2 cursor-pointer group">
+                                        <input
+                                            type="radio"
+                                            name="dischargeType"
+                                            checked={dischargeType === item.id}
+                                            onChange={() => setDischargeType(item.id as any)}
+                                            className="w-4 h-4 text-emerald-600 focus:ring-emerald-500/20"
+                                        />
+                                        <span className={clsx("text-sm transition-colors", dischargeType === item.id ? "font-medium text-slate-900" : "text-slate-500 group-hover:text-slate-700")}>
+                                            {item.label}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
 
                             {dischargeType === 'Otra' && (
-                                <input
-                                    type="text"
-                                    placeholder="Describir tipo de alta..."
-                                    value={otherDetails}
-                                    onChange={(e) => setOtherDetails(e.target.value)}
-                                    className="w-full text-sm border-slate-300 rounded focus:ring-medical-500 focus:border-medical-500 mt-1"
-                                    autoFocus
-                                />
+                                <div className="pt-1 animate-fade-in">
+                                    <input
+                                        type="text"
+                                        placeholder="Especifique motivo..."
+                                        value={otherDetails}
+                                        onChange={(e) => { setOtherDetails(e.target.value); setErrors(prev => ({ ...prev, other: undefined })); }}
+                                        className={clsx(
+                                            "w-full text-sm p-2 bg-slate-50 border rounded-lg focus:ring-2 focus:outline-none transition-all",
+                                            errors.other ? "border-red-300 focus:ring-red-100" : "border-slate-200 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                        )}
+                                        autoFocus
+                                    />
+                                    {errors.other && <p className="text-[9px] text-red-500 font-medium mt-1 pl-1">{errors.other}</p>}
+                                </div>
                             )}
                         </div>
                     )}
-                    <div className="mt-4">
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Hora de alta</label>
-                        <input
-                            type="time"
-                            className="w-32 p-2 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-green-200 focus:border-green-400"
-                            step={300}
-                            value={dischargeTime}
-                            onChange={(e) => setDischargeTime(e.target.value)}
-                        />
+
+                    {/* Discharge Time */}
+                    <div className="space-y-1.5 pt-2">
+                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Hora de Alta</label>
+                        <div className="max-w-[120px]">
+                            <input
+                                type="time"
+                                className={clsx(
+                                    "w-full p-2 bg-slate-50 border rounded-lg text-sm focus:ring-2 focus:outline-none transition-all",
+                                    errors.time ? "border-red-300 focus:ring-red-100" : "border-slate-200 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                )}
+                                step={300}
+                                value={dischargeTime}
+                                onChange={(e) => { setDischargeTime(e.target.value); setErrors(prev => ({ ...prev, time: undefined })); }}
+                            />
+                        </div>
+                        {errors.time && <p className="text-[9px] text-red-500 font-medium mt-1 pl-1">{errors.time}</p>}
                     </div>
                 </div>
 
-                {/* Clinical Crib Patient (Baby) */}
+                {/* Clinical Crib Patient (Baby) - Minimalist */}
                 {!isEditing && hasClinicalCrib && onClinicalCribStatusChange && (
-                    <div className="mb-6 p-4 bg-pink-50 rounded-lg border border-pink-100">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Baby size={16} className="text-pink-500" />
-                            <label className="block text-xs font-bold text-pink-700 uppercase">Estado Recién Nacido</label>
-                        </div>
-                        <p className="text-xs text-slate-500 mb-3 font-medium">{clinicalCribName || 'Recién Nacido'}</p>
-                        <div className="flex gap-4">
-                            <label className="flex items-center gap-2 cursor-pointer">
+                    <div className="pt-4 border-t border-slate-100 space-y-3">
+                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                            Estado Recién Nacido ({clinicalCribName || 'RN'})
+                        </label>
+                        <div className="flex gap-6 pl-1">
+                            <label className="flex items-center gap-2 cursor-pointer group">
                                 <input
                                     type="radio" name="cribStatus" value="Vivo"
                                     checked={clinicalCribStatus === 'Vivo'}
                                     onChange={() => onClinicalCribStatusChange('Vivo')}
-                                    className="text-pink-600 focus:ring-pink-500"
+                                    className="w-4 h-4 text-emerald-600 focus:ring-emerald-500/20"
                                 />
-                                Vivo
+                                <span className={clsx("text-sm transition-colors", clinicalCribStatus === 'Vivo' ? "font-bold text-slate-900" : "text-slate-500 group-hover:text-slate-700")}>Vivo</span>
                             </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
+                            <label className="flex items-center gap-2 cursor-pointer group">
                                 <input
                                     type="radio" name="cribStatus" value="Fallecido"
                                     checked={clinicalCribStatus === 'Fallecido'}
                                     onChange={() => onClinicalCribStatusChange('Fallecido')}
-                                    className="text-red-600 focus:ring-red-500"
+                                    className="w-4 h-4 text-red-600 focus:ring-red-500/20"
                                 />
-                                Fallecido
+                                <span className={clsx("text-sm transition-colors", clinicalCribStatus === 'Fallecido' ? "font-bold text-slate-900" : "text-slate-500 group-hover:text-slate-700")}>Fallecido</span>
                             </label>
                         </div>
                     </div>
                 )}
 
-                <div className="flex justify-end gap-2">
-                    <button onClick={onClose} className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded">Cancelar</button>
-                    <button onClick={handleConfirm} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                {/* Footer Actions - Standard Clean Style */}
+                <div className="pt-6 flex justify-end items-center gap-4">
+                    <button
+                        onClick={onClose}
+                        className="text-slate-500 hover:text-slate-700 text-sm font-semibold transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleConfirm}
+                        className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-bold shadow-md shadow-emerald-600/10 hover:bg-emerald-700 transition-all transform active:scale-95"
+                    >
                         {isEditing ? 'Guardar Cambios' : 'Confirmar Alta'}
                     </button>
                 </div>
             </div>
-        </div>
+        </BaseModal>
     );
 };

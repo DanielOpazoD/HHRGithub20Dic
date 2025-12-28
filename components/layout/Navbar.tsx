@@ -106,9 +106,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const getNavColor = () => {
     switch (currentModule) {
       case 'CENSUS': return 'bg-medical-900 shadow-medical-900/20'; // Default Blue
-      case 'CUDYR': return 'bg-clinical-teal shadow-clinical-teal/20';
-      case 'NURSING_HANDOFF': return 'bg-indigo-700 shadow-indigo-700/20';
-      case 'MEDICAL_HANDOFF': return 'bg-purple-700 shadow-purple-700/20';
+      case 'CUDYR': return 'bg-slate-500 shadow-slate-500/20';
+      case 'NURSING_HANDOFF': return 'bg-sky-600 shadow-sky-600/20';
+      case 'MEDICAL_HANDOFF': return 'bg-sky-600 shadow-sky-600/20';
       case 'REPORTS': return 'bg-slate-700 shadow-slate-700/20';
       case 'AUDIT': return 'bg-slate-800 shadow-slate-800/20';
       case 'WHATSAPP': return 'bg-green-700 shadow-green-700/20';
@@ -124,16 +124,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="relative">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 py-2 hover:opacity-90 transition-opacity"
+            className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-white/10 transition-all duration-200"
           >
-            <div className="bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10">
-              <LayoutList size={22} className="text-medical-100" />
+            <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md border border-white/20 shadow-glass">
+              <LayoutList size={22} className="text-white" />
             </div>
             <div className="text-left">
               <h1 className="text-lg font-display font-bold leading-tight tracking-tight">Hospital Hanga Roa</h1>
-              <p className="text-[10px] font-bold text-medical-200 uppercase tracking-[0.15em] opacity-80">Gestión de Camas</p>
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-[0.2em]">Gestión de Camas</p>
             </div>
-            <ChevronDown size={16} className={clsx("text-medical-300 transition-transform ml-1", isMenuOpen && "rotate-180")} />
+            <ChevronDown size={16} className={clsx("text-white/50 transition-transform ml-1", isMenuOpen && "rotate-180")} />
           </button>
 
           {/* Dropdown Menu */}
@@ -250,7 +250,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs uppercase shadow-md focus:outline-none focus:ring-2 focus:ring-white/70"
+                className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white font-bold text-sm uppercase shadow-glass transition-transform active:scale-90"
                 title={userEmail}
               >
                 {userEmail.charAt(0)}

@@ -49,7 +49,9 @@ export const SETTINGS_DOCS = {
     /** Nurse catalog */
     NURSES: 'nurses',
     /** TENS catalog */
-    TENS: 'tens'
+    TENS: 'tens',
+    /** Table column configuration */
+    TABLE_CONFIG: 'tableConfig'
 } as const;
 
 // ============================================================================

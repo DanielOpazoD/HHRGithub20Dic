@@ -13,8 +13,25 @@ interface TriggerEmailParams {
 
 const ENDPOINT = '/.netlify/functions/send-census-email';
 
+// Check if we're in development mode (Vite dev server)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isDevelopment = (import.meta as any).env?.DEV ?? false;
+
 export const triggerCensusEmail = async (params: TriggerEmailParams) => {
     const { date, records, recipients, nursesSignature, body, userEmail, userRole } = params;
+
+    // In development, Netlify functions are not available
+    if (isDevelopment) {
+        console.log('[CensusEmail] Modo desarrollo - el envío de correo solo funciona en Netlify.');
+        console.log('[CensusEmail] Datos que se enviarían:', {
+            date,
+            recipientCount: recipients?.length || CENSUS_DEFAULT_RECIPIENTS.length,
+            recordCount: records.length,
+        });
+
+        // Show a user-friendly message instead of crashing
+        throw new Error('El envío de correo automático solo está disponible cuando la aplicación está desplegada en Netlify. En desarrollo local, puedes verificar los datos en la consola.');
+    }
 
     const response = await fetch(ENDPOINT, {
         method: 'POST',

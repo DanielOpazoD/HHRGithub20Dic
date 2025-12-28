@@ -34,6 +34,8 @@ export { CudyrRow } from './cudyr/CudyrRow';
 // ============================================================
 export { HandoffHeader } from './handoff/HandoffHeader';
 export { HandoffRow } from './handoff/HandoffRow';
+export { MedicalHandoffHeader } from './handoff/MedicalHandoffHeader';
+export { MovementsSummary } from './handoff/MovementsSummary';
 
 // ============================================================
 // WHATSAPP SUB-VIEWS / COMPONENTS

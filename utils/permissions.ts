@@ -67,6 +67,83 @@ const DEFAULT_PERMISSIONS: RolePermissions = {
 };
 
 // ==========================================
+// 3. PERMISOS DE ACCIONES (GRANULARES)
+// ==========================================
+
+/**
+ * Action-level permissions for granular access control.
+ * These define specific actions that can be performed in the system.
+ */
+export const ACTIONS = {
+    // Patient Management
+    PATIENT_READ: 'patient:read',
+    PATIENT_WRITE: 'patient:write',
+    PATIENT_DISCHARGE: 'patient:discharge',
+    PATIENT_TRANSFER: 'patient:transfer',
+
+    // Daily Record Management
+    RECORD_CREATE: 'record:create',
+    RECORD_DELETE: 'record:delete',
+    RECORD_COPY_PREVIOUS: 'record:copy_previous',
+
+    // CUDYR Scoring
+    CUDYR_EDIT: 'cudyr:edit',
+
+    // Handoff
+    HANDOFF_NURSING_EDIT: 'handoff:nursing:edit',
+    HANDOFF_MEDICAL_SIGN: 'handoff:medical:sign',
+    HANDOFF_SEND_WHATSAPP: 'handoff:send:whatsapp',
+
+    // Export & Reports
+    EXPORT_EXCEL: 'export:excel',
+    EXPORT_PDF: 'export:pdf',
+
+    // Admin
+    AUDIT_READ: 'audit:read',
+    BED_MANAGER_ACCESS: 'bed_manager:access',
+    SETTINGS_ACCESS: 'settings:access',
+    DEMO_DATA_GENERATE: 'demo:generate',
+} as const;
+
+export type ActionPermission = typeof ACTIONS[keyof typeof ACTIONS];
+
+/**
+ * Mapping of roles to their allowed actions.
+ * SECURITY-CRITICAL: This defines what each role can do at a granular level.
+ */
+const ACTION_PERMISSIONS: Record<string, ActionPermission[]> = {
+    [ROLES.ADMIN]: [
+        // Admin can do everything
+        ACTIONS.PATIENT_READ, ACTIONS.PATIENT_WRITE, ACTIONS.PATIENT_DISCHARGE, ACTIONS.PATIENT_TRANSFER,
+        ACTIONS.RECORD_CREATE, ACTIONS.RECORD_DELETE, ACTIONS.RECORD_COPY_PREVIOUS,
+        ACTIONS.CUDYR_EDIT,
+        ACTIONS.HANDOFF_NURSING_EDIT, ACTIONS.HANDOFF_MEDICAL_SIGN, ACTIONS.HANDOFF_SEND_WHATSAPP,
+        ACTIONS.EXPORT_EXCEL, ACTIONS.EXPORT_PDF,
+        ACTIONS.AUDIT_READ, ACTIONS.BED_MANAGER_ACCESS, ACTIONS.SETTINGS_ACCESS, ACTIONS.DEMO_DATA_GENERATE
+    ],
+    [ROLES.NURSE_HOSPITAL]: [
+        // Nurse can manage patients, create records, but NOT delete or access audit
+        ACTIONS.PATIENT_READ, ACTIONS.PATIENT_WRITE, ACTIONS.PATIENT_DISCHARGE, ACTIONS.PATIENT_TRANSFER,
+        ACTIONS.RECORD_CREATE, ACTIONS.RECORD_COPY_PREVIOUS,
+        ACTIONS.CUDYR_EDIT,
+        ACTIONS.HANDOFF_NURSING_EDIT, ACTIONS.HANDOFF_SEND_WHATSAPP,
+        ACTIONS.EXPORT_EXCEL, ACTIONS.EXPORT_PDF
+    ],
+    [ROLES.DOCTOR_URGENCY]: [
+        // Doctor can only view and sign medical handoff
+        ACTIONS.PATIENT_READ,
+        ACTIONS.HANDOFF_MEDICAL_SIGN,
+        ACTIONS.EXPORT_PDF
+    ],
+    [ROLES.VIEWER_CENSUS]: [
+        // Viewer can only read
+        ACTIONS.PATIENT_READ
+    ]
+};
+
+const DEFAULT_ACTIONS: ActionPermission[] = [ACTIONS.PATIENT_READ];
+
+// ==========================================
 // 3. UTILIDADES
 // ==========================================
 
@@ -77,6 +154,58 @@ const getPermissions = (role?: string): RolePermissions => {
     if (!role) return DEFAULT_PERMISSIONS;
     return PERMISSIONS[role] || DEFAULT_PERMISSIONS;
 };
+
+/**
+ * Get action permissions for a given role.
+ * @param role - User's role
+ * @returns Array of allowed action permissions
+ */
+const getActionPermissions = (role?: string): ActionPermission[] => {
+    if (!role) return DEFAULT_ACTIONS;
+    return ACTION_PERMISSIONS[role] || DEFAULT_ACTIONS;
+};
+
+/**
+ * Check if a user can perform a specific action.
+ * 
+ * SECURITY-CRITICAL: This is the primary function for checking granular permissions.
+ * Use this for fine-grained access control on specific operations.
+ * 
+ * @param role - User's role
+ * @param action - The action to check (from ACTIONS enum)
+ * @returns True if the user can perform the action
+ * 
+ * @example
+ * ```typescript
+ * import { canDoAction, ACTIONS } from '../utils/permissions';
+ * 
+ * // In a component or hook:
+ * if (canDoAction(userRole, ACTIONS.RECORD_DELETE)) {
+ *     showDeleteButton();
+ * }
+ * 
+ * // Protect a function:
+ * function deleteRecord(role: string) {
+ *     if (!canDoAction(role, ACTIONS.RECORD_DELETE)) {
+ *         throw new Error('Permission denied');
+ *     }
+ *     // ... proceed with deletion
+ * }
+ * ```
+ */
+export function canDoAction(role: UserRole | undefined, action: ActionPermission): boolean {
+    const permissions = getActionPermissions(role);
+    return permissions.includes(action);
+}
+
+/**
+ * Get all action permissions for a role (for debugging/display).
+ * @param role - User's role
+ * @returns Array of all allowed action strings
+ */
+export function getAllowedActions(role: UserRole | undefined): ActionPermission[] {
+    return getActionPermissions(role);
+}
 
 /**
  * Get visible modules for a given role

@@ -18,7 +18,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ stats, discharges = []
     const capacidadServicio = stats.serviceCapacity - stats.blockedBeds;
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-100 h-full flex-shrink-0">
+        <div className="card flex flex-row divide-x divide-slate-100 h-full flex-shrink-0">
 
             {/* Sección 1: Censo Camas */}
             <div className="p-2 sm:w-[40%] flex-shrink-0">

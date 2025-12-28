@@ -49,7 +49,7 @@ export type { SyncStatus } from './useDailyRecordSync';
  * Main hook for daily record management.
  * Orchestrates sync, persistence, and domain operations.
  */
-export const useDailyRecord = (currentDateString: string): DailyRecordContextType => {
+export const useDailyRecord = (currentDateString: string, isOfflineMode: boolean = false): DailyRecordContextType => {
     const { success, warning } = useNotification();
 
     // ========================================================================
@@ -64,7 +64,7 @@ export const useDailyRecord = (currentDateString: string): DailyRecordContextTyp
         markLocalChange,
         refresh,
         patchRecord
-    } = useDailyRecordSync(currentDateString);
+    } = useDailyRecordSync(currentDateString, isOfflineMode);
 
     // ========================================================================
     // Day Lifecycle
@@ -131,8 +131,8 @@ export const useDailyRecord = (currentDateString: string): DailyRecordContextTyp
     const bedManagement = useBedManagement(record, saveAndUpdate, patchRecord);
     const dischargeManagement = usePatientDischarges(record, saveAndUpdate);
     const transferManagement = usePatientTransfers(record, saveAndUpdate);
-    const nurseManagement = useNurseManagement(record, saveAndUpdate);
-    const tensManagement = useTensManagement(record, saveAndUpdate);
+    const nurseManagement = useNurseManagement(record, patchRecord);
+    const tensManagement = useTensManagement(record, patchRecord);
     const cmaManagement = useCMA(record, saveAndUpdate);
     const handoffManagement = useHandoffManagement(record, saveAndUpdate, patchRecord);
 
@@ -161,6 +161,7 @@ export const useDailyRecord = (currentDateString: string): DailyRecordContextTyp
         clearAllBeds: bedManagement.clearAllBeds,
         moveOrCopyPatient: bedManagement.moveOrCopyPatient,
         toggleBlockBed: bedManagement.toggleBlockBed,
+        updateBlockedReason: bedManagement.updateBlockedReason,
         toggleExtraBed: bedManagement.toggleExtraBed,
 
         // Nurse Management

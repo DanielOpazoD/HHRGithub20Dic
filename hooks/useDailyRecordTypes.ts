@@ -28,10 +28,10 @@ type PatientClinicalCribPath = `beds.${string}.clinicalCrib.${keyof PatientData}
 type PatientDeviceDetailsPath = `beds.${string}.deviceDetails.${string}`;
 
 // Type-safe paths for Top-level DailyRecord fields
-type TopLevelPath = keyof Pick<DailyRecord, 
+type TopLevelPath = keyof Pick<DailyRecord,
     | 'date'
-    | 'lastUpdated' 
-    | 'nurses' 
+    | 'lastUpdated'
+    | 'nurses'
     | 'nurseName'
     | 'nursesDayShift'
     | 'nursesNightShift'
@@ -59,7 +59,7 @@ type MedicalSignaturePath = `medicalSignature` | `medicalSignature.${string}`;
  * Union of all valid patch paths.
  * This provides compile-time checking for patch keys.
  */
-type DailyRecordPatchPath = 
+type DailyRecordPatchPath =
     | TopLevelPath
     | PatientFieldPath
     | PatientCudyrPath
@@ -79,13 +79,13 @@ type DailyRecordPatchPath =
  * should be done by the caller.
  */
 export type DailyRecordPatch = {
-    [K in DailyRecordPatchPath]?: 
-        K extends TopLevelPath ? DailyRecord[K] :
-        K extends PatientCudyrPath ? number :
-        K extends HandoffDayChecklistPath | HandoffNightChecklistPath ? boolean | string :
-        K extends HandoffStaffPath ? string[] :
-        // For dynamic paths, allow common value types
-        PatientFieldValue | PatientData | Record<string, unknown> | string[] | boolean | number | null | undefined;
+    [K in DailyRecordPatchPath]?:
+    K extends TopLevelPath ? DailyRecord[K] :
+    K extends PatientCudyrPath ? number :
+    K extends HandoffDayChecklistPath | HandoffNightChecklistPath ? boolean | string :
+    K extends HandoffStaffPath ? string[] :
+    // For dynamic paths, allow common value types
+    PatientFieldValue | PatientData | Record<string, unknown> | string[] | boolean | number | null | undefined;
 };
 
 /**
@@ -120,6 +120,7 @@ export interface DailyRecordContextType {
     clearAllBeds: () => void;
     moveOrCopyPatient: (type: 'move' | 'copy', sourceBedId: string, targetBedId: string) => void;
     toggleBlockBed: (bedId: string, reason?: string) => void;
+    updateBlockedReason: (bedId: string, reason: string) => void;
     toggleExtraBed: (bedId: string) => void;
 
     // Nurse Management (from useNurseManagement)

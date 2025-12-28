@@ -73,6 +73,7 @@ export const StaffProvider: React.FC<StaffProviderProps> = ({ children }) => {
         return () => unsubscribe();
     }, []);
 
+
     const value: StaffContextType = {
         nursesList,
         setNursesList,

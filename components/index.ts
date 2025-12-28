@@ -13,6 +13,8 @@ export type { FallbackProps } from './shared/ErrorBoundary';
 export { GlobalErrorBoundary } from './shared/GlobalErrorBoundary';
 export { SectionErrorBoundary } from './shared/SectionErrorBoundary';
 export { SyncWatcher } from './shared/SyncWatcher';
+export { BaseModal, ModalSection } from './shared/BaseModal';
+export type { BaseModalProps, ModalSectionProps } from './shared/BaseModal';
 
 // ============================================================
 // LAYOUT COMPONENTS (layout/)

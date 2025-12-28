@@ -24,7 +24,8 @@ import {
     saveRecordToFirestore,
     subscribeToRecord,
     deleteRecordFromFirestore,
-    updateRecordPartial
+    updateRecordPartial,
+    getRecordFromFirestore
 } from '../storage/firestoreService';
 import { createEmptyPatient, clonePatient } from '../factories/patientFactory';
 import { applyPatches } from '../../utils/patchUtils';
@@ -228,8 +229,39 @@ export const subscribe = (
         // Demo mode: no real-time sync, just return no-op
         return () => { };
     }
+
+    if (!firestoreEnabled) {
+        console.log('⚠️ Subscribing in OFFLINE MODE (No real-time sync)');
+        return () => { };
+    }
+
     console.log('🔌 Subscribing to LIVE Firestore updates:', date);
-    return subscribeToRecord(date, callback);
+    return subscribeToRecord(date, (record) => {
+        if (record) {
+            // Mirror to localStorage whenever we get an update from Firestore
+            saveRecordLocal(record);
+        }
+        callback(record);
+    });
+};
+
+/**
+ * Manually pulls the latest data from Firestore for a specific date
+ * and updates local storage.
+ */
+export const syncWithFirestore = async (date: string): Promise<DailyRecord | null> => {
+    if (demoModeActive || !firestoreEnabled) return null;
+
+    try {
+        const record = await getRecordFromFirestore(date);
+        if (record) {
+            saveRecordLocal(record);
+            return record;
+        }
+    } catch (err) {
+        console.warn(`[Repository] Sync failed for ${date}:`, err);
+    }
+    return null;
 };
 
 /**
@@ -269,10 +301,23 @@ export const initializeDay = async (
         initialBeds[bed.id] = createEmptyPatient(bed.id);
     });
 
-    // If a copyFromDate is provided, copy active patients
+    let nursesDay: string[] = ["", ""];
+    let nursesNight: string[] = ["", ""];
+    let tensDay: string[] = ["", "", ""];
+    let tensNight: string[] = ["", "", ""];
+
+    // If a copyFromDate is provided, copy active patients and staff
     if (copyFromDate && records[copyFromDate]) {
         const prevRecord = records[copyFromDate];
         const prevBeds = prevRecord.beds;
+
+        // Inherit staff: Previous night shift becomes the starting staff for the new day shift
+        nursesDay = [...(prevRecord.nursesNightShift || ["", ""])];
+        tensDay = [...(prevRecord.tensNightShift || ["", "", ""])];
+
+        // Night shifts start empty for the new day
+        nursesNight = ["", ""];
+        tensNight = ["", "", ""];
 
         // Copy active extra beds setting
         activeExtras = [...(prevRecord.activeExtraBeds || [])];
@@ -321,6 +366,10 @@ export const initializeDay = async (
         cma: [],
         lastUpdated: new Date().toISOString(),
         nurses: ["", ""],
+        nursesDayShift: nursesDay,
+        nursesNightShift: nursesNight,
+        tensDayShift: tensDay,
+        tensNightShift: tensNight,
         activeExtraBeds: activeExtras
     };
 
@@ -407,7 +456,7 @@ export const saveNurses = async (nurses: string[]): Promise<void> => {
  * @returns Unsubscribe function
  */
 export const subscribeNurses = (callback: (nurses: string[]) => void): (() => void) => {
-    if (demoModeActive) {
+    if (demoModeActive || !firestoreEnabled) {
         return () => { };
     }
     return subscribeToNurseCatalog(callback);
@@ -451,7 +500,7 @@ export const saveTens = async (tens: string[]): Promise<void> => {
  * @returns Unsubscribe function
  */
 export const subscribeTens = (callback: (tens: string[]) => void): (() => void) => {
-    if (demoModeActive) {
+    if (demoModeActive || !firestoreEnabled) {
         return () => { };
     }
     return subscribeToTensCatalog(callback);
@@ -465,13 +514,14 @@ export const subscribeTens = (callback: (tens: string[]) => void): (() => void) 
  * Repository interface for daily records.
  * Provides methods for CRUD operations and real-time synchronization.
  */
-export const DailyRecordRepository: IDailyRecordRepository = {
+export const DailyRecordRepository: IDailyRecordRepository & { syncWithFirestore: typeof syncWithFirestore } = {
     getForDate,
     getPreviousDay,
     save,
     subscribe,
     initializeDay,
-    deleteDay
+    deleteDay,
+    syncWithFirestore
 };
 
 /**

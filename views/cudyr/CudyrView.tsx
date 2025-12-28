@@ -70,7 +70,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                     <span className="font-semibold">Fecha: {formatPrintDate()}</span>
                     <span className="text-slate-400">|</span>
                     <span>
-                        <span className="font-semibold">Enfermeros: </span>
+                        <span className="font-semibold">Enfermeros/as: </span>
                         {responsibleNurses.length > 0
                             ? responsibleNurses.join(', ')
                             : <span className="italic text-slate-400">No registrados</span>
@@ -112,7 +112,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                             <tr className="text-center">
                                 {/* Fixed */}
                                 <th className="border border-slate-300 p-1 w-10 bg-slate-50 align-middle print:w-auto">CAMA</th>
-                                <th className="border border-slate-300 p-1 w-32 bg-slate-50 align-middle print:w-[88px] print:max-w-[88px]">
+                                <th className="border border-slate-300 p-1 w-44 bg-slate-50 align-middle print:w-[88px] print:max-w-[88px]">
                                     <span className="print:hidden">NOMBRE</span>
                                     <span className="hidden print:inline">RUT</span>
                                 </th>

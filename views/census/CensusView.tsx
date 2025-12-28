@@ -2,6 +2,7 @@ import React from 'react';
 import { SectionErrorBoundary } from '../../components/shared/SectionErrorBoundary';
 import { AnalyticsView } from '../analytics/AnalyticsView';
 import { useCensusLogic } from '../../hooks/useCensusLogic';
+import { useTableConfig } from '../../context/TableConfigContext';
 import {
     CensusActionsProvider,
     EmptyDayPrompt,
@@ -53,6 +54,10 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
         tensList
     } = useCensusLogic(currentDateString);
 
+    // Get page margin from table config
+    const { config } = useTableConfig();
+    const marginStyle = { padding: `0 ${config.pageMargin}px` };
+
     // ========== VIEW MODE: ANALYTICS ==========
     if (viewMode === 'ANALYTICS') {
         return (
@@ -80,7 +85,7 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
                 <h1 className="text-2xl font-bold uppercase leading-tight">Censo diario de servicios hospitalizados - Hospital Hanga Roa</h1>
                 <p className="text-sm font-semibold mt-1">Fecha: {new Date(record.date).toLocaleDateString('es-CL')}</p>
             </div>
-            <div className="space-y-6">
+            <div className="space-y-6" style={marginStyle}>
                 {/* 1. Header Row: Staff Selectors + Stats */}
                 <CensusStaffHeader
                     record={record}

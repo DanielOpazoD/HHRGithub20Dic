@@ -5,6 +5,7 @@ import { useDailyRecordContext } from '@/context/DailyRecordContext';
 import { BEDS } from '@/constants';
 import { VerticalHeader } from '@/views/cudyr/CudyrRow';
 import { getCategorization } from '@/views/cudyr/CudyrScoreUtils';
+import { CudyrScore } from '@/types';
 
 export const HandoffCudyrPrint: React.FC = () => {
     const { record } = useDailyRecordContext();
@@ -24,8 +25,15 @@ export const HandoffCudyrPrint: React.FC = () => {
 
     const responsibleNurses = (record.nursesNightShift || []).filter((n) => n && n.trim() !== '');
 
+    // Helper to render score values consistently
+    const renderScore = (value?: number) => {
+        if (value === 0) return 0;
+        if (value === undefined || value === null) return '-';
+        return value;
+    };
+
     return (
-        <div className="handoff-cudyr-print bg-white print:bg-white print:m-0 print:p-0">
+        <div className="handoff-cudyr-print bg-white print:bg-white print:m-0 print:p-0 list-none">
             <div className="mb-3 pb-3 border-b border-slate-300">
                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
                     <ClipboardList size={18} className="text-medical-700" />
@@ -35,7 +43,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                     <span className="font-semibold">Fecha: {formatPrintDate()}</span>
                     <span className="text-slate-400">|</span>
                     <span>
-                        <span className="font-semibold">Enfermeros: </span>
+                        <span className="font-semibold">Enfermeros/as: </span>
                         {responsibleNurses.length > 0 ? (
                             responsibleNurses.join(', ')
                         ) : (
@@ -84,39 +92,35 @@ export const HandoffCudyrPrint: React.FC = () => {
                         <tbody>
                             {visibleBeds.map((bed) => {
                                 const patient = record.beds[bed.id];
-                                const cudyr = patient.cudyr || {};
-                                const { finalCat, badgeColor } = getCategorization(cudyr);
+                                const cudyr: Partial<CudyrScore> = patient.cudyr || {};
+                                const { finalCat, badgeColor } = getCategorization(cudyr as CudyrScore);
                                 const isUTI = bed.type === 'UTI';
 
+                                // Empty bed row - consistent height with occupied beds
                                 if (!patient.patientName) {
                                     return (
                                         <tr
                                             key={bed.id}
                                             className={clsx(
-                                                'border-b border-slate-300 transition-colors text-[10px] print:text-[7px]',
+                                                'border-b border-slate-300 h-8 print:h-6',
                                                 isUTI ? 'bg-yellow-50/60' : 'bg-white'
                                             )}
                                         >
                                             <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">{bed.name}</td>
-                                            <td colSpan={15} className="p-2 text-center text-slate-400 italic text-[10px]">
+                                            <td colSpan={15} className="border-r border-slate-300 p-1 text-center text-slate-400 italic text-[10px] print:text-[8px]">
                                                 Cama disponible
                                             </td>
-                                            <td className="border-l border-slate-300 p-1 text-center font-semibold">-</td>
+                                            <td className="p-1 text-center font-semibold">-</td>
                                         </tr>
                                     );
                                 }
 
-                                const renderScore = (value?: number) => {
-                                    if (value === 0) return 0;
-                                    if (value === undefined || value === null) return '-';
-                                    return value;
-                                };
-
+                                // Occupied bed row - consistent height
                                 return (
                                     <tr
                                         key={bed.id}
                                         className={clsx(
-                                            'border-b border-slate-300 transition-colors text-slate-800 text-[11px] print:text-[8px]',
+                                            'border-b border-slate-300 h-8 print:h-6',
                                             isUTI ? 'bg-yellow-50/60' : 'bg-white'
                                         )}
                                     >
@@ -126,6 +130,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                                             <span className="hidden print:inline text-[10px]">{patient.rut || '-'}</span>
                                         </td>
 
+                                        {/* Dependency scores with borders */}
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.changeClothes)}</td>
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.mobilization)}</td>
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.feeding)}</td>
@@ -133,6 +138,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.psychosocial)}</td>
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.surveillance)}</td>
 
+                                        {/* Risk scores with borders */}
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.vitalSigns)}</td>
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.fluidBalance)}</td>
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.oxygenTherapy)}</td>

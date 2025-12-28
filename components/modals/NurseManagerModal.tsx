@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Users, X, Plus, Trash2, Cloud, AlertCircle, Pencil, Check } from 'lucide-react';
+import { Users, Plus, Trash2, Cloud, AlertCircle, Pencil, Check, X } from 'lucide-react';
 import * as DataService from '../../services/dataService';
 import { saveNurseCatalogToFirestore } from '../../services/storage/firestoreService';
+import { BaseModal, ModalSection } from '../shared/BaseModal';
+import { StaffNameSchema } from '../../schemas/inputSchemas';
+import clsx from 'clsx';
 
 interface NurseManagerModalProps {
   isOpen: boolean;
@@ -16,15 +19,12 @@ export const NurseManagerModal: React.FC<NurseManagerModalProps> = ({ isOpen, on
   const [syncError, setSyncError] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-
-  if (!isOpen) return null;
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const saveNurses = async (updatedList: string[]) => {
-    // Save locally first (instant)
     setNursesList(updatedList);
     DataService.saveStoredNurses(updatedList);
 
-    // Sync to Firebase
     setSyncing(true);
     setSyncError(null);
     try {
@@ -38,11 +38,18 @@ export const NurseManagerModal: React.FC<NurseManagerModalProps> = ({ isOpen, on
   };
 
   const handleAdd = async () => {
-    if (newNurseName.trim()) {
-      const updated = [...nursesList, newNurseName.trim()];
-      await saveNurses(updated);
-      setNewNurseName('');
+    const trimmed = newNurseName.trim();
+    const result = StaffNameSchema.safeParse(trimmed);
+
+    if (!result.success) {
+      setValidationError(result.error.issues[0].message);
+      return;
     }
+
+    setValidationError(null);
+    const updated = [...nursesList, trimmed];
+    await saveNurses(updated);
+    setNewNurseName('');
   };
 
   const handleRemove = async (name: string) => {
@@ -53,14 +60,20 @@ export const NurseManagerModal: React.FC<NurseManagerModalProps> = ({ isOpen, on
   const handleStartEdit = (name: string) => {
     setEditingName(name);
     setEditValue(name);
+    setValidationError(null);
   };
 
   const handleUpdate = async () => {
     if (!editingName) return;
-
     const trimmed = editValue.trim();
-    if (!trimmed) return;
 
+    const result = StaffNameSchema.safeParse(trimmed);
+    if (!result.success) {
+      setValidationError(result.error.issues[0].message);
+      return;
+    }
+
+    setValidationError(null);
     const updated = nursesList.map(n => (n === editingName ? trimmed : n));
     await saveNurses(updated);
     setEditingName(null);
@@ -70,121 +83,145 @@ export const NurseManagerModal: React.FC<NurseManagerModalProps> = ({ isOpen, on
   const handleCancelEdit = () => {
     setEditingName(null);
     setEditValue('');
+    setValidationError(null);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm print:hidden">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-scale-in">
-        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
-          <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <Users size={18} /> Gestionar Enfermeros/as
-            {syncing && <Cloud size={14} className="text-blue-500 animate-pulse" />}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
-            <X size={20} />
-          </button>
-        </div>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <span className="flex items-center gap-2">
+          Gestionar Enfermeros/as
+          {syncing && <Cloud size={14} className="text-blue-500 animate-pulse" />}
+        </span>
+      }
+      icon={<Users size={18} />}
+      size="md"
+      headerIconColor="text-medical-600"
+    >
+      <ModalSection
+        title="Lista de Personal"
+        icon={<Users size={14} />}
+        description="Agregue, edite o elimine enfermeros/as del catálogo."
+      >
+        {syncError && (
+          <div className="mb-3 p-2 bg-amber-50 text-amber-700 text-xs rounded flex items-center gap-2">
+            <AlertCircle size={14} />
+            {syncError}
+          </div>
+        )}
 
-        <div className="p-4 max-h-[60vh] overflow-y-auto">
-          {syncError && (
-            <div className="mb-3 p-2 bg-amber-50 text-amber-700 text-xs rounded flex items-center gap-2">
-              <AlertCircle size={14} />
-              {syncError}
-            </div>
-          )}
-
-          <div className="flex gap-2 mb-4">
+        {/* Add new nurse input */}
+        <div className="space-y-2 mb-4">
+          <div className="flex gap-2">
             <input
               type="text"
-              className="flex-1 p-2 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-sm"
+              className={clsx(
+                "flex-1 p-2 border rounded-xl focus:ring-2 focus:outline-none text-sm transition-all",
+                validationError && !editingName ? "border-red-500 focus:ring-red-200" : "border-slate-300 focus:ring-medical-500"
+              )}
               placeholder="Nuevo nombre..."
               value={newNurseName}
-              onChange={(e) => setNewNurseName(e.target.value)}
+              onChange={(e) => { setNewNurseName(e.target.value); setValidationError(null); }}
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             />
             <button
               onClick={handleAdd}
-              className="bg-medical-600 hover:bg-medical-700 text-white p-2 rounded transition-colors"
+              className="bg-medical-600 hover:bg-medical-700 text-white p-2 rounded-xl transition-colors shadow-lg shadow-medical-600/20 active:scale-95 flex items-center justify-center"
               disabled={syncing}
             >
               <Plus size={20} />
             </button>
           </div>
+          {validationError && !editingName && (
+            <p className="text-[10px] text-red-500 mt-1 font-medium animate-fade-in pl-1">{validationError}</p>
+          )}
+        </div>
 
-          <div className="space-y-2">
-            {nursesList.map(nurse => (
-              <div key={nurse} className="flex justify-between items-center bg-slate-50 p-2 rounded border border-slate-100 gap-2 group">
-                {editingName === nurse ? (
-                  <>
+        {/* Nurses list */}
+        <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+          {nursesList.map(nurse => (
+            <div key={nurse} className="flex justify-between items-center bg-white/40 p-2 rounded-xl border border-white/60 gap-3 group shadow-sm transition-all hover:bg-white/60">
+              {editingName === nurse ? (
+                <>
+                  <div className="flex-1 space-y-1">
                     <input
-                      className="flex-1 p-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-medical-500"
+                      className={clsx(
+                        "w-full p-2 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all",
+                        validationError && editingName === nurse ? "border-red-500 focus:ring-red-200" : "border-slate-300 focus:ring-medical-500"
+                      )}
                       value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
+                      onChange={(e) => { setEditValue(e.target.value); setValidationError(null); }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleUpdate();
                         if (e.key === 'Escape') handleCancelEdit();
                       }}
                       disabled={syncing}
+                      autoFocus
                     />
-                    <div className="flex gap-1">
-                      <button
-                        onClick={handleUpdate}
-                        className="p-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-60"
-                        disabled={syncing}
-                        title="Guardar cambios"
-                      >
-                        <Check size={16} />
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="p-1.5 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 transition-colors"
-                        disabled={syncing}
-                        title="Cancelar"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium text-slate-700 flex-1">{nurse}</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => handleStartEdit(nurse)}
-                        className="text-slate-400 hover:text-medical-600 transition-colors"
-                        disabled={syncing}
-                        title="Editar nombre"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleRemove(nurse)}
-                        className="text-slate-300 hover:text-red-500 transition-colors"
-                        disabled={syncing}
-                        title="Eliminar"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+                    {validationError && editingName === nurse && (
+                      <p className="text-[10px] text-red-500 font-medium animate-fade-in pl-1">{validationError}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      onClick={handleUpdate}
+                      className="p-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-60 shadow-md shadow-emerald-500/10"
+                      disabled={syncing}
+                      title="Guardar cambios"
+                    >
+                      <Check size={16} />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors shadow-md shadow-slate-300/10"
+                      disabled={syncing}
+                      title="Cancelar"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-slate-700 flex-1 pl-1">{nurse}</span>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleStartEdit(nurse)}
+                      className="p-1.5 text-slate-400 hover:text-medical-600 hover:bg-medical-50 rounded-lg transition-all"
+                      disabled={syncing}
+                      title="Editar nombre"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleRemove(nurse)}
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      disabled={syncing}
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
 
-            {nursesList.length === 0 && (
-              <div className="text-center text-slate-400 text-sm py-4 italic">
-                No hay enfermeros registrados
-              </div>
-            )}
-          </div>
+          {nursesList.length === 0 && (
+            <div className="text-center text-slate-400 text-sm py-8 italic bg-white/20 rounded-2xl border border-dashed border-slate-200">
+              No hay enfermeros registrados
+            </div>
+          )}
         </div>
-        <div className="p-4 border-t border-slate-200 flex justify-between items-center">
-          <span className="text-xs text-slate-400 flex items-center gap-1">
-            <Cloud size={12} /> Sincronizado con Firebase
-          </span>
-          <button onClick={onClose} className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-sm font-medium">Cerrar</button>
+
+        {/* Sync status footer */}
+        <div className="mt-6 pt-3 border-t border-slate-200/50 flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <Cloud size={12} className="text-medical-400" />
+          Sincronizado con Firebase
         </div>
-      </div>
-    </div>
+      </ModalSection>
+    </BaseModal>
   );
 };

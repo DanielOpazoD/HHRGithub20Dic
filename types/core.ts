@@ -9,7 +9,7 @@ export enum BedType {
 }
 
 export enum Specialty {
-    MEDICINA = 'Medicina Interna',
+    MEDICINA = 'Med Interna',
     CIRUGIA = 'Cirugía',
     TRAUMATOLOGIA = 'Traumatología',
     GINECOLOGIA = 'Ginecología',

@@ -4,7 +4,14 @@ import clsx from 'clsx';
 import { MONTH_NAMES } from '../../constants';
 import { useDemoMode } from '../../context/DemoModeContext';
 
-interface DateStripProps {
+// ============================================================================
+// Grouped Props Interfaces
+// ============================================================================
+
+/**
+ * Date navigation state and setters
+ */
+export interface DateNavigationProps {
     selectedYear: number;
     setSelectedYear: React.Dispatch<React.SetStateAction<number>>;
     selectedMonth: number;
@@ -14,31 +21,62 @@ interface DateStripProps {
     currentDateString: string;
     daysInMonth: number;
     existingDaysInMonth: number[];
+}
+
+/**
+ * Optional action callbacks for the DateStrip buttons
+ */
+export interface DateStripActionsProps {
     onPrintPDF?: () => void;
     onOpenBedManager?: () => void;
     onExportExcel?: () => void;
+}
+
+/**
+ * Email configuration and status
+ */
+export interface EmailConfigProps {
     onConfigureEmail?: () => void;
     onSendEmail?: () => void;
     emailStatus?: 'idle' | 'loading' | 'success' | 'error';
     emailErrorMessage?: string | null;
+}
+
+/**
+ * Sync status for Firebase connection
+ */
+export interface SyncConfigProps {
     syncStatus?: 'idle' | 'saving' | 'saved' | 'error';
     lastSyncTime?: Date | null;
 }
 
+/**
+ * Combined DateStrip props - composed from grouped interfaces
+ */
+export interface DateStripProps extends DateNavigationProps, DateStripActionsProps, EmailConfigProps, SyncConfigProps { }
+
+// ============================================================================
+// Component Implementation
+// ============================================================================
+
 export const DateStrip: React.FC<DateStripProps> = ({
+    // Date Navigation
     selectedYear, setSelectedYear,
     selectedMonth, setSelectedMonth,
     selectedDay, setSelectedDay,
     currentDateString,
     daysInMonth,
     existingDaysInMonth,
+    // Actions
     onPrintPDF,
     onOpenBedManager,
     onExportExcel,
+    // Email
     onConfigureEmail,
     onSendEmail,
     emailStatus = 'idle',
     emailErrorMessage,
+    // Sync
     syncStatus,
     lastSyncTime
 }) => {
@@ -82,7 +120,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
                     {onPrintPDF && (
                         <button
                             onClick={onPrintPDF}
-                            className="flex items-center gap-1 px-2 py-1 bg-slate-800 text-white text-xs font-bold rounded hover:bg-slate-900 transition-colors shadow-sm"
+                            className="btn btn-secondary bg-slate-800 text-white hover:bg-slate-900 border-none !px-3 !py-1.5 text-[10px]"
                             title="Imprimir vista en PDF"
                         >
                             <Printer size={14} />
@@ -94,7 +132,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
                     {onExportExcel && (
                         <button
                             onClick={onExportExcel}
-                            className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700 transition-colors shadow-sm"
+                            className="btn btn-primary bg-green-600 hover:bg-green-700 border-none !px-3 !py-1.5 text-[10px]"
                             title="Descargar Excel Maestro del Mes"
                         >
                             <FileSpreadsheet size={14} />
@@ -108,10 +146,10 @@ export const DateStrip: React.FC<DateStripProps> = ({
                             onClick={onSendEmail}
                             disabled={emailStatus === 'loading'}
                             className={clsx(
-                                "flex items-center gap-1 px-2 py-1 text-xs font-bold rounded transition-colors shadow-sm",
+                                "btn !px-3 !py-1.5 text-[10px]",
                                 emailStatus === 'success'
-                                    ? 'bg-blue-700 text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white',
+                                    ? 'bg-blue-700 text-white shadow-inner'
+                                    : 'btn-primary bg-blue-600 hover:bg-blue-700',
                                 emailStatus === 'loading' && 'opacity-70 cursor-not-allowed'
                             )}
                             title={emailStatus === 'error' ? (emailErrorMessage || 'Ocurrió un error al enviar el correo') : "Enviar censo por correo"}
@@ -125,7 +163,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
                     {onConfigureEmail && (
                         <button
                             onClick={onConfigureEmail}
-                            className="flex items-center justify-center px-2 py-1 bg-slate-200 text-slate-800 text-xs font-bold rounded hover:bg-slate-300 transition-colors shadow-sm"
+                            className="btn btn-secondary !p-1.5"
                             title="Configurar destinatarios y mensaje"
                             aria-label="Configurar correo"
                         >

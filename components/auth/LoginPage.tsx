@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
-import { signIn, signInWithGoogle } from '../../services/auth/authService';
-import { Hospital, Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { signIn, signInWithGoogle, signInAnonymouslyForPassport } from '../../services/auth/authService';
+import {
+    parsePassportFile,
+    validatePassport,
+    storePassportLocally,
+    getStoredPassport,
+    verifyPassportCredentials
+} from '../../services/auth/passportService';
+import { Hospital, Lock, Mail, AlertCircle, Loader2, FileKey, Upload } from 'lucide-react';
 
 interface LoginPageProps {
     onLoginSuccess: () => void;
@@ -22,6 +29,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isPassportLoading, setIsPassportLoading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,6 +44,32 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             onLoginSuccess();
         } catch (err: unknown) {
             const error = err as Error;
+
+            // Try offline fallback if there's a stored passport
+            const storedPassport = getStoredPassport();
+            if (storedPassport) {
+                console.log('[LoginPage] Attempting offline credential verification fallback...');
+                const isValid = await verifyPassportCredentials(storedPassport, email, password);
+
+                if (isValid) {
+                    const result = await validatePassport(storedPassport);
+                    if (result.valid) {
+                        // Store user info in localStorage for offline mode
+                        localStorage.setItem('hhr_offline_user', JSON.stringify(result.user));
+
+                        // Try to sign in anonymously (hybrid mode) if possible
+                        try {
+                            await signInAnonymouslyForPassport();
+                        } catch {
+                            // Offline, ignore anonymous auth failure
+                        }
+
+                        onLoginSuccess();
+                        return;
+                    }
+                }
+            }
+
             setError(error.message || 'Error al iniciar sesión');
         } finally {
             setIsLoading(false);
@@ -54,7 +91,76 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         }
     };
 
-    const isAnyLoading = isLoading || isGoogleLoading;
+    // ========== PASSPORT HANDLING ==========
+    const handlePassportFile = useCallback(async (file: File) => {
+        setError(null);
+        setIsPassportLoading(true);
+
+        try {
+            const passport = await parsePassportFile(file);
+
+            if (!passport) {
+                setError('No se pudo leer el archivo pasaporte. Verifique que sea un archivo .hhr válido.');
+                return;
+            }
+
+            const result = await validatePassport(passport);
+
+            if (!result.valid) {
+                setError(result.error || 'Pasaporte inválido.');
+                return;
+            }
+
+            // Valid passport - store locally
+            storePassportLocally(passport);
+
+            // Store user info in localStorage for offline mode
+            localStorage.setItem('hhr_offline_user', JSON.stringify(result.user));
+
+            // Try to sign in anonymously to Firebase for Firestore access (hybrid mode)
+            await signInAnonymouslyForPassport();
+
+            onLoginSuccess();
+        } catch (err) {
+            console.error('[LoginPage] Passport error:', err);
+            setError('Error al procesar el pasaporte.');
+        } finally {
+            setIsPassportLoading(false);
+        }
+    }, [onLoginSuccess]);
+
+
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handlePassportFile(file);
+        }
+    };
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith('.hhr')) {
+            handlePassportFile(file);
+        } else {
+            setError('Por favor, suba un archivo .hhr válido.');
+        }
+    }, [handlePassportFile]);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    }, []);
+
+    const isAnyLoading = isLoading || isGoogleLoading || isPassportLoading;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-medical-600 via-medical-700 to-medical-900 flex items-center justify-center p-4">
@@ -72,12 +178,58 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div className="bg-white rounded-2xl shadow-2xl p-8">
                     <h2 className="text-xl font-bold text-slate-800 mb-6 text-center">Iniciar Sesión</h2>
 
+                    {/* Passport Upload Zone */}
+                    <div
+                        className={`mb-6 border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer
+                            ${isDragging
+                                ? 'border-medical-500 bg-medical-50'
+                                : 'border-slate-300 hover:border-medical-400 hover:bg-slate-50'
+                            }
+                            ${isPassportLoading ? 'opacity-50 pointer-events-none' : ''}
+                        `}
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".hhr"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
+                        <div className="flex flex-col items-center gap-2">
+                            {isPassportLoading ? (
+                                <Loader2 className="w-8 h-8 text-medical-500 animate-spin" />
+                            ) : (
+                                <FileKey className="w-8 h-8 text-medical-500" />
+                            )}
+                            <p className="text-sm text-slate-600 font-medium">
+                                {isDragging ? 'Suelte el archivo aquí' : 'Acceso Offline con Pasaporte'}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                                Arrastre su archivo .hhr o haga clic para seleccionar
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-slate-200"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-4 bg-white text-slate-500">o con conexión a internet</span>
+                        </div>
+                    </div>
+
                     {/* Google Sign In Button */}
                     <button
                         type="button"
                         onClick={handleGoogleSignIn}
                         disabled={isAnyLoading}
-                        className="w-full mb-6 bg-white hover:bg-gray-50 disabled:bg-gray-100 border-2 border-slate-200 text-slate-700 font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md"
+                        className="w-full mb-4 bg-white hover:bg-gray-50 disabled:bg-gray-100 border-2 border-slate-200 text-slate-700 font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md"
                     >
                         {isGoogleLoading ? (
                             <>
@@ -93,12 +245,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     </button>
 
                     {/* Divider */}
-                    <div className="relative my-6">
+                    <div className="relative my-4">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-slate-200"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white text-slate-500">o con correo y contraseña</span>
+                            <span className="px-4 bg-white text-slate-500">o con correo</span>
                         </div>
                     </div>
 

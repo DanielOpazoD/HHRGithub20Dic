@@ -37,7 +37,7 @@ export const HandoffNovedades: React.FC<HandoffNovedadesProps> = ({ value, onCha
             </div>
 
             {/* Print: Full Content Div */}
-            <div className="hidden print:block whitespace-pre-wrap text-slate-800 text-sm print:text-[9px] print:leading-snug">
+            <div className="hidden print:block whitespace-pre-wrap text-slate-800 text-sm print:text-[9px] print:leading-snug print:list-none">
                 {value || <span className="italic text-slate-400">Sin novedades registradas.</span>}
             </div>
         </div>

@@ -100,10 +100,13 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
     // If bed is blocked (and not a sub-row), show blocked status
     if (!isSubRow && patient.isBlocked) {
         return (
-            <tr className="bg-slate-50 border-b border-slate-200 text-sm">
-                <td className="p-3 font-semibold text-slate-700 text-center align-middle">{bedName}</td>
-                <td colSpan={9} className="p-3 text-slate-700 flex items-center gap-2 align-middle">
-                    <AlertCircle size={16} className="text-slate-500" /> BLOQUEADA: {patient.blockedReason}
+            <tr className="bg-slate-50 border-b border-slate-200 text-sm print:last:border-b-0 print:text-[10px]">
+                <td className="p-2 font-semibold text-slate-700 text-center align-middle border-r border-slate-200 print:p-1">{bedName}</td>
+                <td colSpan={7} className="p-2 text-slate-600 align-middle print:p-1 print:whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1.5">
+                        <AlertCircle size={14} className="text-slate-500 print:w-3 print:h-3" />
+                        <span className="font-medium">BLOQUEADA:</span> {patient.blockedReason || 'Sin motivo'}
+                    </span>
                 </td>
             </tr>
         );
@@ -117,7 +120,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
 
     return (
         <tr className={clsx(
-            "border-b border-slate-200 hover:bg-slate-50 transition-colors text-sm",
+            "border-b border-slate-200 hover:bg-slate-50 transition-colors text-sm print:last:border-b-0",
             isSubRow ? "bg-pink-50/40" : "bg-white"
         )}>
             {/* Cama + Días Hosp - Vertically Centered */}

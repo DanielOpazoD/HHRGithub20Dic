@@ -1,14 +1,16 @@
 
-import ExcelJS from 'exceljs';
+import type { Workbook } from 'exceljs';
 import { saveAs } from 'file-saver';
 import { DailyRecord } from '../../types';
 import { getStoredRecords, getRecordForDate } from '../dataService';
 import { buildCensusDailyRawWorkbook, extractRowsFromRecord, getCensusRawHeader } from './censusRawWorkbook';
 import { BEDS } from '../../constants';
+import { createWorkbook } from './excelUtils';
+
 
 // --- UTILS ---
 
-const saveWorkbook = async (workbook: ExcelJS.Workbook, filename: string) => {
+const saveWorkbook = async (workbook: Workbook, filename: string) => {
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(blob, filename + '.xlsx');
@@ -38,7 +40,7 @@ export const generateCensusRangeRaw = async (startDate: string, endDate: string)
         return;
     }
 
-    const workbook = new ExcelJS.Workbook();
+    const workbook = createWorkbook();
     const sheet = workbook.addWorksheet('Datos Brutos');
 
     sheet.addRow(getCensusRawHeader());
@@ -79,8 +81,7 @@ export const generateCudyrDailyRaw = async (date: string) => {
     const record = getRecordForDate(date);
     if (!record) { alert("Sin datos"); return; }
 
-    // Logic to extract CUDYR scores...
-    const workbook = new ExcelJS.Workbook();
+    const workbook = createWorkbook();
     const sheet = workbook.addWorksheet('CUDYR Diario');
 
     sheet.addRow(['FECHA', 'CAMA', 'PACIENTE', 'RUT', 'PUNTAJE_TOTAL', 'CATEGORIA', 'DEPENDENCIA', 'RIESGO']);

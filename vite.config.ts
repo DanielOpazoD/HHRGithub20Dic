@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import viteCompression from 'vite-plugin-compression';
 
 export default defineConfig(({ mode }) => {
@@ -14,6 +15,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      tailwindcss(),
       // Gzip compression for production builds
       isProduction && viteCompression({
         algorithm: 'gzip',
@@ -70,10 +72,9 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, '.'),
       }
     },
-    // Optimize dependencies
+    // Optimize dependencies - pre-bundle CommonJS packages for ESM compatibility
     optimizeDeps: {
-      include: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
-      exclude: ['exceljs'], // Don't pre-bundle large libraries
+      include: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore', 'exceljs'],
     },
     test: {
       environment: 'jsdom',

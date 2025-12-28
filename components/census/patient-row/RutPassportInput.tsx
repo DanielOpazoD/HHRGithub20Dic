@@ -6,30 +6,44 @@ interface RutPassportInputProps {
     value: string;
     documentType: string;
     isSubRow?: boolean;
+    isEmpty?: boolean;
     onChange: (value: string) => void;
     onToggleType?: () => void;
     readOnly?: boolean;
+    hasError?: boolean;
 }
 
 export const RutPassportInput: React.FC<RutPassportInputProps> = ({
     value,
     documentType,
     isSubRow = false,
+    isEmpty = false,
     onChange,
     onToggleType,
-    readOnly = false
+    readOnly = false,
+    hasError = false
 }) => {
+    // Show empty state for main row when no patient
+    if (isEmpty && !isSubRow) {
+        return (
+            <td className="p-1 border-r border-slate-200 w-32">
+                <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+            </td>
+        );
+    }
+
     return (
         <td className="p-1 border-r border-slate-200 w-32 relative group/rut">
             <div className="relative">
                 <DebouncedInput
                     type="text"
                     className={clsx(
-                        "w-full p-0.5 h-9 border rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs pr-6",
+                        "w-full p-0.5 h-9 border rounded focus:ring-2 focus:outline-none text-xs pr-6 transition-all",
                         isSubRow && "h-8",
                         documentType === 'Pasaporte'
-                            ? "border-amber-300 bg-amber-50"
-                            : "border-slate-300"
+                            ? (hasError ? "border-red-400 bg-red-50/50" : "border-amber-300 bg-amber-50")
+                            : (hasError ? "border-red-400 bg-red-50/50" : "border-slate-300"),
+                        hasError ? "focus:ring-red-200 focus:border-red-500" : "focus:ring-medical-500 focus:border-medical-500"
                     )}
                     placeholder={documentType === 'Pasaporte' ? 'N° Pasaporte' : '12.345.678-9'}
                     value={value || ''}

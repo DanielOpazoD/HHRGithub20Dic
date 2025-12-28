@@ -60,8 +60,9 @@ export const handler = async (event: any) => {
         const attachmentBufferRaw = await buildCensusMasterBuffer(monthRecords);
         const attachmentName = getCensusMasterFilename(date);
 
-        // Generate deterministic password based on census date (same for manual downloads and emails)
-        const { generateCensusPassword } = await import('../../services/security/exportPasswordService');
+        // Generate deterministic password based on census date
+        // Use pure generator (no Firebase deps) for Node.js/Netlify compatibility
+        const { generateCensusPassword } = await import('../../services/security/passwordGenerator');
         const password = generateCensusPassword(date);
 
         console.log(`[CensusEmail] Password for ${date}: ${password}`);

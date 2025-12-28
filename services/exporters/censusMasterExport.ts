@@ -2,6 +2,9 @@
  * Census Master Export Service
  * Generates a multi-sheet Excel file with one sheet per day of the month.
  * Uses the shared workbook builder to keep the email attachment and manual download in sync.
+ * 
+ * NOTE: Password encryption only works for email attachments (server-side via Netlify Function).
+ * Manual downloads are NOT encrypted because xlsx-populate doesn't work in browsers.
  */
 
 import { saveAs } from 'file-saver';
@@ -11,36 +14,14 @@ import { getMonthRecordsFromFirestore } from '../storage/firestoreService';
 import { getStoredRecords } from '../storage/localStorageService';
 import { isFirestoreEnabled } from '../repositories/DailyRecordRepository';
 import { buildCensusMasterWorkbook, getCensusMasterFilename } from './censusMasterWorkbook';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import { getExportPasswordsPath } from '../../constants/firestorePaths';
-
-/**
- * Save export password to Firestore for audit purposes
- */
-const saveExportPassword = async (date: string, password: string): Promise<void> => {
-    try {
-        const db = getFirestore();
-        const passwordsPath = getExportPasswordsPath();
-        const docRef = doc(db, passwordsPath, date);
-
-        await setDoc(docRef, {
-            date,
-            password,
-            createdAt: new Date().toISOString(),
-            source: 'manual_download'
-        }, { merge: true });
-
-        console.log(`[CensusExport] Password saved to Firestore for ${date}`);
-    } catch (error) {
-        console.error('[CensusExport] Failed to save password to Firestore:', error);
-        // Don't throw - download continues, this is just for audit
-    }
-};
 
 /**
  * Generate and download the Census Master Excel file for a given month.
  * Fetches data from Firestore if available, otherwise falls back to localStorage.
  * Creates one worksheet per day that has data, from the first day up to the selected day.
+ * 
+ * NOTE: This download is NOT password-protected. Only email attachments are encrypted.
+ * 
  * @param year - Year (e.g., 2025)
  * @param month - Month (0-indexed, e.g., 11 for December)
  * @param selectedDay - Day of the month to use as the limit (e.g., 10 means include days 1-10)
@@ -72,28 +53,15 @@ export const generateCensusMasterExcel = async (year: number, month: number, sel
 
     console.log(`✅ Se encontraron ${monthRecords.length} días con datos`);
 
-    // Generate the workbook
+    // Generate the workbook (without encryption - xlsx-populate doesn't work in browsers)
     const workbook = buildCensusMasterWorkbook(monthRecords);
     const buffer = await workbook.xlsx.writeBuffer();
 
-    // Get the deterministic password for this census date
-    const { generateCensusPassword } = await import('../security/exportPasswordService');
-    const password = generateCensusPassword(limitDateStr);
-
-    // Save password to Firestore for audit
-    await saveExportPassword(limitDateStr, password);
-
-    // Encrypt the workbook with xlsx-populate
-    const XlsxPopulate = await import('xlsx-populate');
-    const encryptedWorkbook = await XlsxPopulate.default.fromDataAsync(buffer);
-    const encryptedBuffer = await encryptedWorkbook.outputAsync({ password });
-
-    const blob = new Blob([encryptedBuffer], {
+    const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
     const filename = getCensusMasterFilename(limitDateStr);
     saveAs(blob, filename);
 
-    // Show the password to the user
-    alert(`📌 ARCHIVO PROTEGIDO\n\nEl archivo Excel ha sido descargado con protección.\n\nClave de apertura: ${password}\n\nGuarde esta clave en un lugar seguro.`);
+    console.log(`📥 Archivo descargado: ${filename}`);
 };

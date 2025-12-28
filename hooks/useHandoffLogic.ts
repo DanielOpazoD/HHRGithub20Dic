@@ -42,6 +42,9 @@ export const useHandoffLogic = ({
     const isMedical = type === 'medical';
 
     // ========== MEMOS ==========
+    // Helper to check if a list is actually empty (void or all empty strings)
+    const isActuallyEmpty = (list: string[]) => !list || list.length === 0 || !list.some(name => name && name.trim().length > 0);
+
     const visibleBeds = useMemo(() => {
         if (!record) return [];
         const activeExtras = record.activeExtraBeds || [];
@@ -68,10 +71,10 @@ export const useHandoffLogic = ({
         if (!record) return [];
         if (selectedShift === 'day') {
             const handoffList = record.handoffDayDelivers || [];
-            return handoffList.length > 0 ? handoffList : (record.nursesDayShift || []);
+            return !isActuallyEmpty(handoffList) ? handoffList : (record.nursesDayShift || []);
         } else {
             const handoffList = record.handoffNightDelivers || [];
-            return handoffList.length > 0 ? handoffList : (record.nursesNightShift || []);
+            return !isActuallyEmpty(handoffList) ? handoffList : (record.nursesNightShift || []);
         }
     }, [record, selectedShift]);
 
@@ -79,21 +82,23 @@ export const useHandoffLogic = ({
         if (!record) return [];
         if (selectedShift === 'day') {
             const handoffList = record.handoffDayReceives || [];
-            return handoffList.length > 0 ? handoffList : (record.nursesNightShift || []);
+            // In day shift handoff, the receivers are typically the night shift nurses (fallback)
+            return !isActuallyEmpty(handoffList) ? handoffList : (record.nursesNightShift || []);
         } else {
             return record.handoffNightReceives || [];
         }
     }, [record, selectedShift]);
 
-    const tensList = record
-        ? (selectedShift === 'day' ? (record.tensDayShift || []) : (record.tensNightShift || []))
-        : [];
+    const tensList = useMemo(() => {
+        if (!record) return [];
+        return selectedShift === 'day' ? (record.tensDayShift || []) : (record.tensNightShift || []);
+    }, [record, selectedShift]);
 
     // ========== HANDLERS ==========
-    const handleNursingNoteChange = useCallback((bedId: string, value: string, isNested: boolean = false) => {
+    const handleNursingNoteChange = useCallback(async (bedId: string, value: string, isNested: boolean = false) => {
         if (isMedical) {
             if (isNested) {
-                updateClinicalCrib(bedId, 'medicalHandoffNote', value);
+                await updateClinicalCrib(bedId, 'medicalHandoffNote', value);
                 const p = record?.beds[bedId].clinicalCrib;
                 if (p) logMedicalHandoffModified(bedId, p.patientName || 'Cuna', p.rut || '-', value, record?.date || '');
             } else {

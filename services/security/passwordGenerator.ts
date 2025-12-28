@@ -11,11 +11,11 @@
 const PASSWORD_SALT = 'HHR-CENSO-2025';
 
 /**
- * Generate a deterministic 6-character alphanumeric password for a census date.
- * Uses a hash-based approach to ensure the same date always produces the same password.
+ * Generate a deterministic 6-digit numeric PIN for a census date.
+ * Uses a hash-based approach to ensure the same date always produces the same PIN.
  * 
  * @param censusDate - The census date in YYYY-MM-DD format
- * @returns A 6-character alphanumeric password
+ * @returns A 6-digit numeric PIN
  */
 export const generateCensusPassword = (censusDate: string): string => {
     const input = `${PASSWORD_SALT}-${censusDate}`;
@@ -27,19 +27,12 @@ export const generateCensusPassword = (censusDate: string): string => {
         hash = hash & hash; // Convert to 32-bit integer
     }
 
-    // Convert to positive number
-    hash = Math.abs(hash);
+    // Convert to positive number and ensure we have at least 6 digits
+    // We use modulo 1,000,000 to get a 6-digit number
+    let numericHash = Math.abs(hash);
+    const pin = (numericHash % 1000000).toString().padStart(6, '0');
 
-    // Generate alphanumeric password from hash
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing chars (0/O, 1/I/L)
-    let password = '';
-
-    for (let i = 0; i < 6; i++) {
-        password += chars[hash % chars.length];
-        hash = Math.floor(hash / chars.length);
-    }
-
-    return password;
+    return pin;
 };
 
 /**

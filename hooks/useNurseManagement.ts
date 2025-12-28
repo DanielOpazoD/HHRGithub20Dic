@@ -3,10 +3,10 @@ import { DailyRecordPatchLoose } from './useDailyRecordTypes';
 
 export const useNurseManagement = (
     record: DailyRecord | null,
-    patchRecord: (partial: DailyRecordPatchLoose) => void
+    patchRecord: (partial: DailyRecordPatchLoose) => Promise<void>
 ) => {
 
-    const updateNurse = (shift: 'day' | 'night', index: number, name: string) => {
+    const updateNurse = async (shift: 'day' | 'night', index: number, name: string) => {
         console.log('[NurseManagement] updateNurse called:', shift, index, name, 'record:', !!record);
         if (!record) return;
 
@@ -23,7 +23,7 @@ export const useNurseManagement = (
         currentArray[index] = name;
 
         console.log('[NurseManagement] Sending complete array:', field, '=', currentArray);
-        patchRecord({ [field]: currentArray });
+        await patchRecord({ [field]: currentArray });
     };
 
     return {
@@ -33,10 +33,10 @@ export const useNurseManagement = (
 
 export const useTensManagement = (
     record: DailyRecord | null,
-    patchRecord: (partial: DailyRecordPatchLoose) => void
+    patchRecord: (partial: DailyRecordPatchLoose) => Promise<void>
 ) => {
 
-    const updateTens = (shift: 'day' | 'night', index: number, name: string) => {
+    const updateTens = async (shift: 'day' | 'night', index: number, name: string) => {
         if (!record) return;
 
         const field = shift === 'day' ? 'tensDayShift' : 'tensNightShift';
@@ -52,7 +52,7 @@ export const useTensManagement = (
         currentArray[index] = name;
 
         console.log('[TensManagement] Sending complete array:', field, '=', currentArray);
-        patchRecord({ [field]: currentArray });
+        await patchRecord({ [field]: currentArray });
     };
 
     return {

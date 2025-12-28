@@ -61,11 +61,18 @@ export const handler = async (event: any) => {
         const attachmentName = getCensusMasterFilename(date);
 
         // Generate deterministic password based on census date
-        // Use pure generator (no Firebase deps) for Node.js/Netlify compatibility
+        // Use numeric PIN generator (pure function, no Firebase deps)
         const { generateCensusPassword } = await import('../../services/security/passwordGenerator');
         const password = generateCensusPassword(date);
 
-        console.log(`[CensusEmail] Password for ${date}: ${password}`);
+        console.log(`[CensusEmail] Numeric PIN for ${date}: ${password}`);
+
+        // Ensure the PIN is included in the email body, even if a custom body was provided
+        let finalBody = body || '';
+        if (password && !finalBody.includes(password)) {
+            const pinNote = `\n\n📌 CLAVE DE SEGURIDAD EXCEL: ${password}`;
+            finalBody = finalBody ? `${finalBody}${pinNote}` : pinNote;
+        }
 
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const XlsxPopulate = require('xlsx-populate');
@@ -82,9 +89,9 @@ export const handler = async (event: any) => {
             attachmentBuffer,
             attachmentName,
             nursesSignature,
-            body,
+            body: finalBody, // Use the body with the appended PIN
             requestedBy: requesterEmail,
-            encryptionPin: password // Pass the password so it can be included in the email body
+            encryptionPin: password
         });
 
         console.log('Gmail send response', gmailResponse);
@@ -93,9 +100,8 @@ export const handler = async (event: any) => {
             statusCode: 200,
             body: JSON.stringify({
                 success: true,
-                message: 'Correo enviado',
+                message: 'Correo enviado correctamente.',
                 gmailId: gmailResponse.id,
-                // Return password and date so client can save to Firestore for audit
                 censusDate: date,
                 exportPassword: password
             })

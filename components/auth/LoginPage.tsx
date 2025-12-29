@@ -24,57 +24,12 @@ const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isPassportLoading, setIsPassportLoading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        setIsLoading(true);
-
-        try {
-            await signIn(email, password);
-            onLoginSuccess();
-        } catch (err: unknown) {
-            const error = err as Error;
-
-            // Try offline fallback if there's a stored passport
-            const storedPassport = getStoredPassport();
-            if (storedPassport) {
-                console.log('[LoginPage] Attempting offline credential verification fallback...');
-                const isValid = await verifyPassportCredentials(storedPassport, email, password);
-
-                if (isValid) {
-                    const result = await validatePassport(storedPassport);
-                    if (result.valid) {
-                        // Store user info in localStorage for offline mode
-                        localStorage.setItem('hhr_offline_user', JSON.stringify(result.user));
-
-                        // Try to sign in anonymously (hybrid mode) if possible
-                        try {
-                            await signInAnonymouslyForPassport();
-                        } catch {
-                            // Offline, ignore anonymous auth failure
-                        }
-
-                        onLoginSuccess();
-                        return;
-                    }
-                }
-            }
-
-            setError(error.message || 'Error al iniciar sesión');
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const handleGoogleSignIn = async () => {
         setError(null);
@@ -100,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             const passport = await parsePassportFile(file);
 
             if (!passport) {
-                setError('No se pudo leer el archivo pasaporte. Verifique que sea un archivo .hhr válido.');
+                setError('Archivo pasaporte inválido (.hhr)');
                 return;
             }
 
@@ -111,15 +66,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 return;
             }
 
-            // Valid passport - store locally
             storePassportLocally(passport);
-
-            // Store user info in localStorage for offline mode
             localStorage.setItem('hhr_offline_user', JSON.stringify(result.user));
-
-            // Try to sign in anonymously to Firebase for Firestore access (hybrid mode)
             await signInAnonymouslyForPassport();
-
             onLoginSuccess();
         } catch (err) {
             console.error('[LoginPage] Passport error:', err);
@@ -128,8 +77,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             setIsPassportLoading(false);
         }
     }, [onLoginSuccess]);
-
-
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -160,174 +107,95 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         setIsDragging(false);
     }, []);
 
-    const isAnyLoading = isLoading || isGoogleLoading || isPassportLoading;
+    const isAnyLoading = isGoogleLoading || isPassportLoading;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-medical-600 via-medical-700 to-medical-900 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-sm">
                 {/* Logo/Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-xl mb-4">
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-xl mb-6">
                         <Hospital className="w-10 h-10 text-medical-600" />
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-2">Hospital Hanga Roa</h1>
-                    <p className="text-medical-200">Sistema de Registro de Enfermería</p>
+                    <p className="text-medical-200">Sistema Estadístico de Hospitalizados</p>
                 </div>
 
-                {/* Login Form */}
-                <div className="bg-white rounded-2xl shadow-2xl p-8">
-                    <h2 className="text-xl font-bold text-slate-800 mb-6 text-center">Iniciar Sesión</h2>
+                {/* Login Card */}
+                <div className="bg-white rounded-3xl shadow-2xl p-10 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-medical-400 to-medical-600"></div>
 
-                    {/* Passport Upload Zone */}
-                    <div
-                        className={`mb-6 border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer
-                            ${isDragging
-                                ? 'border-medical-500 bg-medical-50'
-                                : 'border-slate-300 hover:border-medical-400 hover:bg-slate-50'
-                            }
-                            ${isPassportLoading ? 'opacity-50 pointer-events-none' : ''}
-                        `}
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".hhr"
-                            onChange={handleFileSelect}
-                            className="hidden"
-                        />
-                        <div className="flex flex-col items-center gap-2">
-                            {isPassportLoading ? (
-                                <Loader2 className="w-8 h-8 text-medical-500 animate-spin" />
-                            ) : (
-                                <FileKey className="w-8 h-8 text-medical-500" />
-                            )}
-                            <p className="text-sm text-slate-600 font-medium">
-                                {isDragging ? 'Suelte el archivo aquí' : 'Acceso Offline con Pasaporte'}
-                            </p>
-                            <p className="text-xs text-slate-400">
-                                Arrastre su archivo .hhr o haga clic para seleccionar
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="relative my-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-200"></div>
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white text-slate-500">o con conexión a internet</span>
-                        </div>
-                    </div>
+                    <h2 className="text-xl font-bold text-slate-800 mb-8 text-center text-balance">
+                        Acceso al Sistema
+                    </h2>
 
                     {/* Google Sign In Button */}
                     <button
                         type="button"
                         onClick={handleGoogleSignIn}
                         disabled={isAnyLoading}
-                        className="w-full mb-4 bg-white hover:bg-gray-50 disabled:bg-gray-100 border-2 border-slate-200 text-slate-700 font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md"
+                        className="w-full bg-white hover:bg-slate-50 disabled:bg-slate-100 border-2 border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md hover:border-medical-300 active:scale-[0.98]"
                     >
                         {isGoogleLoading ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                Conectando...
-                            </>
+                            <Loader2 className="w-6 h-6 animate-spin text-medical-600" />
                         ) : (
                             <>
-                                <GoogleIcon className="w-5 h-5" />
-                                Continuar con Google
+                                <GoogleIcon className="w-6 h-6" />
+                                Ingresar con Google
                             </>
                         )}
                     </button>
 
-                    {/* Divider */}
-                    <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-200"></div>
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mt-6 flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm animate-fade-in text-balance">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                            <span>{error}</span>
                         </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white text-slate-500">o con correo</span>
-                        </div>
-                    </div>
+                    )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Email Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Correo electrónico
-                            </label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-medical-500 focus:border-medical-500 focus:outline-none transition-all"
-                                    placeholder="enfermero@hospital.cl"
-                                    required
-                                    disabled={isAnyLoading}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Password Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Contraseña
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-medical-500 focus:border-medical-500 focus:outline-none transition-all"
-                                    placeholder="••••••••"
-                                    required
-                                    disabled={isAnyLoading}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Error Message */}
-                        {error && (
-                            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-fade-in">
-                                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        {/* Submit Button */}
-                        <button
-                            type="submit"
-                            disabled={isAnyLoading}
-                            className="w-full bg-medical-600 hover:bg-medical-700 disabled:bg-medical-400 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-medical-500/30 flex items-center justify-center gap-2"
+                    {/* Passport Offline Access - Minimal Icon */}
+                    <div className="mt-10 flex flex-col items-center">
+                        <div
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`p-4 rounded-full transition-all cursor-pointer border-2
+                                ${isDragging
+                                    ? 'bg-medical-50 border-medical-400 scale-110'
+                                    : 'bg-slate-50 border-transparent hover:bg-slate-100 hover:border-slate-200'
+                                }
+                                ${isPassportLoading ? 'opacity-50 pointer-events-none' : ''}
+                            `}
+                            title="Acceso Offline con Pasaporte (.hhr)"
                         >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Ingresando...
-                                </>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".hhr"
+                                onChange={handleFileSelect}
+                                className="hidden"
+                            />
+                            {isPassportLoading ? (
+                                <Loader2 className="w-6 h-6 text-medical-500 animate-spin" />
                             ) : (
-                                'Ingresar'
+                                <FileKey className={`w-6 h-6 ${isDragging ? 'text-medical-600' : 'text-slate-400'}`} />
                             )}
-                        </button>
-                    </form>
-
-                    {/* Footer Note */}
-                    <p className="mt-6 text-center text-sm text-slate-500">
-                        Contacte al administrador si no tiene acceso
-                    </p>
+                        </div>
+                        <p className="mt-2 text-[10px] text-slate-400 font-medium">MODO OFFLINE</p>
+                    </div>
                 </div>
 
                 {/* Version/Footer */}
-                <p className="text-center text-medical-300 text-xs mt-6">
-                    Sistema Estadístico v1.0 • Servicio de Salud Metropolitano
-                </p>
+                <div className="text-center mt-8 space-y-1">
+                    <p className="text-medical-200/60 text-[10px] uppercase tracking-widest font-bold">
+                        Unidad de Estadística • v1.2.0
+                    </p>
+                    <p className="text-medical-300/40 text-[9px]">
+                        Isla de Pascua, Chile
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -14,7 +14,7 @@ import { NavbarTabs } from './NavbarTabs';
 import { UserMenu } from './UserMenu';
 import { DemoModeBadge } from './DemoModeBadge';
 
-export type ModuleType = 'CENSUS' | 'CUDYR' | 'NURSING_HANDOFF' | 'MEDICAL_HANDOFF' | 'REPORTS' | 'AUDIT' | 'WHATSAPP';
+export type ModuleType = 'CENSUS' | 'CUDYR' | 'NURSING_HANDOFF' | 'MEDICAL_HANDOFF' | 'REPORTS' | 'AUDIT' | 'WHATSAPP' | 'ERRORS';
 type ViewMode = 'REGISTER' | 'ANALYTICS';
 
 interface NavbarProps {
@@ -73,6 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       case 'REPORTS': return 'bg-slate-700 shadow-slate-700/20';
       case 'AUDIT': return 'bg-slate-800 shadow-slate-800/20';
       case 'WHATSAPP': return 'bg-green-700 shadow-green-700/20';
+      case 'ERRORS': return 'bg-slate-900 shadow-slate-900/20';
       default: return 'bg-medical-900 shadow-medical-900/20';
     }
   };

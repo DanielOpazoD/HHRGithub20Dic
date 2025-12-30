@@ -7,6 +7,8 @@
 
 import React from 'react';
 import { useDailyRecord, useAuthState, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail, useSignatureMode, useAppState } from '@/hooks';
+import { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
+import { UseAuthStateReturn } from '@/hooks/useAuthState';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
 import { Navbar, DateStrip, SettingsModal, TestAgent, SyncWatcher, DemoModePanel, LoginPage } from '@/components';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
@@ -60,6 +62,7 @@ function App() {
 
   // Date navigation
   const dateNav = useDateNavigation();
+
   const { isSignatureMode, currentDateString } = useSignatureMode(dateNav.currentDateString, auth.user, auth.authLoading);
 
   // Loading state
@@ -73,7 +76,7 @@ function App() {
 
   // Auth required
   if (!auth.user && !isSignatureMode) {
-    return <LoginPage onLoginSuccess={() => window.location.reload()} />;
+    return <LoginPage onLoginSuccess={() => { }} />;
   }
 
   return (
@@ -86,8 +89,13 @@ function App() {
 /**
  * Inner component to handle hook instantiation AFTER providers are balanced
  */
-function AppInner({ auth, dateNav }: any) {
-  const dailyRecordHook = useDailyRecord(dateNav.currentDateString, auth.isOfflineMode);
+interface AppInnerProps {
+  auth: UseAuthStateReturn & { isOfflineMode: boolean };
+  dateNav: UseDateNavigationReturn & { isSignatureMode: boolean };
+}
+
+function AppInner({ auth, dateNav }: AppInnerProps) {
+  const dailyRecordHook = useDailyRecord(dateNav.currentDateString, auth.isOfflineMode, auth.isFirebaseConnected);
   const { record } = dailyRecordHook;
 
   const existingDaysInMonth = useExistingDays(dateNav.selectedYear, dateNav.selectedMonth, record);

@@ -14,7 +14,7 @@ interface SignatureModeResult {
 
 export function useSignatureMode(
     navDateString: string,
-    user: User | null,
+    user: any | null,
     authLoading: boolean
 ): SignatureModeResult {
     // Parse URL params
@@ -25,8 +25,10 @@ export function useSignatureMode(
     // Anonymous login for signature mode
     const isSigningInRef = useRef(false);
     useEffect(() => {
+        // ONLY sign in anonymously if we are in signature mode AND have NO user whatsoever (real or passport)
         if (isSignatureMode && !user && !authLoading && !isSigningInRef.current) {
             isSigningInRef.current = true;
+            console.log("[useSignatureMode] 👤 No user found in signature mode, signing in anonymously...");
             signInAnonymously(auth).catch((err) => {
                 console.error("Anonymous auth failed", err);
                 isSigningInRef.current = false;

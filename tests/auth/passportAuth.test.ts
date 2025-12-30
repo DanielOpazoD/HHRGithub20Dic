@@ -42,37 +42,37 @@ describe('Auth Role Permissions', () => {
     describe('Editor role detection', () => {
         it('should treat admin as editor', () => {
             const role: UserRole = 'admin';
-            const isEditor = role === 'editor' || role === 'admin' || role === 'nurse_hospital';
+            const isEditor = (role as string) === 'editor' || (role as string) === 'admin' || (role as string) === 'nurse_hospital';
             expect(isEditor).toBe(true);
         });
 
         it('should treat editor as editor', () => {
             const role: UserRole = 'editor';
-            const isEditor = role === 'editor' || role === 'admin' || role === 'nurse_hospital';
+            const isEditor = (role as string) === 'editor' || (role as string) === 'admin' || (role as string) === 'nurse_hospital';
             expect(isEditor).toBe(true);
         });
 
         it('should treat nurse_hospital as editor', () => {
             const role: UserRole = 'nurse_hospital';
-            const isEditor = role === 'editor' || role === 'admin' || role === 'nurse_hospital';
+            const isEditor = (role as string) === 'editor' || (role as string) === 'admin' || (role as string) === 'nurse_hospital';
             expect(isEditor).toBe(true);
         });
 
         it('should NOT treat viewer as editor', () => {
             const role: UserRole = 'viewer';
-            const isEditor = role === 'editor' || role === 'admin' || role === 'nurse_hospital';
+            const isEditor = (role as string) === 'editor' || (role as string) === 'admin' || (role as string) === 'nurse_hospital';
             expect(isEditor).toBe(false);
         });
 
         it('should NOT treat doctor_urgency as editor', () => {
             const role: UserRole = 'doctor_urgency';
-            const isEditor = role === 'editor' || role === 'admin' || role === 'nurse_hospital';
+            const isEditor = (role as string) === 'editor' || (role as string) === 'admin' || (role as string) === 'nurse_hospital';
             expect(isEditor).toBe(false);
         });
 
         it('should NOT treat viewer_census as editor', () => {
             const role: UserRole = 'viewer_census';
-            const isEditor = role === 'editor' || role === 'admin' || role === 'nurse_hospital';
+            const isEditor = (role as string) === 'editor' || (role as string) === 'admin' || (role as string) === 'nurse_hospital';
             expect(isEditor).toBe(false);
         });
     });

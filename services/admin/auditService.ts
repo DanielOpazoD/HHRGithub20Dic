@@ -17,6 +17,11 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 import { AuditLogEntry, AuditAction, maskRut } from '../../types/audit';
+import {
+    saveAuditLog,
+    getAuditLogs as getIndexedDBAuditLogs,
+    getAuditLogsForDate as getIndexedDBAuditLogsForDate
+} from '../storage/indexedDBService';
 
 // Get current user email from Firebase Auth
 const getCurrentUserEmail = (): string => {
@@ -26,7 +31,7 @@ const getCurrentUserEmail = (): string => {
 const HOSPITAL_ID = 'hanga_roa';
 const COLLECTION_NAME = 'auditLogs';
 
-// Local storage key for offline fallback
+// Local storage key for offline fallback (Legacy, used for migration)
 const AUDIT_STORAGE_KEY = 'hanga_roa_audit_logs';
 
 /**
@@ -60,26 +65,20 @@ const generateAuditId = (): string => {
 /**
  * Store audit log entry locally (fallback)
  */
-const storeLocally = (entry: AuditLogEntry): void => {
+const storeLocally = async (entry: AuditLogEntry): Promise<void> => {
     try {
-        const existingData = localStorage.getItem(AUDIT_STORAGE_KEY);
-        const logs: AuditLogEntry[] = existingData ? JSON.parse(existingData) : [];
-        logs.unshift(entry); // Add to beginning
-        // Keep only last 1000 entries locally
-        const trimmed = logs.slice(0, 1000);
-        localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(trimmed));
+        await saveAuditLog(entry);
     } catch (error) {
-        console.error('Failed to store audit log locally:', error);
+        console.error('Failed to store audit log in IndexedDB:', error);
     }
 };
 
 /**
  * Get locally stored audit logs
  */
-export const getLocalAuditLogs = (): AuditLogEntry[] => {
+export const getLocalAuditLogs = async (): Promise<AuditLogEntry[]> => {
     try {
-        const data = localStorage.getItem(AUDIT_STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
+        return await getIndexedDBAuditLogs(1000);
     } catch {
         return [];
     }
@@ -160,7 +159,7 @@ export const getAuditLogs = async (limitCount: number = 100): Promise<AuditLogEn
     } catch (error) {
         console.error('Failed to fetch audit logs from Firestore:', error);
         // Return local logs as fallback
-        return getLocalAuditLogs();
+        return await getLocalAuditLogs();
     }
 };
 
@@ -193,7 +192,8 @@ export const getAuditLogsForDate = async (date: string): Promise<AuditLogEntry[]
         });
     } catch (error) {
         console.error('Failed to fetch audit logs for date:', error);
-        return [];
+        // Fallback to IndexedDB
+        return await getIndexedDBAuditLogsForDate(date);
     }
 };
 

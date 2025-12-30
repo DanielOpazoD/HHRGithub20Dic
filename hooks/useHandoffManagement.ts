@@ -14,7 +14,7 @@ import { getAttributedAuthors } from '../services/admin/attributionService';
 
 export interface HandoffManagementActions {
     updateHandoffChecklist: (shift: 'day' | 'night', field: string, value: boolean | string) => void;
-    updateHandoffNovedades: (shift: 'day' | 'night', value: string) => void;
+    updateHandoffNovedades: (shift: 'day' | 'night' | 'medical', value: string) => void;
     updateHandoffStaff: (shift: 'day' | 'night', type: 'delivers' | 'receives', staffList: string[]) => void;
     updateMedicalSignature: (doctorName: string) => void;
     updateMedicalHandoffDoctor: (doctorName: string) => Promise<void>;
@@ -145,7 +145,7 @@ export const useHandoffManagement = (
             // 1. Get Doctor Name (Auto-fill from previous if empty)
             let doctorName = record.medicalHandoffDoctor;
             if (!doctorName) {
-                const previousRecord = getPreviousDay(record.date);
+                const previousRecord = await getPreviousDay(record.date);
                 doctorName = previousRecord?.medicalHandoffDoctor || 'Sin especificar';
             }
 
@@ -189,9 +189,10 @@ export const useHandoffManagement = (
                 medicalHandoffSentAt: new Date().toISOString()
             });
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('WhatsApp Logic Error:', err);
-            notifyError('Error al enviar', err.message || 'Error desconocido');
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            notifyError('Error al enviar', errorMessage);
         }
     }, [record, patchRecord, success, notifyError]);
 

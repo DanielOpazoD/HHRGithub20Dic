@@ -172,9 +172,51 @@ const saveHistorySnapshot = async (date: string): Promise<void> => {
  * await saveRecordToFirestore(myRecord);
  * ```
  */
-export const saveRecordToFirestore = async (record: DailyRecord): Promise<void> => {
+export class ConcurrencyError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'ConcurrencyError';
+    }
+}
+
+/**
+ * Saves a complete DailyRecord to Firestore.
+ * Performs sanitization to ensure compatibility with Firestore.
+ * 
+ * @param record - The DailyRecord object to persist
+ * @param expectedLastUpdated - Optional ISO timestamp of the base version we are editing from.
+ *                              Used for optimistic concurrency control.
+ * @returns Promise that resolves when the save operation is finished
+ */
+export const saveRecordToFirestore = async (record: DailyRecord, expectedLastUpdated?: string): Promise<void> => {
     try {
         const docRef = doc(getRecordsCollection(), record.date);
+
+        // Optimistic Concurrency Check
+        if (expectedLastUpdated) {
+            // We use a transaction or simple read-before-write. 
+            // Since we want offline support for writes, we only check if we can read fresh data.
+            // If getDoc fails (offline), we assume it's safe to write (Last Write Wins locally).
+            try {
+                const remoteDoc = await getDoc(docRef);
+                if (remoteDoc.exists()) {
+                    const remoteData = remoteDoc.data();
+                    const remoteLastUpdated = remoteData.lastUpdated instanceof Timestamp
+                        ? remoteData.lastUpdated.toDate().toISOString()
+                        : (remoteData.lastUpdated as string);
+
+                    if (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(expectedLastUpdated)) {
+                        console.warn(`[Firestore] Concurrency conflict. Remote: ${remoteLastUpdated}, Local base: ${expectedLastUpdated}`);
+                        throw new ConcurrencyError('El registro ha sido modificado por otro usuario. Por favor recarga la página.');
+                    }
+                }
+            } catch (err) {
+                // If checking fails (e.g. offline), or checking logic throws ConcurrencyError, rethrow ConcurrencyError
+                if (err instanceof ConcurrencyError) throw err;
+                // Otherwise (network error on read), we proceed to save (optimistic offline behavior)
+                console.warn('[Firestore] Could not verify concurrency (likely offline), proceeding with save.');
+            }
+        }
 
         // MINSAL Integrity: Save snapshot of current state before overwriting
         await saveHistorySnapshot(record.date);

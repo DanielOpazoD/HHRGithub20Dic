@@ -103,14 +103,15 @@ export async function sendWhatsAppMessage(
         });
 
         return { success: true, messageId: result.messageId };
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         await logWhatsAppOperation({
             type: 'ERROR',
             success: false,
-            error: error.message
+            error: errorMessage
         });
 
-        return { success: false, error: error.message };
+        return { success: false, error: errorMessage };
     }
 }
 
@@ -156,7 +157,7 @@ export async function fetchShiftsFromGroup(): Promise<{
             success: result.success,
             message: result.message
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         return {
             success: false,
             message: '',
@@ -417,9 +418,9 @@ export async function saveManualShift(messageText: string): Promise<{ success: b
 
         console.log('✅ Turno guardado exitosamente');
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error saving manual shift:', error);
-        return { success: false, error: error.message || 'Error al guardar el turno' };
+        return { success: false, error: error instanceof Error ? error.message : 'Error al guardar el turno' };
     }
 }
 

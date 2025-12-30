@@ -37,9 +37,9 @@ export class GlobalErrorBoundary extends Component<Props, State> {
             message: `React Error Boundary: ${error.message}`,
             severity: 'critical',
             error,
-            stack: errorInfo.componentStack,
+            stack: errorInfo.componentStack || undefined,
             context: {
-                componentStack: errorInfo.componentStack,
+                componentStack: errorInfo.componentStack || undefined,
                 errorInfo,
             },
         });

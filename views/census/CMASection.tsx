@@ -70,24 +70,27 @@ export const CMASection: React.FC = () => {
     };
 
     return (
-        <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:break-inside-avoid">
+        <div className="card mt-6 animate-fade-in print:break-inside-avoid">
             {/* Header minimalista */}
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white">
+            <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
                 <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-orange-50 text-orange-600 rounded-lg">
-                        <Scissors size={20} />
+                    <div className="p-2 bg-medical-50 text-medical-600 rounded-lg shadow-sm">
+                        <Scissors size={18} />
                     </div>
-                    <h2 className="text-lg font-bold text-slate-800">
-                        Hospitalización Diurna
-                    </h2>
+                    <div>
+                        <h2 className="text-base font-bold text-slate-800 leading-tight">
+                            Hospitalización Diurna
+                        </h2>
+                        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">CMA / PMA</p>
+                    </div>
                 </div>
                 {!isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded hover:bg-slate-200 transition-colors"
+                        className="flex items-center gap-1.5 text-slate-400 hover:text-medical-600 hover:bg-medical-50/50 px-2.5 py-1.5 rounded-lg transition-all text-xs font-semibold"
                     >
                         <Plus size={14} />
-                        Agregar
+                        Agregar Paciente
                     </button>
                 )}
             </div>
@@ -99,16 +102,16 @@ export const CMASection: React.FC = () => {
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 uppercase text-xs">
+                        <thead className="bg-slate-50/50 text-slate-500 font-bold border-b border-slate-200 uppercase text-[10px] tracking-tight">
                             <tr>
-                                <th className="p-3 w-20">Cama</th>
-                                <th className="p-3 w-40">Tipo</th>
-                                <th className="p-3 w-48">Paciente</th>
-                                <th className="p-3 w-32">RUT / ID</th>
-                                <th className="p-3 w-16 text-center">Edad</th>
-                                <th className="p-3 min-w-[200px]">Diagnóstico</th>
-                                <th className="p-3 w-40">Especialidad</th>
-                                <th className="p-3 w-10"></th>
+                                <th className="px-3 py-2.5 w-24">Cama</th>
+                                <th className="px-3 py-2.5 w-40">Tipo Intervención</th>
+                                <th className="px-3 py-2.5 w-48">Paciente</th>
+                                <th className="px-3 py-2.5 w-36">RUT / Identidad</th>
+                                <th className="px-3 py-2.5 w-16 text-center">Edad</th>
+                                <th className="px-3 py-2.5 min-w-[200px]">Diagnóstico Clínico</th>
+                                <th className="px-3 py-2.5 w-44">Especialidad</th>
+                                <th className="px-3 py-2.5 w-10 text-right"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -117,11 +120,11 @@ export const CMASection: React.FC = () => {
                                 <tr key={item.id} className="hover:bg-slate-50 group">
                                     <td className="p-2">
                                         <select
-                                            className="w-full p-1 border border-transparent hover:border-slate-300 rounded focus:border-orange-400 focus:ring-1 focus:ring-orange-400 text-xs bg-transparent transition-colors"
+                                            className="w-full p-1 border border-transparent hover:border-slate-300 rounded focus:border-medical-400 focus:ring-2 focus:ring-medical-500/10 text-[11px] font-bold text-slate-700 bg-transparent transition-all outline-none"
                                             value={item.bedName}
                                             onChange={(e) => handleUpdate(item.id, 'bedName', e.target.value)}
                                         >
-                                            <option value="">-- Sel --</option>
+                                            <option value="">--</option>
                                             {CMA_BEDS.map(bed => (
                                                 <option key={bed} value={bed}>{bed}</option>
                                             ))}
@@ -142,10 +145,10 @@ export const CMASection: React.FC = () => {
                                         <DebouncedInput
                                             type="text"
                                             className={clsx(
-                                                "w-full p-1 border rounded text-xs font-bold text-slate-700 transition-colors focus:ring-1",
+                                                "w-full p-1 border rounded text-[11px] font-bold text-slate-700 transition-all focus:ring-2 outline-none",
                                                 !PatientInputSchema.pick({ patientName: true }).safeParse({ patientName: item.patientName }).success && item.patientName
-                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400"
-                                                    : "border-transparent hover:border-slate-300 focus:border-orange-400 focus:ring-orange-400"
+                                                    ? "border-red-300 bg-red-50/30 focus:border-red-500 focus:ring-red-400/20"
+                                                    : "border-transparent hover:border-slate-300 focus:border-medical-400 focus:ring-medical-500/10"
                                             )}
                                             value={item.patientName}
                                             onChange={(val) => handleUpdate(item.id, 'patientName', val)}
@@ -193,11 +196,11 @@ export const CMASection: React.FC = () => {
                                     </td>
                                     <td className="p-2">
                                         <select
-                                            className="w-full p-1 border border-transparent hover:border-slate-300 rounded focus:border-orange-400 focus:ring-1 focus:ring-orange-400 text-xs bg-transparent transition-colors"
+                                            className="w-full p-1 border border-transparent hover:border-slate-300 rounded focus:border-medical-400 focus:ring-2 focus:ring-medical-500/10 text-xs bg-transparent transition-all outline-none"
                                             value={item.specialty}
                                             onChange={(e) => handleUpdate(item.id, 'specialty', e.target.value)}
                                         >
-                                            <option value="">-- Sel --</option>
+                                            <option value="">--</option>
                                             {SPECIALTY_OPTIONS.map(opt => (
                                                 <option key={opt} value={opt}>{opt}</option>
                                             ))}
@@ -217,15 +220,15 @@ export const CMASection: React.FC = () => {
 
                             {/* Add New Entry Row */}
                             {isAdding && (
-                                <tr className="bg-orange-50/50 animate-fade-in">
+                                <tr className="bg-medical-50/30 animate-scale-in">
                                     <td className="p-2">
                                         <select
-                                            className="w-full p-1.5 border border-orange-200 rounded text-xs focus:outline-none focus:border-orange-400"
+                                            className="w-full p-1.5 border border-slate-200 rounded text-xs focus:outline-none focus:border-medical-400 focus:ring-2 focus:ring-medical-500/10 transition-all font-bold text-slate-700"
                                             value={newEntry.bedName || ''}
                                             onChange={(e) => setNewEntry({ ...newEntry, bedName: e.target.value })}
                                             autoFocus
                                         >
-                                            <option value="">-- Sel --</option>
+                                            <option value="">--</option>
                                             {CMA_BEDS.map(bed => (
                                                 <option key={bed} value={bed}>{bed}</option>
                                             ))}
@@ -245,12 +248,12 @@ export const CMASection: React.FC = () => {
                                     <td className="p-2">
                                         <input
                                             type="text"
-                                            placeholder="Nombre Paciente (Req)"
+                                            placeholder="Nombre Paciente"
                                             className={clsx(
-                                                "w-full p-1.5 border rounded text-xs focus:outline-none transition-all font-medium",
+                                                "w-full p-1.5 border rounded text-xs focus:outline-none transition-all font-bold",
                                                 !PatientInputSchema.pick({ patientName: true }).safeParse({ patientName: newEntry.patientName }).success && newEntry.patientName
-                                                    ? "border-red-400 focus:border-red-500"
-                                                    : "border-orange-200 focus:border-orange-400"
+                                                    ? "border-red-400 focus:border-red-500 bg-red-50/20"
+                                                    : "border-slate-200 focus:border-medical-400 focus:ring-2 focus:ring-medical-500/10"
                                             )}
                                             value={newEntry.patientName || ''}
                                             onChange={(e) => setNewEntry({ ...newEntry, patientName: e.target.value })}

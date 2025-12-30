@@ -12,14 +12,25 @@ import { AppProviders } from '@/components/AppProviders';
 import { generateCensusMasterExcel } from '@/services';
 import { CensusEmailConfigModal } from '@/components/census/CensusEmailConfigModal';
 
+import { UseAuthStateReturn } from '@/hooks/useAuthState';
+import { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
+import { UseUIStateReturn } from '@/hooks/useUIState';
+import { DailyRecordContextType } from '@/hooks/useDailyRecord';
+import { UseCensusEmailReturn } from '@/hooks/useCensusEmail';
+import { UseFileOperationsReturn } from '@/hooks/useFileOperations';
+import { UseNurseSignatureReturn } from '@/hooks/useNurseSignature';
+
 interface AppContentProps {
-    auth: any;
-    dateNav: any;
-    ui: any;
-    dailyRecordHook: any;
-    censusEmail: any;
-    fileOps: any;
-    nurseSignature: any;
+    auth: UseAuthStateReturn;
+    dateNav: UseDateNavigationReturn & {
+        isSignatureMode: boolean;
+        existingDaysInMonth: number[];
+    };
+    ui: UseUIStateReturn;
+    dailyRecordHook: DailyRecordContextType;
+    censusEmail: UseCensusEmailReturn;
+    fileOps: UseFileOperationsReturn;
+    nurseSignature: UseNurseSignatureReturn;
 }
 
 /**

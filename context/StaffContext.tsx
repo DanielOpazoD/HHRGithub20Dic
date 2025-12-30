@@ -47,67 +47,45 @@ export const StaffProvider: React.FC<StaffProviderProps> = ({ children }) => {
     const [showNurseManager, setShowNurseManager] = useState(false);
     const [showTensManager, setShowTensManager] = useState(false);
 
-    // Subscribe to nurses catalog (unified through CatalogRepository)
-    // Wait for Firebase auth to be ready before subscribing
+    // Subscribe to catalogs (unified through CatalogRepository)
     useEffect(() => {
-        // Load from localStorage initially (fast)
-        setNursesList(CatalogRepository.getNurses());
+        let unsubscribeNurses: (() => void) | null = null;
+        let unsubscribeTens: (() => void) | null = null;
+        let unsubscribeAuth: (() => void) | null = null;
 
-        let unsubscribeCatalog: (() => void) | null = null;
+        const setupSubscriptions = async () => {
+            // Load initial from Local/IndexedDB first (fast)
+            const [nurses, tens] = await Promise.all([
+                CatalogRepository.getNurses(),
+                CatalogRepository.getTens()
+            ]);
+            setNursesList(nurses);
+            setTensList(tens);
 
-        // Import auth dynamically to avoid circular dependencies
-        import('../firebaseConfig').then(({ auth }) => {
-            const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            // Import auth dynamically
+            const { auth } = await import('../firebaseConfig');
+
+            unsubscribeAuth = auth.onAuthStateChanged((user) => {
                 if (user) {
-                    // User is authenticated, subscribe to Firestore
-                    console.log('[StaffContext] Auth ready, subscribing to nurse catalog');
-                    unsubscribeCatalog = CatalogRepository.subscribeNurses((nurses) => {
-                        setNursesList(nurses);
-                    });
+                    console.log('[StaffContext] 👤 Auth ready, subscribing to catalogs');
+
+                    // Cleanup previous if exists
+                    if (unsubscribeNurses) unsubscribeNurses();
+                    if (unsubscribeTens) unsubscribeTens();
+
+                    unsubscribeNurses = CatalogRepository.subscribeNurses(setNursesList);
+                    unsubscribeTens = CatalogRepository.subscribeTens(setTensList);
                 }
             });
-
-            // Store auth unsubscribe for cleanup
-            return () => {
-                unsubscribeAuth();
-                if (unsubscribeCatalog) unsubscribeCatalog();
-            };
-        });
-
-        return () => {
-            if (unsubscribeCatalog) unsubscribeCatalog();
         };
-    }, []);
 
-    // Subscribe to TENS catalog (unified through CatalogRepository)
-    // Wait for Firebase auth to be ready before subscribing
-    useEffect(() => {
-        // Load from localStorage initially (fast)
-        setTensList(CatalogRepository.getTens());
-
-        let unsubscribeCatalog: (() => void) | null = null;
-
-        // Import auth dynamically to avoid circular dependencies
-        import('../firebaseConfig').then(({ auth }) => {
-            const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-                if (user) {
-                    // User is authenticated, subscribe to Firestore
-                    console.log('[StaffContext] Auth ready, subscribing to TENS catalog');
-                    unsubscribeCatalog = CatalogRepository.subscribeTens((tens) => {
-                        setTensList(tens);
-                    });
-                }
-            });
-
-            // Store auth unsubscribe for cleanup
-            return () => {
-                unsubscribeAuth();
-                if (unsubscribeCatalog) unsubscribeCatalog();
-            };
-        });
+        setupSubscriptions();
 
         return () => {
-            if (unsubscribeCatalog) unsubscribeCatalog();
+            console.log('[StaffContext] 🧹 Cleaning up all subscriptions');
+            if (unsubscribeAuth) unsubscribeAuth();
+            if (unsubscribeNurses) unsubscribeNurses();
+            if (unsubscribeTens) unsubscribeTens();
         };
     }, []);
 

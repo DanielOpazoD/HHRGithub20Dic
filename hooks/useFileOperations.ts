@@ -3,7 +3,7 @@ import * as ExportService from '../services/exporters/exportService';
 import { DailyRecord } from '../types';
 import { useNotification } from '../context/UIContext';
 
-interface UseFileOperationsReturn {
+export interface UseFileOperationsReturn {
     handleExportJSON: () => void;
     handleExportCSV: () => void;
     handleImportJSON: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;

@@ -34,18 +34,14 @@ describe('useDailyRecordSync - Reconnection Logic', () => {
         });
     });
 
-    it('should push local data to Firestore if Online and Auth is ready', async () => {
+    it('should push local data to Firestore if Online and isFirebaseConnected is true', async () => {
         // Setup mocks
         (DailyRecordRepository.getForDate as any).mockReturnValue(mockRecord);
-        const onAuthChangeMock = (auth.onAuthStateChanged as any);
 
-        // Render hook with UIProvider wrapper
-        renderHook(() => useDailyRecordSync(mockDate), {
+        // Render hook with isFirebaseConnected = true
+        renderHook(() => useDailyRecordSync(mockDate, false, true), {
             wrapper: UIProvider
         });
-
-        // Simulate Auth ready - Trigger all registered observers
-        onAuthChangeMock.mock.calls.forEach(call => call[0]({ uid: 'user-1' }));
 
         // Verify push logic
         await waitFor(() => {
@@ -57,15 +53,11 @@ describe('useDailyRecordSync - Reconnection Logic', () => {
         // Setup mocks
         (DailyRecordRepository.getForDate as any).mockReturnValue(null);
         (DailyRecordRepository.syncWithFirestore as any).mockResolvedValue(mockRecord);
-        const onAuthChangeMock = (auth.onAuthStateChanged as any);
 
-        // Render hook with UIProvider wrapper
-        renderHook(() => useDailyRecordSync(mockDate), {
+        // Render hook with isFirebaseConnected = true
+        renderHook(() => useDailyRecordSync(mockDate, false, true), {
             wrapper: UIProvider
         });
-
-        // Simulate Auth ready - Trigger all registered observers
-        onAuthChangeMock.mock.calls.forEach(call => call[0]({ uid: 'user-1' }));
 
         // Verify pull logic
         await waitFor(() => {
@@ -77,15 +69,11 @@ describe('useDailyRecordSync - Reconnection Logic', () => {
         // Set offline
         Object.defineProperty(navigator, 'onLine', { value: false });
 
-        const onAuthChangeMock = (auth.onAuthStateChanged as any);
-        renderHook(() => useDailyRecordSync(mockDate), {
+        renderHook(() => useDailyRecordSync(mockDate, false, true), {
             wrapper: UIProvider
         });
 
-        // Simulate Auth ready - Trigger all registered observers
-        onAuthChangeMock.mock.calls.forEach(call => call[0]({ uid: 'user-1' }));
-
-        // Verify no sync calls
+        // Verify no sync calls even if connected
         expect(DailyRecordRepository.save).not.toHaveBeenCalled();
         expect(DailyRecordRepository.syncWithFirestore).not.toHaveBeenCalled();
     });

@@ -7,10 +7,13 @@ import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { vi } from 'vitest';
 import { DailyRecord, PatientData, Specialty, PatientStatus } from '@/types';
-import { NotificationProvider } from '@/context/UIContext';
-import { ConfirmDialogProvider } from '@/context/UIContext';
+import { DailyRecordContextType, useDailyRecord } from '@/hooks/useDailyRecord';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { UIProvider } from '@/context/UIContext';
+import { AuditProvider } from '@/context/AuditContext';
+import { DemoModeProvider } from '@/context/DemoModeContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { DailyRecordProvider } from '@/context/DailyRecordContext';
-import { DailyRecordContextType } from '@/hooks/useDailyRecord';
 
 // ============================================================================
 // Mock Data Factories
@@ -76,6 +79,7 @@ export const createMockDailyRecordContext = (
     clearAllBeds: vi.fn(),
     moveOrCopyPatient: vi.fn(),
     toggleBlockBed: vi.fn(),
+    updateBlockedReason: vi.fn(),
     toggleExtraBed: vi.fn(),
     updateNurse: vi.fn(),
     updateTens: vi.fn(),
@@ -111,15 +115,30 @@ interface AllProvidersProps {
 
 const AllProviders: React.FC<AllProvidersProps> = ({ children, contextValue }) => {
     const mockContext = contextValue || createMockDailyRecordContext();
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: {
+                retry: false,
+                gcTime: 0,
+                staleTime: 0,
+            },
+        },
+    });
 
     return (
-        <NotificationProvider>
-            <ConfirmDialogProvider>
-                <DailyRecordProvider value={mockContext}>
-                    {children}
-                </DailyRecordProvider>
-            </ConfirmDialogProvider>
-        </NotificationProvider>
+        <QueryClientProvider client={queryClient}>
+            <UIProvider>
+                <AuthProvider>
+                    <AuditProvider userId="test-user">
+                        <DemoModeProvider>
+                            <DailyRecordProvider value={mockContext}>
+                                {children}
+                            </DailyRecordProvider>
+                        </DemoModeProvider>
+                    </AuditProvider>
+                </AuthProvider>
+            </UIProvider>
+        </QueryClientProvider>
     );
 };
 

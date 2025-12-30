@@ -19,7 +19,7 @@ const saveWorkbook = async (workbook: Workbook, filename: string) => {
 // --- EXPORT FUNCTIONS ---
 
 export const generateCensusDailyRaw = async (date: string) => {
-    const record = getRecordForDate(date);
+    const record = await getRecordForDate(date);
     if (!record) {
         alert("No hay datos para la fecha seleccionada.");
         return;
@@ -78,7 +78,7 @@ export const generateCensusRangeFormatted = async (startDate: string, endDate: s
 // --- CUDYR EXPORTS ---
 
 export const generateCudyrDailyRaw = async (date: string) => {
-    const record = getRecordForDate(date);
+    const record = await getRecordForDate(date);
     if (!record) { alert("Sin datos"); return; }
 
     const workbook = createWorkbook();
@@ -90,7 +90,7 @@ export const generateCudyrDailyRaw = async (date: string) => {
         const p = record.beds[bed.id];
         if (p && p.patientName && p.cudyr) {
             // Simple sum for demo
-            const total = Object.values(p.cudyr).reduce((a, b) => a + b, 0);
+            const total = Object.values(p.cudyr).reduce((a: number, b: number) => a + b, 0);
             sheet.addRow([
                 date, bed.name, p.patientName, p.rut, total,
                 total >= 19 ? 'C1' : 'C2', // Fake logic, normally calculated properly

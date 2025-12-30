@@ -195,10 +195,10 @@ class ErrorService {
         // Send to external service (Sentry, LogRocket, etc.) - Future
         this.sendToExternalService(errorLog);
 
-        // Store critical errors in localStorage for offline review
-        if (errorLog.severity === 'critical' || errorLog.severity === 'high') {
-            this.persistCriticalError(errorLog);
-        }
+        // Store in IndexedDB for the local Error Dashboard (unlimited capacity)
+        import('../storage/indexedDBService').then(({ saveErrorLog }) => {
+            saveErrorLog(errorLog);
+        }).catch(err => console.error('Failed to log to IndexedDB:', err));
     }
 
     /**
@@ -325,22 +325,6 @@ class ErrorService {
         return messages[code] || 'Error de autenticación';
     }
 
-    private persistCriticalError(error: ErrorLog): void {
-        try {
-            const existing = localStorage.getItem('criticalErrors');
-            const errors = existing ? JSON.parse(existing) : [];
-            errors.push(error);
-
-            // Keep only last 20 critical errors
-            if (errors.length > 20) {
-                errors.shift();
-            }
-
-            localStorage.setItem('criticalErrors', JSON.stringify(errors));
-        } catch (e) {
-            console.error('Failed to persist critical error', e);
-        }
-    }
 
     private sendToExternalService(error: ErrorLog): void {
         // TODO: Integrate with Sentry, LogRocket, or similar service

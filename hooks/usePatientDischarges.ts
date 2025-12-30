@@ -1,4 +1,4 @@
-import { DailyRecord, DischargeData } from '../types';
+import { DailyRecord, DischargeData, DischargeType } from '../types';
 import { createEmptyPatient } from '../services/factories/patientFactory';
 import { BEDS } from '../constants';
 import { logPatientDischarge } from '../services/admin/auditService';
@@ -39,7 +39,7 @@ export const usePatientDischarges = (
             diagnosis: patient.pathology,
             time: time || '',
             status: status,
-            dischargeType: status === 'Vivo' ? (dischargeType as any) : undefined,
+            dischargeType: status === 'Vivo' ? (dischargeType as DischargeType) : undefined,
             dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined,
             age: patient.age,
             insurance: patient.insurance,
@@ -96,7 +96,7 @@ export const usePatientDischarges = (
         const updatedDischarges = record.discharges.map(d => d.id === id ? {
             ...d,
             status,
-            dischargeType: status === 'Vivo' ? (dischargeType as any) : undefined,
+            dischargeType: status === 'Vivo' ? (dischargeType as DischargeType) : undefined,
             dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined,
             time: time ?? d.time
         } : d);

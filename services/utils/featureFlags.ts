@@ -42,6 +42,8 @@ export type FeatureFlag = keyof typeof FEATURE_FLAGS;
 // Feature Flags Service
 // ============================================================================
 
+import { getSetting, saveSetting } from '../storage/indexedDBService';
+
 const STORAGE_KEY = 'hhr_feature_flags';
 
 class FeatureFlagsService {
@@ -65,20 +67,20 @@ class FeatureFlagsService {
     // Initialization
     // ========================================================================
 
-    private loadFromStorage(): void {
+    private async loadFromStorage(): Promise<void> {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
+            const stored = await getSetting<Partial<Record<FeatureFlag, boolean>>>(STORAGE_KEY, {});
             if (stored) {
-                this.overrides = JSON.parse(stored);
+                this.overrides = { ...this.overrides, ...stored };
             }
         } catch {
             // Ignore storage errors
         }
     }
 
-    private saveToStorage(): void {
+    private async saveToStorage(): Promise<void> {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.overrides));
+            await saveSetting(STORAGE_KEY, this.overrides);
         } catch {
             // Ignore storage errors
         }

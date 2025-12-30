@@ -115,6 +115,14 @@ export const useHandoffLogic = ({
     }, [record, selectedShift]);
 
     // ========== HANDLERS ==========
+    /**
+     * Handles changes to nursing or medical notes.
+     * Automatically logs modifications to the audit service.
+     * 
+     * @param bedId - The unique ID of the bed being modified.
+     * @param value - The new note content.
+     * @param isNested - True if the note belongs to a clinical crib within the bed.
+     */
     const handleNursingNoteChange = useCallback(async (bedId: string, value: string, isNested: boolean = false) => {
         if (isMedical) {
             if (isNested) {
@@ -157,6 +165,9 @@ export const useHandoffLogic = ({
         }
     }, [isMedical, selectedShift, updatePatient, updatePatientMultiple, updateClinicalCrib, updateClinicalCribMultiple]);
 
+    /**
+     * Copies the unique signature link to the system clipboard.
+     */
     const handleShareLink = useCallback(() => {
         if (!record) return;
         const url = `${window.location.origin}?mode=signature&date=${record.date}`;
@@ -164,6 +175,9 @@ export const useHandoffLogic = ({
         onSuccess('Enlace copiado', 'El link para firma médica ha sido copiado al portapapeles.');
     }, [record, onSuccess]);
 
+    /**
+     * Sends the medical handoff summary to the configured WhatsApp group via integration service.
+     */
     const handleSendWhatsApp = useCallback(async () => {
         if (!record) return;
         setWhatsappSending(true);
@@ -192,6 +206,9 @@ export const useHandoffLogic = ({
         }
     }, [record, sendMedicalHandoff, onSuccess]);
 
+    /**
+     * Opens the WhatsApp web/app interface with a pre-filled message for manual sharing.
+     */
     const handleSendWhatsAppManual = useCallback(async () => {
         if (!record) return;
         try {

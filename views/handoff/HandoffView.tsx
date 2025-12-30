@@ -136,14 +136,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                         <h2 className="text-xl font-bold text-slate-800">
                             {isMedical ? 'Entrega de Turno' : 'Entrega de Turno Enfermería'}
                         </h2>
-                        {!isMedical && (
-                            <p className="text-sm text-slate-500 font-medium">
-                                {selectedShift === 'day'
-                                    ? `Turno Largo(${schedule.dayStart} - ${schedule.dayEnd})`
-                                    : `Turno Noche(${schedule.nightStart} - ${schedule.nightEnd})`
-                                }
-                            </p>
-                        )}
                     </div>
                 </div>
 

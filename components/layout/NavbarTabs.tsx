@@ -33,7 +33,7 @@ const NavTab: React.FC<NavTabProps> = ({ label, icon: Icon, isActive, onClick })
 interface NavbarTabsProps {
     currentModule: ModuleType;
     onModuleChange: (mod: ModuleType) => void;
-    visibleModules: ModuleType[];
+    visibleModules: readonly ModuleType[];
 }
 
 export const NavbarTabs: React.FC<NavbarTabsProps> = ({

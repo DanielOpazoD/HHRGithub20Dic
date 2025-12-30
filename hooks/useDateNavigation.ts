@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
  * Return type for useDateNavigation hook.
  * Provides date selection state and derived values for navigation.
  */
-interface UseDateNavigationReturn {
+export interface UseDateNavigationReturn {
     /** Currently selected year (e.g., 2024) */
     selectedYear: number;
     /** Set the selected year */

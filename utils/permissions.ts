@@ -41,8 +41,8 @@ interface RolePermissions {
 
 const PERMISSIONS: Record<string, RolePermissions> = {
     [ROLES.ADMIN]: {
-        modules: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF', 'REPORTS', 'AUDIT', 'WHATSAPP'],
-        canEdit: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF', 'REPORTS', 'AUDIT', 'WHATSAPP']
+        modules: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF', 'REPORTS', 'AUDIT', 'WHATSAPP', 'ERRORS'],
+        canEdit: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF', 'REPORTS', 'AUDIT', 'WHATSAPP', 'ERRORS']
     },
     [ROLES.NURSE_HOSPITAL]: {
         // Editar: Censo, CUDYR, Entrega Enf. Ver: Entrega Médica.

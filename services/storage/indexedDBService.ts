@@ -7,35 +7,39 @@
 
 import Dexie, { Table } from 'dexie';
 import { DailyRecord } from '../../types';
+import { ErrorLog } from '../utils/errorService';
+import { AuditLogEntry } from '../../types/audit';
 
 // ============================================================================
 // Database Schema
 // ============================================================================
 
-class HospitalDatabase extends Dexie {
-    dailyRecords!: Table<DailyRecord, string>;
-    catalogs!: Table<{ id: string; list: string[]; lastUpdated: string }, string>;
+class HangaRoaDatabase extends Dexie {
+    dailyRecords!: Table<DailyRecord>;
+    demoRecords!: Table<DailyRecord>;
+    catalogs!: Table<{ id: string, list: string[], lastUpdated: string }>;
+    errorLogs!: Table<ErrorLog>;
+    auditLogs!: Table<AuditLogEntry>;
+    settings!: Table<{ id: string, value: any }>;
 
     constructor() {
-        super('HangaRoaHospitalDB');
+        super('HangaRoaDB');
 
-        this.version(1).stores({
-            // Primary key is 'date' field for dailyRecords
+        this.version(4).stores({
             dailyRecords: 'date',
-            // Catalogs for nurses, TENS, etc.
-            catalogs: 'id'
+            demoRecords: 'date',
+            catalogs: 'id',
+            errorLogs: 'id, timestamp, severity',
+            auditLogs: 'id, timestamp, action, entityId',
+            settings: 'id'
         });
     }
 }
 
-// Singleton instance with safety
-let db: HospitalDatabase;
-
 /**
- * Mock fallback for HospitalDatabase when initialization fails.
- * Provides no-op implementations to prevent runtime crashes.
+ * Mock fallback for HangaRoaDatabase when initialization fails.
  */
-const createMockDatabase = (): HospitalDatabase => {
+export const createMockDatabase = (): HangaRoaDatabase => {
     const mockTable = {
         toArray: () => Promise.resolve([]),
         get: () => Promise.resolve(null),
@@ -43,123 +47,401 @@ const createMockDatabase = (): HospitalDatabase => {
         delete: () => Promise.resolve(),
         clear: () => Promise.resolve(),
         bulkPut: () => Promise.resolve(''),
+        add: () => Promise.resolve(''),
         orderBy: () => ({
             reverse: () => ({
-                keys: () => Promise.resolve([])
+                limit: () => ({ toArray: () => Promise.resolve([]) }),
+                keys: () => Promise.resolve([]),
+                toArray: () => Promise.resolve([])
             })
         }),
-        where: () => ({
+        where: (key: string) => ({
             below: () => ({
                 reverse: () => ({
                     first: () => Promise.resolve(null)
                 })
+            }),
+            equals: () => ({
+                first: () => Promise.resolve(null),
+                toArray: () => Promise.resolve([])
+            }),
+            startsWith: () => ({
+                toArray: () => Promise.resolve([])
             })
         })
-    };
+    } as any;
 
-    // Return a minimal mock that satisfies HospitalDatabase usage patterns
     return {
         dailyRecords: mockTable,
-        catalogs: {
-            get: () => Promise.resolve(null),
-            put: () => Promise.resolve('')
-        }
-    } as unknown as HospitalDatabase;
+        demoRecords: mockTable,
+        catalogs: mockTable,
+        auditLogs: mockTable,
+        settings: mockTable,
+        isOpen: () => true,
+        open: () => Promise.resolve(),
+        on: () => ({})
+    } as unknown as HangaRoaDatabase;
 };
 
+// Singleton instance with safety
+let db: HangaRoaDatabase;
+let isUsingMock = false;
+
 try {
-    db = new HospitalDatabase();
+    db = new HangaRoaDatabase();
+
+    // Handle blocking (multiple tabs trying to upgrade)
+    db.on('blocked', () => {
+        console.warn('[IndexedDB] ⏳ Database is blocked by another tab');
+    });
+
 } catch (e) {
-    console.error('Failed to initialize HospitalDatabase:', e);
+    console.error('[IndexedDB] ❌ Failed to construct HangaRoaDatabase:', e);
     db = createMockDatabase();
+    isUsingMock = true;
 }
+
+let isOpening = false;
+
+/**
+ * Ensures the database is open or falls back to mock.
+ * Includes automatic recovery logic for Chrome's "UnknownError".
+ */
+const ensureDbReady = async () => {
+    if (isUsingMock) return;
+    if (db.isOpen()) return;
+
+    if (isOpening) {
+        while (isOpening) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            if (db.isOpen() || isUsingMock) return;
+        }
+        return;
+    }
+
+    isOpening = true;
+    try {
+        await db.open();
+    } catch (err: any) {
+        console.warn('[IndexedDB] ⚠️ Initial open failed, attempting auto-recovery:', err.name || err.message);
+
+        // If it's a known persistent error (like UnknownError or VersionError), 
+        // try to delete and recreate the database once.
+        if (err.name === 'UnknownError' || err.name === 'VersionError') {
+            try {
+                console.log('[IndexedDB] 🛠️ Deleting corrupted database for recreation...');
+                await db.close();
+                await Dexie.delete('HangaRoaDB');
+
+                // Re-instantiate and try again
+                db = new HangaRoaDatabase();
+                await db.open();
+
+                console.log('[IndexedDB] ✨ Database successfully recreated and opened');
+
+                // Re-trigger migration since we started fresh
+                localStorage.removeItem(MIGRATION_FLAG);
+                migrateFromLocalStorage();
+
+                isOpening = false;
+                return;
+            } catch (recoveryErr) {
+                console.error('[IndexedDB] ❌ Recovery failed:', recoveryErr);
+            }
+        }
+
+        console.error('[IndexedDB] 💨 Falling back to Memory Storage (Mock)');
+        isUsingMock = true;
+        const mock = createMockDatabase();
+        db.dailyRecords = mock.dailyRecords;
+        db.catalogs = mock.catalogs;
+        db.errorLogs = mock.errorLogs;
+        db.auditLogs = mock.auditLogs;
+    } finally {
+        isOpening = false;
+    }
+};
+
+// ============================================================================
+// Error Log Operations
+// ============================================================================
+
+export const saveErrorLog = async (log: ErrorLog): Promise<void> => {
+    try {
+        await ensureDbReady();
+        await db.errorLogs.add(log);
+    } catch (err) {
+        console.warn('Failed to save error log to IndexedDB:', err);
+    }
+};
+
+export const getErrorLogs = async (limit = 50): Promise<ErrorLog[]> => {
+    try {
+        await ensureDbReady();
+        return await db.errorLogs
+            .orderBy('timestamp')
+            .reverse()
+            .limit(limit)
+            .toArray();
+    } catch (err) {
+        console.error('Failed to retrieve error logs:', err);
+        return [];
+    }
+};
+
+export const clearErrorLogs = async (): Promise<void> => {
+    try {
+        await ensureDbReady();
+        await db.errorLogs.clear();
+    } catch (err) {
+        console.warn('Failed to clear error logs:', err);
+    }
+};
 
 // ============================================================================
 // Daily Records Operations
 // ============================================================================
 
-/**
- * Get all stored daily records
- */
 export const getAllRecords = async (): Promise<Record<string, DailyRecord>> => {
-    const records = await db.dailyRecords.toArray();
-    const result: Record<string, DailyRecord> = {};
-    for (const record of records) {
-        result[record.date] = record;
+    try {
+        await ensureDbReady();
+        const records = await db.dailyRecords.toArray();
+        const result: Record<string, DailyRecord> = {};
+        for (const record of records) {
+            result[record.date] = record;
+        }
+        return result;
+    } catch (err) {
+        console.error('Failed to get all records from IndexedDB:', err);
+        return {};
     }
-    return result;
 };
 
-/**
- * Get record for a specific date
- */
+export const getRecordsForMonth = async (year: number, month: number): Promise<DailyRecord[]> => {
+    try {
+        await ensureDbReady();
+        const prefix = `${year}-${String(month).padStart(2, '0')}`;
+        return await db.dailyRecords
+            .where('date')
+            .startsWith(prefix)
+            .toArray();
+    } catch (err) {
+        console.error(`Failed to get records for month ${year}-${month}:`, err);
+        return [];
+    }
+};
+
 export const getRecordForDate = async (date: string): Promise<DailyRecord | null> => {
-    const record = await db.dailyRecords.get(date);
-    return record || null;
+    try {
+        await ensureDbReady();
+        const record = await db.dailyRecords.get(date);
+        return record || null;
+    } catch (err) {
+        console.error(`Failed to get record for ${date}:`, err);
+        return null;
+    }
 };
 
-/**
- * Save a single record
- */
 export const saveRecord = async (record: DailyRecord): Promise<void> => {
-    await db.dailyRecords.put(record);
+    try {
+        await ensureDbReady();
+        await db.dailyRecords.put(record);
+    } catch (err) {
+        console.error('Failed to save record to IndexedDB:', err);
+    }
 };
 
-/**
- * Delete a record by date
- */
 export const deleteRecord = async (date: string): Promise<void> => {
-    await db.dailyRecords.delete(date);
+    try {
+        await ensureDbReady();
+        await db.dailyRecords.delete(date);
+    } catch (err) {
+        console.error('Failed to delete record from IndexedDB:', err);
+    }
 };
 
-/**
- * Get all dates with records
- */
 export const getAllDates = async (): Promise<string[]> => {
-    const records = await db.dailyRecords.orderBy('date').reverse().keys();
-    return records as string[];
+    try {
+        await ensureDbReady();
+        const records = await db.dailyRecords.orderBy('date').reverse().keys();
+        return records as string[];
+    } catch (err) {
+        console.error('Failed to get all dates from IndexedDB:', err);
+        return [];
+    }
 };
 
-/**
- * Get the closest previous day's record
- */
 export const getPreviousDayRecord = async (currentDate: string): Promise<DailyRecord | null> => {
-    const record = await db.dailyRecords
-        .where('date')
-        .below(currentDate)
-        .reverse()
-        .first();
-    return record || null;
+    try {
+        await ensureDbReady();
+        const record = await db.dailyRecords
+            .where('date')
+            .below(currentDate)
+            .reverse()
+            .first();
+        return record || null;
+    } catch (err) {
+        console.error('Failed to get previous day record:', err);
+        return null;
+    }
 };
 
-/**
- * Clear all daily records
- */
 export const clearAllRecords = async (): Promise<void> => {
-    await db.dailyRecords.clear();
+    try {
+        await ensureDbReady();
+        await db.dailyRecords.clear();
+    } catch (err) {
+        console.error('Failed to clear all records from IndexedDB:', err);
+    }
+};
+
+// ============================================================================
+// Audit Log Operations
+// ============================================================================
+
+export const saveAuditLog = async (log: AuditLogEntry): Promise<void> => {
+    try {
+        await ensureDbReady();
+        await db.auditLogs.put(log); // put handles update if id exists
+    } catch (err) {
+        console.warn('Failed to save audit log to IndexedDB:', err);
+    }
+};
+
+export const getAuditLogs = async (limitCount = 100): Promise<AuditLogEntry[]> => {
+    try {
+        await ensureDbReady();
+        return await db.auditLogs
+            .orderBy('timestamp')
+            .reverse()
+            .limit(limitCount)
+            .toArray();
+    } catch (err) {
+        console.error('Failed to retrieve audit logs from IndexedDB:', err);
+        return [];
+    }
+};
+
+export const clearAuditLogs = async (): Promise<void> => {
+    try {
+        await ensureDbReady();
+        await db.auditLogs.clear();
+    } catch (err) {
+        console.error('Failed to clear audit logs from IndexedDB:', err);
+    }
+};
+
+export const getAuditLogsForDate = async (date: string): Promise<AuditLogEntry[]> => {
+    try {
+        await ensureDbReady();
+        return await db.auditLogs
+            .where('recordDate')
+            .equals(date)
+            .toArray();
+    } catch (err) {
+        console.error(`Failed to get audit logs for date ${date}:`, err);
+        return [];
+    }
+};
+
+// ============================================================================
+// Demo Records Operations
+// ============================================================================
+
+export const saveDemoRecord = async (record: DailyRecord): Promise<void> => {
+    try {
+        await ensureDbReady();
+        await db.demoRecords.put(record);
+    } catch (err) {
+        console.error('[IndexedDB] Failed to save demo record:', err);
+    }
+};
+
+export const getDemoRecordForDate = async (date: string): Promise<DailyRecord | null> => {
+    try {
+        await ensureDbReady();
+        const record = await db.demoRecords.get(date);
+        return record || null;
+    } catch (err) {
+        console.error(`[IndexedDB] Failed to get demo record for ${date}:`, err);
+        return null;
+    }
+};
+
+export const getAllDemoRecords = async (): Promise<Record<string, DailyRecord>> => {
+    try {
+        await ensureDbReady();
+        const records = await db.demoRecords.toArray();
+        const result: Record<string, DailyRecord> = {};
+        for (const record of records) {
+            result[record.date] = record;
+        }
+        return result;
+    } catch (err) {
+        console.error('[IndexedDB] Failed to get all demo records:', err);
+        return {};
+    }
+};
+
+export const deleteDemoRecord = async (date: string): Promise<void> => {
+    try {
+        await ensureDbReady();
+        await db.demoRecords.delete(date);
+    } catch (err) {
+        console.error('[IndexedDB] Failed to delete demo record:', err);
+    }
+};
+
+export const clearAllDemoRecords = async (): Promise<void> => {
+    try {
+        await ensureDbReady();
+        await db.demoRecords.clear();
+    } catch (err) {
+        console.error('[IndexedDB] Failed to clear all demo records:', err);
+    }
+};
+
+export const getPreviousDemoDayRecord = async (currentDate: string): Promise<DailyRecord | null> => {
+    try {
+        await ensureDbReady();
+        const record = await db.demoRecords
+            .where('date')
+            .below(currentDate)
+            .reverse()
+            .first();
+        return record || null;
+    } catch (err) {
+        console.error('[IndexedDB] Failed to get previous demo day record:', err);
+        return null;
+    }
 };
 
 // ============================================================================
 // Catalog Operations (Nurses, TENS)
 // ============================================================================
 
-/**
- * Get a catalog by ID (e.g., 'nurses', 'tens')
- */
 export const getCatalog = async (catalogId: string): Promise<string[]> => {
-    const catalog = await db.catalogs.get(catalogId);
-    return catalog?.list || [];
+    try {
+        await ensureDbReady();
+        const catalog = await db.catalogs.get(catalogId);
+        return catalog?.list || [];
+    } catch (err) {
+        console.error(`Failed to get catalog ${catalogId}:`, err);
+        return [];
+    }
 };
 
-/**
- * Save a catalog
- */
 export const saveCatalog = async (catalogId: string, list: string[]): Promise<void> => {
-    await db.catalogs.put({
-        id: catalogId,
-        list,
-        lastUpdated: new Date().toISOString()
-    });
+    try {
+        await ensureDbReady();
+        await db.catalogs.put({
+            id: catalogId,
+            list,
+            lastUpdated: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error(`Failed to save catalog ${catalogId}:`, err);
+    }
 };
 
 // ============================================================================
@@ -169,14 +451,11 @@ export const saveCatalog = async (catalogId: string, list: string[]): Promise<vo
 const STORAGE_KEY = 'hanga_roa_hospital_data';
 const NURSES_KEY = 'hanga_roa_nurses_list';
 const TENS_KEY = 'hanga_roa_tens_list';
+const AUDIT_KEY = 'hanga_roa_audit_logs';
+const DEMO_KEY = 'hhr_demo_records';
 const MIGRATION_FLAG = 'indexeddb_migration_complete';
 
-/**
- * Migrate data from localStorage to IndexedDB
- * Only runs once, sets a flag to prevent re-migration
- */
 export const migrateFromLocalStorage = async (): Promise<boolean> => {
-    // Check if migration already done
     if (localStorage.getItem(MIGRATION_FLAG) === 'true') {
         return false;
     }
@@ -184,6 +463,7 @@ export const migrateFromLocalStorage = async (): Promise<boolean> => {
     console.log('🔄 Starting migration from localStorage to IndexedDB...');
 
     try {
+        await ensureDbReady();
         // Migrate daily records
         const recordsData = localStorage.getItem(STORAGE_KEY);
         if (recordsData) {
@@ -211,7 +491,27 @@ export const migrateFromLocalStorage = async (): Promise<boolean> => {
             console.log(`✅ Migrated TENS catalog (${tens.length} entries)`);
         }
 
-        // Set migration flag
+        // Migrate audit logs
+        const auditData = localStorage.getItem(AUDIT_KEY);
+        if (auditData) {
+            const logs = JSON.parse(auditData) as AuditLogEntry[];
+            if (logs.length > 0) {
+                await db.auditLogs.bulkPut(logs);
+                console.log(`✅ Migrated ${logs.length} audit logs`);
+            }
+        }
+
+        // Migrate demo records
+        const demoData = localStorage.getItem(DEMO_KEY);
+        if (demoData) {
+            const records = JSON.parse(demoData) as Record<string, DailyRecord>;
+            const recordArray = Object.values(records);
+            if (recordArray.length > 0) {
+                await db.demoRecords.bulkPut(recordArray);
+                console.log(`✅ Migrated ${recordArray.length} demo records`);
+            }
+        }
+
         localStorage.setItem(MIGRATION_FLAG, 'true');
         console.log('✅ Migration complete!');
 
@@ -222,12 +522,53 @@ export const migrateFromLocalStorage = async (): Promise<boolean> => {
     }
 };
 
-/**
- * Check if IndexedDB is available
- */
 export const isIndexedDBAvailable = (): boolean => {
     return typeof indexedDB !== 'undefined';
 };
 
-// Export database instance for advanced usage
+export const isDatabaseInFallbackMode = (): boolean => {
+    return isUsingMock;
+};
+
+/**
+ * Hard Reset: Clears all local storage (IndexedDB, localStorage, sessionStorage)
+ * Use only as last resort for corruption issues.
+ */
+export const resetLocalDatabase = async () => {
+    try {
+        const dbs = await window.indexedDB.databases();
+        for (const dbInfo of dbs) {
+            if (dbInfo.name) {
+                window.indexedDB.deleteDatabase(dbInfo.name);
+            }
+        }
+    } catch (e) {
+        console.error('Failed to clear IndexedDB databases:', e);
+    }
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.reload();
+};
+
+/**
+ * Settings Store
+ */
+export const saveSetting = async (id: string, value: any): Promise<void> => {
+    try {
+        await db.settings.put({ id, value });
+    } catch (e) {
+        console.error(`[IndexedDB] Failed to save setting ${id}:`, e);
+    }
+};
+
+export const getSetting = async <T>(id: string, defaultValue: T): Promise<T> => {
+    try {
+        const item = await db.settings.get(id);
+        return item ? (item.value as T) : defaultValue;
+    } catch (e) {
+        console.error(`[IndexedDB] Failed to get setting ${id}:`, e);
+        return defaultValue;
+    }
+};
+
 export { db as hospitalDB };

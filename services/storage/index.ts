@@ -1,4 +1,4 @@
 // Storage services barrel file
 export * from './firestoreService';
-export * from './localStorageService';
+export * as LocalStorage from './localStorageService';
 export * from './indexedDBService';

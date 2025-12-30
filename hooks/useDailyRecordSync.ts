@@ -20,7 +20,6 @@ import {
     syncWithFirestore
 } from '../services/repositories/DailyRecordRepository';
 import { auth } from '../firebaseConfig';
-import { saveRecordLocal } from '../services/storage/localStorageService';
 import { applyPatches } from '../utils/patchUtils';
 
 // Debounce for sync protection - prevents flickering during rapid local changes
@@ -42,7 +41,11 @@ export interface UseDailyRecordSyncResult {
 /**
  * Hook that manages sync state and real-time updates from Firebase.
  */
-export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boolean = false): UseDailyRecordSyncResult => {
+export const useDailyRecordSync = (
+    currentDateString: string,
+    isOfflineMode: boolean = false,
+    isFirebaseConnected: boolean = false
+): UseDailyRecordSyncResult => {
     const [record, setRecord] = useState<DailyRecord | null>(null);
     const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
@@ -53,88 +56,73 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
     const isSavingRef = useRef(false);
     const lastLocalChangeRef = useRef<number>(0);
 
-    // ========================================================================
-    // Initial Load
-    // ========================================================================
+    /**
+     * Effect: Loads the initial record state from local storage on date change.
+     */
     useEffect(() => {
-        const existing = getForDate(currentDateString);
-        setRecord(existing || null);
+        const loadInitial = async () => {
+            const existing = await getForDate(currentDateString);
+            setRecord(existing || null);
+        };
+        loadInitial();
     }, [currentDateString]);
 
-    // ========================================================================
-    // Real-time Sync Subscription
-    // ========================================================================
+    /**
+     * Effect: Establishes a real-time subscription to the Firestore repository.
+     * Implements echo protection to prevent flickering from local updates.
+     */
     useEffect(() => {
-        let unsubRepo: (() => void) | null = null;
+        if (!isFirebaseConnected || isOfflineMode) return;
 
-        // Wait for auth to be ready before subscribing to Firestore
-        const unregisterAuthObserver = auth.onAuthStateChanged((user) => {
-            if (user) {
-                if (unsubRepo) unsubRepo();
-
-                unsubRepo = subscribe(currentDateString, (remoteRecord, hasPendingWrites) => {
-                    if (!remoteRecord) {
-                        setRecord(null);
-                        setSyncStatus('idle');
-                        return;
-                    }
-
-                    const now = Date.now();
-                    const timeSinceLastChange = now - lastLocalChangeRef.current;
-
-                    // 1. If Firestore says it's a pending local write, IGNORE it.
-                    // This is the absolute best way to avoid flickering from our own "echoes".
-                    if (hasPendingWrites) {
-                        console.log('[Sync] Ignoring local pending write (echo protection)');
-                        return;
-                    }
-
-                    // 2. If we are currently saving and the change is VERY fresh, ignore to be safe.
-                    // But since hasPendingWrites covers most echos, we can keep this window very short.
-                    if (isSavingRef.current && timeSinceLastChange < 500) {
-                        console.log(`[Sync] Ignoring update due to active saving (${timeSinceLastChange}ms)`);
-                        return;
-                    }
-
-                    // 3. Otherwise, ACCEPT the remote update.
-                    // Our DebouncedInput and DebouncedTextarea components will protect themselves if they are focused.
-                    console.log('[Sync] Applying remote change, lastUpdated:', remoteRecord.lastUpdated);
-                    setRecord(remoteRecord);
-                    setLastSyncTime(new Date());
-                    setSyncStatus('saved');
-
-                    // Mirror to localStorage (if repo didn't already do it)
-                    import('../services/storage/localStorageService').then(({ saveRecordLocal }) => {
-                        saveRecordLocal(remoteRecord);
-                    });
-                });
+        console.log('[Sync] Initializing Firestore subscription for:', currentDateString);
+        const unsubRepo = subscribe(currentDateString, async (remoteRecord, hasPendingWrites) => {
+            if (!remoteRecord) {
+                // If we are online and there is NO remote record, we might want to push local
+                // but subscribe is mostly for updates.
+                return;
             }
+
+            const now = Date.now();
+            const timeSinceLastChange = now - lastLocalChangeRef.current;
+
+            // 1. If Firestore says it's a pending local write, IGNORE it.
+            if (hasPendingWrites) {
+                return;
+            }
+
+            // 2. If we are currently saving and the change is VERY fresh, ignore to be safe.
+            if (isSavingRef.current && timeSinceLastChange < 500) {
+                return;
+            }
+
+            // 3. Otherwise, ACCEPT the remote update.
+            console.log('[Sync] Applying remote change, lastUpdated:', remoteRecord.lastUpdated);
+            setRecord(remoteRecord);
+            setLastSyncTime(new Date());
+            setSyncStatus('saved');
         });
 
         return () => {
-            unregisterAuthObserver();
             if (unsubRepo) unsubRepo();
         };
-    }, [currentDateString]);
+    }, [currentDateString, isFirebaseConnected, isOfflineMode]);
 
-    // ========================================================================
-    // Initial / Reconnection Sync (Force Pull from Firestore)
-    // ========================================================================
+    /**
+     * Effect: Performs a deep sync (force pull) from Firestore on mount or reconnection.
+     * Ensures local storage is consistent with the latest cloud version.
+     */
     useEffect(() => {
-        // This effect runs once when date changes and auth is ready.
-        // It ensures we have the absolute latest version from Firestore at boot.
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            if (user && navigator.onLine) {
-                console.log('[useDailyRecordSync] Component mount/online - performing deep sync for:', currentDateString);
+        const performDeepSync = async () => {
+            if (isFirebaseConnected && navigator.onLine && !isOfflineMode) {
+                console.log('[useDailyRecordSync] Deep sync triggered for:', currentDateString);
 
-                // Always check Firestore for the latest version
-                syncWithFirestore(currentDateString).then((remoteRecord: DailyRecord | null) => {
-                    const localRecord = getForDate(currentDateString);
+                try {
+                    const remoteRecord = await syncWithFirestore(currentDateString);
+                    const localRecord = await getForDate(currentDateString);
 
                     if (remoteRecord) {
-                        // We found a record in Firestore
                         if (!localRecord || new Date(remoteRecord.lastUpdated) > new Date(localRecord.lastUpdated)) {
-                            console.log('[useDailyRecordSync] Firestore version is newer (or no local data). Updating state.');
+                            console.log('[useDailyRecordSync] Firestore version is newer or local missing. Updating state.');
                             setRecord(remoteRecord);
                             setSyncStatus('saved');
                             setLastSyncTime(new Date());
@@ -143,20 +131,37 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
                             setRecord(localRecord);
                         }
                     } else if (localRecord) {
-                        // No Firestore record but we have local record (maybe newly created offline)
                         console.log('[useDailyRecordSync] Local data found but no Firestore record. Pushing local to cloud.');
-                        save(localRecord).then(() => {
-                            setSyncStatus('saved');
-                            setLastSyncTime(new Date());
-                        });
+                        await save(localRecord);
+                        setSyncStatus('saved');
+                        setLastSyncTime(new Date());
                     }
-                }).catch(err => {
+                } catch (err) {
                     console.error('[useDailyRecordSync] Deep sync failed:', err);
-                });
+                }
             }
-        });
+        };
 
-        return () => unsubscribe();
+        performDeepSync();
+    }, [currentDateString, isFirebaseConnected, isOfflineMode]);
+
+    // ========================================================================
+    // Utility Functions (Declared before usage)
+    // ========================================================================
+    /**
+     * Manually updates the timestamp of the last local change.
+     * Used by components to signal that they are taking control of the data.
+     */
+    const markLocalChange = useCallback(() => {
+        lastLocalChangeRef.current = Date.now();
+    }, []);
+
+    /**
+     * Force re-loads the current date's record from local storage into the state.
+     */
+    const refresh = useCallback(async () => {
+        const existing = await getForDate(currentDateString);
+        setRecord(existing || null);
     }, [currentDateString]);
 
     // ========================================================================
@@ -177,12 +182,29 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
         setSyncStatus('saving');
 
         try {
-            await save(updatedRecord);
+            // Capture the last known version timestamp BEFORE saving local state
+            // "record" is the state before the update (closure capture), but let's be safe
+            // Assuming "record" in scope is the PREVIOUS state because saveAndUpdate is recreated on record change?
+            // Actually, saveAndUpdate depends on [error] only in my previous read?
+            // Let's rely on finding the previous lastUpdated. 
+            // Better yet, `record` (from state) is the base.
+            const baseLastUpdated = record?.lastUpdated;
+
+            await save(updatedRecord, baseLastUpdated);
             setSyncStatus('saved');
             setLastSyncTime(new Date());
             setTimeout(() => setSyncStatus('idle'), 2000);
-        } catch (err) {
+        } catch (err: unknown) {
             console.error('Save failed:', err);
+
+            if (err instanceof Error && err.name === 'ConcurrencyError') {
+                setSyncStatus('error');
+                error('Conflicto de Edición', err.message);
+                // Force refresh to get latest data
+                setTimeout(() => refresh(), 2000);
+                return;
+            }
+
             setSyncStatus('error');
 
             // Log error to centralized service
@@ -199,7 +221,7 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
                 isSavingRef.current = false;
             }, 1000); // Wait 1s after operation ends to release lock
         }
-    }, [error]);
+    }, [record, error, refresh]);
 
     /**
      * Performs an optimistic partial update to the DailyRecord.
@@ -243,17 +265,6 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
         }
     }, [currentDateString, error]);
 
-    // ========================================================================
-    // Utility Functions
-    // ========================================================================
-    const markLocalChange = useCallback(() => {
-        lastLocalChangeRef.current = Date.now();
-    }, []);
-
-    const refresh = useCallback(() => {
-        const existing = getForDate(currentDateString);
-        setRecord(existing || null);
-    }, [currentDateString]);
 
     return {
         record,

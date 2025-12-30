@@ -9,24 +9,28 @@ import { DailyRecord, PatientData } from '../../types';
 import { DailyRecordPatchLoose } from '../../hooks/useDailyRecordTypes';
 import { BEDS } from '../../constants';
 import {
-    saveRecordLocal,
-    getRecordForDate as getRecordFromLocal,
-    getPreviousDayRecord,
-    getStoredRecords,
-    deleteRecordLocal,
-    // Demo storage functions
+    getRecordForDate as getRecordFromIndexedDB,
+    getPreviousDayRecord as getPreviousDayFromIndexedDB,
+    saveRecord as saveToIndexedDB,
+    deleteRecord as deleteFromIndexedDB,
+    getAllRecords as getAllFromIndexedDB,
+    migrateFromLocalStorage,
+    isIndexedDBAvailable,
     saveDemoRecord,
     getDemoRecordForDate,
     getPreviousDemoDayRecord,
-    getDemoRecords,
     deleteDemoRecord
-} from '../storage/localStorageService';
+} from '../storage/indexedDBService';
 import {
     saveRecordToFirestore,
     subscribeToRecord,
     deleteRecordFromFirestore,
     updateRecordPartial,
-    getRecordFromFirestore
+    getRecordFromFirestore,
+    saveNurseCatalogToFirestore,
+    saveTensCatalogToFirestore,
+    subscribeToNurseCatalog,
+    subscribeToTensCatalog
 } from '../storage/firestoreService';
 import { createEmptyPatient, clonePatient } from '../factories/patientFactory';
 import { applyPatches } from '../../utils/patchUtils';
@@ -55,9 +59,9 @@ export const isDemoModeActive = (): boolean => demoModeActive;
 // ============================================================================
 
 export interface IDailyRecordRepository {
-    getForDate(date: string): DailyRecord | null;
-    getPreviousDay(date: string): DailyRecord | null;
-    save(record: DailyRecord): Promise<void>;
+    getForDate(date: string): Promise<DailyRecord | null>;
+    getPreviousDay(date: string): Promise<DailyRecord | null>;
+    save(record: DailyRecord, expectedLastUpdated?: string): Promise<void>;
     subscribe(date: string, callback: (r: DailyRecord | null, hasPendingWrites: boolean) => void): () => void;
     initializeDay(date: string, copyFromDate?: string): Promise<DailyRecord>;
     deleteDay(date: string): Promise<void>;
@@ -67,28 +71,36 @@ export interface IDailyRecordRepository {
 // Repository Implementation
 // ============================================================================
 
+// ============================================================================
+// Repository Implementation
+// ============================================================================
+
+import {
+    getRecordForDate as getRecordFromIndexedDB,
+    getPreviousDayRecord as getPreviousDayFromIndexedDB,
+    saveRecord as saveToIndexedDB,
+    deleteRecord as deleteFromIndexedDB,
+    getAllRecords as getAllFromIndexedDB,
+    migrateFromLocalStorage,
+    isIndexedDBAvailable
+} from '../storage/indexedDBService';
+
+// Initialize migration on load (non-blocking)
+if (isIndexedDBAvailable()) {
+    migrateFromLocalStorage().catch(err => console.error('[Repository] Migration failed:', err));
+}
+
 /**
  * Retrieves the daily record for a specific date.
  * 
  * @param date - Date in YYYY-MM-DD format
  * @returns The daily record if it exists, null otherwise
- * 
- * @example
- * ```typescript
- * const record = getForDate('2024-12-24');
- * if (record) {
- *   console.log(`Beds: ${Object.keys(record.beds).length}`);
- * }
- * ```
- * 
- * @remarks
- * Uses demo storage when demo mode is active, otherwise reads from localStorage.
  */
-export const getForDate = (date: string): DailyRecord | null => {
+export const getForDate = async (date: string): Promise<DailyRecord | null> => {
     if (demoModeActive) {
-        return getDemoRecordForDate(date);
+        return await getDemoRecordForDate(date);
     }
-    return getRecordFromLocal(date);
+    return getRecordFromIndexedDB(date);
 };
 
 /**
@@ -96,102 +108,70 @@ export const getForDate = (date: string): DailyRecord | null => {
  * 
  * @param date - Reference date in YYYY-MM-DD format
  * @returns The previous day's record if it exists, null otherwise
- * 
- * @example
- * ```typescript
- * const prevRecord = getPreviousDay('2024-12-24');
- * // Returns record for 2024-12-23 if it exists
- * ```
- * 
- * @remarks
- * Useful for copying patient data when initializing a new day.
  */
-export const getPreviousDay = (date: string): DailyRecord | null => {
+export const getPreviousDay = async (date: string): Promise<DailyRecord | null> => {
     if (demoModeActive) {
-        return getPreviousDemoDayRecord(date);
+        return await getPreviousDemoDayRecord(date);
     }
-    return getPreviousDayRecord(date);
+    return getPreviousDayFromIndexedDB(date);
 };
 
 /**
  * Saves a daily record to storage.
  * 
  * @param record - The daily record to save
- * @returns Promise that resolves when save is complete
- * @throws Error if Firestore sync fails (data still saved locally)
- * 
- * @example
- * ```typescript
- * await save({
- *   date: '2024-12-24',
- *   beds: {},
- *   nurses: ['Juan Pérez'],
- *   lastUpdated: new Date().toISOString()
- * });
- * ```
- * 
- * @remarks
- * - In demo mode: saves only to demo localStorage (no Firestore)
- * - In normal mode: saves to localStorage first (instant), then syncs to Firestore
  */
-export const save = async (record: DailyRecord): Promise<void> => {
+export const save = async (record: DailyRecord, expectedLastUpdated?: string): Promise<void> => {
     if (demoModeActive) {
-        // Demo mode: only save to demo localStorage, no Firestore
-        saveDemoRecord(record);
+        await saveDemoRecord(record);
         return;
     }
 
-    // Normal mode: save to localStorage first (instant, works offline)
-    saveRecordLocal(record);
+    // Save to IndexedDB (unlimited capacity)
+    await saveToIndexedDB(record);
 
     // Sync to Firestore in background (if enabled)
     if (firestoreEnabled) {
         try {
-            await saveRecordToFirestore(record);
+            await saveRecordToFirestore(record, expectedLastUpdated);
         } catch (err) {
-            console.warn('Firestore sync failed, data saved locally:', err);
-            throw err;
+            console.warn('Firestore sync failed, data saved in IndexedDB:', err);
+            // If it's a ConcurrencyError, we SHOULD rethrow it to notify the user
+            if (err && (err as Error).name === 'ConcurrencyError') {
+                throw err;
+            }
+            // For other errors (network), we suppress (offline mode)
+            // But maybe we should let the caller know?
+            // For now, keep existing behavior of suppressing network errors unless critical
+            // throw err; 
         }
     }
 };
 
 /**
  * Updates specific fields of a daily record without overwriting the entire document.
- * This is the safest way to handle concurrent edits from different users.
- * 
- * @param date - Date in YYYY-MM-DD format
- * @param partialData - Object containing keys (possibly with dot notation) and values to update
- * @returns Promise that resolves when the update is propagated
- * 
- * @example
- * ```typescript
- * await updatePartial('2024-12-24', {
- *   'beds.BED_01.patientName': 'Nuevo Paciente',
- *   'beds.BED_01.isBlocked': false
- * });
- * ```
  */
 export const updatePartial = async (date: string, partialData: DailyRecordPatchLoose): Promise<void> => {
     console.log('[Repository] updatePartial called:', date, Object.keys(partialData));
 
-    // 1. Update local storage (Merge with dot notation support)
+    // Update local storage (IndexedDB)
     if (demoModeActive) {
-        const current = getDemoRecordForDate(date);
+        const current = await getDemoRecordForDate(date);
         if (current) {
             const updated = applyPatches(current, partialData);
             updated.lastUpdated = new Date().toISOString();
-            saveDemoRecord(updated);
+            await saveDemoRecord(updated);
         }
     } else {
-        const current = getRecordFromLocal(date);
+        const current = await getRecordFromIndexedDB(date);
         if (current) {
             const updated = applyPatches(current, partialData);
             updated.lastUpdated = new Date().toISOString();
-            saveRecordLocal(updated);
+            await saveToIndexedDB(updated);
         }
     }
 
-    // 2. Update Firestore (always update since auth is verified by caller)
+    // 2. Update Firestore
     if (!demoModeActive) {
         try {
             console.log('[Repository] Sending partial update to Firestore:', date);
@@ -204,53 +184,27 @@ export const updatePartial = async (date: string, partialData: DailyRecordPatchL
 
 /**
  * Subscribes to real-time updates for a specific date.
- * 
- * @param date - Date in YYYY-MM-DD format to subscribe to
- * @param callback - Function called when the record changes
- * @returns Unsubscribe function to stop listening
- * 
- * @example
- * ```typescript
- * const unsubscribe = subscribe('2024-12-24', (record) => {
- *   if (record) {
- *     console.log('Record updated:', record.lastUpdated);
- *   }
- * });
- * 
- * // Later, when component unmounts:
- * unsubscribe();
- * ```
- * 
- * @remarks
- * In demo mode, returns a no-op unsubscribe function (no real-time sync).
  */
 export const subscribe = (
     date: string,
     callback: (r: DailyRecord | null, hasPendingWrites: boolean) => void
 ): (() => void) => {
     if (demoModeActive) {
-        console.log('⚠️ Subscribing in DEMO MODE (No real-time sync)');
-        // Demo mode: no real-time sync, just return no-op
-        callback(getDemoRecordForDate(date), false);
+        getDemoRecordForDate(date).then(r => callback(r, false));
         return () => { };
     }
 
-    // Note: firestoreEnabled check removed - auth is verified by caller (useDailyRecordSync)
-    console.log('🔌 Subscribing to LIVE Firestore updates:', date);
-    return subscribeToRecord(date, (record, hasPendingWrites) => {
-        console.log('[Repository] Firestore subscription callback for', date, '- record exists:', !!record, 'hasPendingWrites:', hasPendingWrites);
+    return subscribeToRecord(date, async (record, hasPendingWrites) => {
         if (record && !hasPendingWrites) {
-            // Mirror to localStorage whenever we get an update from Firestore
-            // ONLY if it's not a local echo (hasPendingWrites === false)
-            saveRecordLocal(record);
+            // Mirror to IndexedDB whenever we get an update from Firestore
+            await saveToIndexedDB(record);
         }
         callback(record, hasPendingWrites);
     });
 };
 
 /**
- * Manually pulls the latest data from Firestore for a specific date
- * and updates local storage.
+ * Manually pulls the latest data from Firestore and updates local storage.
  */
 export const syncWithFirestore = async (date: string): Promise<DailyRecord | null> => {
     if (demoModeActive || !firestoreEnabled) return null;
@@ -258,7 +212,7 @@ export const syncWithFirestore = async (date: string): Promise<DailyRecord | nul
     try {
         const record = await getRecordFromFirestore(date);
         if (record) {
-            saveRecordLocal(record);
+            await saveToIndexedDB(record);
             return record;
         }
     } catch (err) {
@@ -269,38 +223,20 @@ export const syncWithFirestore = async (date: string): Promise<DailyRecord | nul
 
 /**
  * Initializes a new daily record for the given date.
- * If the record already exists, it is returned immediately.
- * 
- * @param date - Date in YYYY-MM-DD format to initialize
- * @param copyFromDate - Optional date to copy active patients and settings from
- * @returns Promise that resolves to the initialized or existing DailyRecord
- * 
- * @example
- * ```typescript
- * const record = await initializeDay('2024-12-25', '2024-12-24');
- * ```
- * 
- * @remarks
- * When copying from a previous date:
- * - Active patients are copied (name, rut, etc.)
- * - CUDYR scoring is reset for the new day
- * - Nursing shift notes are inherited (Previous night -> New day)
- * - Bed configurations (blocking, modes) are preserved
  */
 export const initializeDay = async (
     date: string,
     copyFromDate?: string
-): Promise<DailyRecord> => {
-    // 1. Check if record already exists in LocalStorage or Firestore
-    const localRecords = demoModeActive ? getDemoRecords() : getStoredRecords();
-    if (localRecords[date]) return localRecords[date];
+): Promise<DailyRecord | null> => {
+    // 1. Check if record already exists
+    const existing = await getForDate(date);
+    if (existing) return existing;
 
     if (!demoModeActive && firestoreEnabled) {
         try {
             const remoteRecord = await getRecordFromFirestore(date);
             if (remoteRecord) {
-                console.log(`[Repository] Found existing record in Firestore for ${date}. Skipping initialization.`);
-                saveRecordLocal(remoteRecord);
+                await saveToIndexedDB(remoteRecord);
                 return remoteRecord;
             }
         } catch (err) {
@@ -311,7 +247,6 @@ export const initializeDay = async (
     let initialBeds: Record<string, PatientData> = {};
     let activeExtras: string[] = [];
 
-    // Initialize empty beds structure
     BEDS.forEach(bed => {
         initialBeds[bed.id] = createEmptyPatient(bed.id);
     });
@@ -322,50 +257,32 @@ export const initializeDay = async (
     let tensNight: string[] = ["", "", ""];
 
     // If a copyFromDate is provided, copy active patients and staff
-    if (copyFromDate && localRecords[copyFromDate]) {
-        const prevRecord = localRecords[copyFromDate];
-        const prevBeds = prevRecord.beds;
+    const prevRecord = copyFromDate ? await getForDate(copyFromDate) : null;
 
-        // Inherit staff: Previous night shift becomes the starting staff for the new day shift
+    if (prevRecord) {
+        const prevBeds = prevRecord.beds;
         nursesDay = [...(prevRecord.nursesNightShift || ["", ""])];
         tensDay = [...(prevRecord.tensNightShift || ["", "", ""])];
-
-        // Night shifts start empty for the new day
-        nursesNight = ["", ""];
-        tensNight = ["", "", ""];
-
-        // Copy active extra beds setting
         activeExtras = [...(prevRecord.activeExtraBeds || [])];
 
         BEDS.forEach(bed => {
             const prevPatient = prevBeds[bed.id];
             if (prevPatient) {
                 if (prevPatient.patientName || prevPatient.isBlocked) {
-                    // Deep copy to prevent reference issues
                     initialBeds[bed.id] = clonePatient(prevPatient);
-
-                    // Reset daily CUDYR scoring while keeping patient assignment
                     initialBeds[bed.id].cudyr = undefined;
-
-                    // Inherit nursing shift notes from previous night to new day
-                    // Previous night's notes become the starting point for the new day
                     const prevNightNote = prevPatient.handoffNoteNightShift || prevPatient.handoffNote || '';
                     initialBeds[bed.id].handoffNoteDayShift = prevNightNote;
                     initialBeds[bed.id].handoffNoteNightShift = prevNightNote;
-
-                    // Clinical crib inheritance
                     if (initialBeds[bed.id].clinicalCrib && prevPatient.clinicalCrib) {
                         const cribPrevNight = prevPatient.clinicalCrib.handoffNoteNightShift || prevPatient.clinicalCrib.handoffNote || '';
                         initialBeds[bed.id].clinicalCrib!.handoffNoteDayShift = cribPrevNight;
                         initialBeds[bed.id].clinicalCrib!.handoffNoteNightShift = cribPrevNight;
                     }
                 } else {
-                    // Preserve configuration even if empty
                     initialBeds[bed.id].bedMode = prevPatient.bedMode || initialBeds[bed.id].bedMode;
                     initialBeds[bed.id].hasCompanionCrib = prevPatient.hasCompanionCrib || false;
                 }
-
-                // Keep location for extras
                 if (prevPatient.location && bed.isExtra) {
                     initialBeds[bed.id].location = prevPatient.location;
                 }
@@ -394,22 +311,12 @@ export const initializeDay = async (
 
 /**
  * Deletes a daily record from both local and remote storage.
- * 
- * @param date - Date in YYYY-MM-DD format of the record to delete
- * @returns Promise that resolves when the record is deleted
- * 
- * @example
- * ```typescript
- * await deleteDay('2024-12-24');
- * ```
  */
 export const deleteDay = async (date: string): Promise<void> => {
     if (demoModeActive) {
-        deleteDemoRecord(date);
+        await deleteDemoRecord(date);
     } else {
-        deleteRecordLocal(date);
-
-        // Also delete from Firestore if enabled
+        await deleteFromIndexedDB(date);
         if (firestoreEnabled) {
             try {
                 await deleteRecordFromFirestore(date);
@@ -432,21 +339,6 @@ export interface MonthIntegrityResult {
 
 /**
  * Ensures all days of a month up to a specified day are initialized.
- * This is CRITICAL for generating complete monthly reports.
- * 
- * @param year - Year (e.g., 2024)
- * @param month - Month (1-12)
- * @param upToDay - Day of the month to initialize up to (inclusive)
- * @returns Result with success status, initialized days, and any errors
- * 
- * @example
- * ```typescript
- * // Ensure days 1-15 of December 2024 exist
- * const result = await ensureMonthIntegrity(2024, 12, 15);
- * if (result.success) {
- *   console.log(`Initialized ${result.initializedDays.length} new days`);
- * }
- * ```
  */
 export const ensureMonthIntegrity = async (
     year: number,
@@ -456,38 +348,26 @@ export const ensureMonthIntegrity = async (
     const initializedDays: string[] = [];
     const errors: string[] = [];
 
-    console.log(`[MonthIntegrity] Checking days 1-${upToDay} of ${month}/${year}`);
-
     for (let day = 1; day <= upToDay; day++) {
-        // Format date as YYYY-MM-DD
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const existing = getForDate(dateStr);
+        const existing = await getForDate(dateStr);
 
         if (!existing) {
             try {
-                // Get previous day to copy from
                 const prevDateStr = day > 1
                     ? `${year}-${String(month).padStart(2, '0')}-${String(day - 1).padStart(2, '0')}`
                     : undefined;
 
                 await initializeDay(dateStr, prevDateStr);
                 initializedDays.push(dateStr);
-                console.log(`[MonthIntegrity] Initialized: ${dateStr}`);
             } catch (error) {
-                console.error(`[MonthIntegrity] Failed to initialize ${dateStr}:`, error);
                 errors.push(dateStr);
             }
         }
     }
 
-    const success = errors.length === 0;
-
-    if (initializedDays.length > 0) {
-        console.log(`[MonthIntegrity] Completed: ${initializedDays.length} days initialized, ${errors.length} errors`);
-    }
-
     return {
-        success,
+        success: errors.length === 0,
         initializedDays,
         errors,
         totalDays: upToDay
@@ -496,39 +376,20 @@ export const ensureMonthIntegrity = async (
 
 // ============================================================================
 // Catalog Operations (Nurses, TENS)
-// Centralizes all catalog storage in the repository
 // ============================================================================
 
 import {
-    getStoredNurses,
-    saveStoredNurses
-} from '../storage/localStorageService';
-import {
-    subscribeToNurseCatalog,
-    subscribeToTensCatalog,
-    saveNurseCatalogToFirestore,
-    saveTensCatalogToFirestore
-} from '../storage/firestoreService';
+    saveCatalog,
+    getCatalog
+} from '../storage/indexedDBService';
 
-const TENS_STORAGE_KEY = 'hanga_roa_tens_list';
-
-/**
- * Retrieves the current catalog of nurse names from local storage.
- * 
- * @returns Array of nurse names
- */
-export const getNurses = (): string[] => {
-    return getStoredNurses();
+export const getNurses = async (): Promise<string[]> => {
+    const list = await getCatalog('nurses');
+    return list.length > 0 ? list : ["Enfermero/a 1", "Enfermero/a 2"];
 };
 
-/**
- * Saves the nurse catalog to local storage and syncs it with Firestore.
- * 
- * @param nurses - Array of nurse names to save
- * @returns Promise that resolves when saving is complete
- */
 export const saveNurses = async (nurses: string[]): Promise<void> => {
-    saveStoredNurses(nurses);
+    await saveCatalog('nurses', nurses);
     if (firestoreEnabled && !demoModeActive) {
         try {
             await saveNurseCatalogToFirestore(nurses);
@@ -538,49 +399,20 @@ export const saveNurses = async (nurses: string[]): Promise<void> => {
     }
 };
 
-/**
- * Subscribes to real-time updates for the nurse catalog.
- * 
- * @param callback - Function called when the nurse catalog changes
- * @returns Unsubscribe function
- */
 export const subscribeNurses = (callback: (nurses: string[]) => void): (() => void) => {
-    // Demo mode check (but don't check firestoreEnabled since auth is verified by caller)
-    if (demoModeActive) {
-        console.log('[CatalogRepository] subscribeNurses: No-op (demo mode)');
-        return () => { };
-    }
-    console.log('[CatalogRepository] subscribeNurses: Setting up Firestore subscription');
-    return subscribeToNurseCatalog((nurses) => {
-        console.log('[CatalogRepository] Received nurse catalog from Firestore:', nurses.length, 'items');
-        // Mirror to localStorage for persistence
-        saveStoredNurses(nurses);
+    if (demoModeActive) return () => { };
+    return subscribeToNurseCatalog(async (nurses) => {
+        await saveCatalog('nurses', nurses);
         callback(nurses);
     });
 };
 
-/**
- * Retrieves the current catalog of TENS names from local storage.
- * 
- * @returns Array of TENS names
- */
-export const getTens = (): string[] => {
-    try {
-        const data = localStorage.getItem(TENS_STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch {
-        return [];
-    }
+export const getTens = async (): Promise<string[]> => {
+    return getCatalog('tens');
 };
 
-/**
- * Saves the TENS catalog to local storage and syncs it with Firestore.
- * 
- * @param tens - Array of TENS names to save
- * @returns Promise that resolves when saving is complete
- */
 export const saveTens = async (tens: string[]): Promise<void> => {
-    localStorage.setItem(TENS_STORAGE_KEY, JSON.stringify(tens));
+    await saveCatalog('tens', tens);
     if (firestoreEnabled && !demoModeActive) {
         try {
             await saveTensCatalogToFirestore(tens);
@@ -590,23 +422,10 @@ export const saveTens = async (tens: string[]): Promise<void> => {
     }
 };
 
-/**
- * Subscribes to real-time updates for the TENS catalog.
- * 
- * @param callback - Function called when the TENS catalog changes
- * @returns Unsubscribe function
- */
 export const subscribeTens = (callback: (tens: string[]) => void): (() => void) => {
-    // Demo mode check (but don't check firestoreEnabled since auth is verified by caller)
-    if (demoModeActive) {
-        console.log('[CatalogRepository] subscribeTens: No-op (demo mode)');
-        return () => { };
-    }
-    console.log('[CatalogRepository] subscribeTens: Setting up Firestore subscription');
-    return subscribeToTensCatalog((tens) => {
-        console.log('[CatalogRepository] Received TENS catalog from Firestore:', tens.length, 'items');
-        // Mirror to localStorage for persistence
-        localStorage.setItem(TENS_STORAGE_KEY, JSON.stringify(tens));
+    if (demoModeActive) return () => { };
+    return subscribeToTensCatalog(async (tens) => {
+        await saveCatalog('tens', tens);
         callback(tens);
     });
 };
@@ -615,10 +434,6 @@ export const subscribeTens = (callback: (tens: string[]) => void): (() => void) 
 // Repository Object Export (Alternative API)
 // ============================================================================
 
-/**
- * Repository interface for daily records.
- * Provides methods for CRUD operations and real-time synchronization.
- */
 export const DailyRecordRepository: IDailyRecordRepository & { syncWithFirestore: typeof syncWithFirestore } = {
     getForDate,
     getPreviousDay,
@@ -629,20 +444,11 @@ export const DailyRecordRepository: IDailyRecordRepository & { syncWithFirestore
     syncWithFirestore
 };
 
-/**
- * Repository for managing catalogs (Nurses and TENS).
- */
 export const CatalogRepository = {
-    /** Gets the list of available nurses */
     getNurses,
-    /** Saves the list of nurses */
     saveNurses,
-    /** Subscribes to changes in the nurse list */
     subscribeNurses,
-    /** Gets the list of available TENS */
     getTens,
-    /** Saves the list of TENS */
     saveTens,
-    /** Subscribes to changes in the TENS list */
     subscribeTens
 };

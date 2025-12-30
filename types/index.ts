@@ -22,7 +22,8 @@ export {
     type TransferData,
     type CMAData,
     type DailyRecord,
-    type Statistics
+    type Statistics,
+    type DischargeType
 } from './core';
 
 // Value types and utilities

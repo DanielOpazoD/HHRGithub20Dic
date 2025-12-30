@@ -18,10 +18,11 @@ import {
     ReportsView,
     AuditView,
     MedicalSignatureView,
-    WhatsAppIntegrationView
+    WhatsAppIntegrationView,
+    ErrorDashboard
 } from '@/views/LazyViews';
 
-export type AppModule = 'CENSUS' | 'CUDYR' | 'NURSING_HANDOFF' | 'MEDICAL_HANDOFF' | 'REPORTS' | 'AUDIT' | 'WHATSAPP';
+export type AppModule = 'CENSUS' | 'CUDYR' | 'NURSING_HANDOFF' | 'MEDICAL_HANDOFF' | 'REPORTS' | 'AUDIT' | 'WHATSAPP' | 'ERRORS';
 export type CensusViewMode = 'REGISTER' | 'ANALYTICS';
 
 interface AppRouterProps {
@@ -88,6 +89,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                         {currentModule === 'REPORTS' && <ReportsView />}
                         {currentModule === 'AUDIT' && <AuditView />}
                         {currentModule === 'WHATSAPP' && <WhatsAppIntegrationView />}
+                        {currentModule === 'ERRORS' && <ErrorDashboard />}
                     </>
                 )}
             </Suspense>

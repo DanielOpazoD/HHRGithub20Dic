@@ -6,7 +6,7 @@ import { Calendar, Plus, Copy } from 'lucide-react';
 interface EmptyDayPromptProps {
     selectedDay: number;
     selectedMonth: number;
-    previousRecordAvailable: DailyRecord | null;
+    previousRecordAvailable: boolean;
     onCreateDay: (copyFromPrevious: boolean) => void;
 }
 
@@ -39,7 +39,7 @@ export const EmptyDayPrompt: React.FC<EmptyDayPromptProps> = ({
                             <span>Copiar del Anterior</span>
                         </div>
                         <span className="text-xs font-normal text-medical-600/80">
-                            Copia pacientes y camas del {previousRecordAvailable.date}
+                            Copia pacientes y camas del día anterior
                         </span>
                     </button>
                 )}

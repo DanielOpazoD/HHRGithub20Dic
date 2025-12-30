@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useDailyRecordContext } from '../context/DailyRecordContext';
 import { useStaffContext } from '../context/StaffContext';
 import { getPreviousDay } from '../services/repositories/DailyRecordRepository';
@@ -19,11 +19,16 @@ export const useCensusLogic = (currentDateString: string) => {
 
     const { nursesList, tensList } = useStaffContext();
 
-    // Computed values
-    const previousRecordAvailable = useMemo(
-        () => getPreviousDay(currentDateString),
-        [currentDateString]
-    );
+    // previousRecordAvailable state (Async check)
+    const [previousRecordAvailable, setPreviousRecordAvailable] = React.useState(false);
+
+    React.useEffect(() => {
+        let mounted = true;
+        getPreviousDay(currentDateString).then(prev => {
+            if (mounted) setPreviousRecordAvailable(!!prev);
+        });
+        return () => { mounted = false; };
+    }, [currentDateString]);
 
     // Calculate statistics when record changes
     const stats = useMemo(() => {

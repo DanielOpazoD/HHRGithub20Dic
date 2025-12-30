@@ -53,7 +53,12 @@ describe('usePatientValidation', () => {
 
         it('should accept today or a past date', () => {
             const { result } = renderHook(() => usePatientValidation());
-            const todayStr = new Date().toISOString().split('T')[0];
+            // Use local date YYYY-MM-DD instead of UTC toISOString()
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
 
             const validation = result.current.validateAdmissionDate(todayStr);
             expect(validation.valid).toBe(true);

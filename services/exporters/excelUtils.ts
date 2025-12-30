@@ -13,6 +13,13 @@ import type { Workbook, Worksheet } from 'exceljs';
 // ExcelJS import - Vite pre-bundles this from CommonJS to ESM
 import * as ExcelJSModule from 'exceljs';
 
+interface ExcelJSModuleType {
+    Workbook: typeof ExcelJSModule.Workbook;
+    default?: {
+        Workbook: typeof ExcelJSModule.Workbook;
+    } | typeof ExcelJSModule.Workbook; // Handle case where default IS the module
+}
+
 /**
  * Creates a new ExcelJS Workbook instance.
  * Handles ESM/CJS compatibility automatically.
@@ -27,20 +34,30 @@ import * as ExcelJSModule from 'exceljs';
  */
 export const createWorkbook = (): Workbook => {
     // After Vite pre-bundles, ExcelJS.Workbook should be available
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ExcelJS = ExcelJSModule as any;
+    // After Vite pre-bundles, ExcelJS.Workbook should be available
+    const ExcelJS = ExcelJSModule as unknown as ExcelJSModuleType;
 
     if (ExcelJS.Workbook) {
         return new ExcelJS.Workbook();
     }
-    if (ExcelJS.default?.Workbook) {
+
+    // Check if default has Workbook property
+    if (ExcelJS.default && 'Workbook' in ExcelJS.default) {
         return new ExcelJS.default.Workbook();
     }
-    // For CommonJS interop, sometimes it's on default
-    if (typeof ExcelJS.default === 'object' && Object.keys(ExcelJS.default).length > 0) {
-        const defaultExport = ExcelJS.default;
-        if (defaultExport.Workbook) {
-            return new defaultExport.Workbook();
+
+    // Check if default export IS the module (common in some CJS -> ESM interops)
+    /* if (typeof ExcelJS.default === 'function' && 'Workbook' in ExcelJS.default) {
+       // This branch is harder to type safely without more complex conditional types, 
+       // but the 'Workbook' check above usually covers it if default is an object
+    } */
+
+    // For CommonJS interop where default is an object containing Workbook
+    if (typeof ExcelJS.default === 'object' && ExcelJS.default !== null) {
+        // unsafe cast but bounded scope - last resort
+        const defaultObj = ExcelJS.default as { Workbook?: typeof ExcelJSModule.Workbook };
+        if (defaultObj.Workbook) {
+            return new defaultObj.Workbook();
         }
     }
 

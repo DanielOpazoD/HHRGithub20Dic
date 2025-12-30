@@ -8,6 +8,7 @@ import {
     verifyPassportCredentials
 } from '../../services/auth/passportService';
 import { Hospital, Lock, Mail, AlertCircle, Loader2, FileKey, Upload } from 'lucide-react';
+import { saveSetting } from '../../services/storage/indexedDBService';
 
 interface LoginPageProps {
     onLoginSuccess: () => void;
@@ -66,10 +67,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 return;
             }
 
-            storePassportLocally(passport);
+            await storePassportLocally(passport);
+            await saveSetting('hhr_offline_user', result.user);
             localStorage.setItem('hhr_offline_user', JSON.stringify(result.user));
-            await signInAnonymouslyForPassport();
+
+            // Trigger login immediately for a fast offline experience
             onLoginSuccess();
+
+            // Fire anonymous sign-in in the background (don't await it to avoid blocking)
+            signInAnonymouslyForPassport().catch(err =>
+                console.warn('[LoginPage] Background anonymous sign-in failed:', err)
+            );
         } catch (err) {
             console.error('[LoginPage] Passport error:', err);
             setError('Error al procesar el pasaporte.');
@@ -148,9 +156,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
                     {/* Error Message */}
                     {error && (
-                        <div className="mt-6 flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm animate-fade-in text-balance">
-                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                            <span>{error}</span>
+                        <div className="mt-6 animate-fade-in">
+                            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm text-balance">
+                                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                <span>{error}</span>
+                            </div>
+                            <div className="mt-2 text-center">
+                                <button
+                                    onClick={async () => {
+                                        if (confirm('Esto cerrará sesión y borrará la caché local para solucionar problemas de carga. ¿Continuar?')) {
+                                            const dbs = await window.indexedDB.databases();
+                                            dbs.forEach(db => window.indexedDB.deleteDatabase(db.name || ''));
+                                            localStorage.clear();
+                                            sessionStorage.clear();
+                                            window.location.reload();
+                                        }
+                                    }}
+                                    className="text-[10px] text-slate-400 hover:text-medical-600 underline font-medium uppercase tracking-wider"
+                                >
+                                    ¿Problemas de conexión? Realizar Hard Reset
+                                </button>
+                            </div>
                         </div>
                     )}
 

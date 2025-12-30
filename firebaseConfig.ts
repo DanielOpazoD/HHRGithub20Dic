@@ -1,5 +1,5 @@
 import { initializeApp, type FirebaseOptions, type FirebaseApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
+import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence, type Auth } from 'firebase/auth';
 import { initializeFirestore, connectFirestoreEmulator, enableMultiTabIndexedDbPersistence, type Firestore } from 'firebase/firestore';
 
 const decodeBase64 = (rawValue: string) => {
@@ -95,7 +95,9 @@ let auth!: Auth;
 let db!: Firestore;
 
 export const firebaseReady = (async () => {
+    console.log('[FirebaseConfig] 🚀 Starting Firebase Ready sequence...');
     const firebaseConfig = await loadFirebaseConfig();
+    console.log('[FirebaseConfig] 📁 Config loaded:', firebaseConfig.projectId);
 
     if (!firebaseConfig.apiKey) {
         mountConfigWarning('Firebase API key is missing. Please configure it in Netlify.');
@@ -106,6 +108,14 @@ export const firebaseReady = (async () => {
     auth = getAuth(app);
     db = initializeFirestore(app, { ignoreUndefinedProperties: true });
 
+    // Set persistence once auth is initialized
+    setPersistence(auth, browserLocalPersistence).catch(err => {
+        console.warn('[FirebaseConfig] Failed to set auth persistence:', err);
+    });
+
+    console.log('[FirebaseConfig] 🔥 Firebase initialized');
+
+    /* 
     enableMultiTabIndexedDbPersistence(db).catch((err) => {
         if ((err as any).code === 'failed-precondition') {
             console.warn('Firestore persistence failed: Multiple tabs open');
@@ -113,8 +123,9 @@ export const firebaseReady = (async () => {
             console.warn('Firestore persistence not available in this browser');
         }
     });
+    */
 
-    // If emulators are configured, connect (kept for compatibility with existing dev setups)
+    // If emulators are configured, connect
     const authEmulatorHost = import.meta.env.VITE_AUTH_EMULATOR_HOST;
     const firestoreEmulatorHost = import.meta.env.VITE_FIRESTORE_EMULATOR_HOST;
 

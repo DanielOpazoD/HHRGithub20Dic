@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import viteCompression from 'vite-plugin-compression';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -16,6 +17,37 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      // PWA plugin configuration
+      VitePWA({
+        strategies: 'injectManifest',
+        srcDir: '.',
+        filename: 'service-worker.ts',
+        registerType: 'autoUpdate',
+        injectRegister: 'auto',
+        manifest: {
+          name: 'Hanga Roa Hospital Tracker',
+          short_name: 'HHR',
+          description: 'Sistema de gestión de censo hospitalario del Hospital Hanga Roa',
+          theme_color: '#0284c7',
+          background_color: '#f8fafc',
+          display: 'standalone',
+          icons: [
+            {
+              src: 'images/logos/logo_HHR.png', // Using existing logo as base
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: 'images/logos/logo_HHR.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ]
+        },
+        devOptions: {
+          enabled: false // Disable in dev to avoid caching headaches
+        }
+      }),
       // Gzip compression for production builds
       isProduction && viteCompression({
         algorithm: 'gzip',
@@ -34,6 +66,7 @@ export default defineConfig(({ mode }) => {
     define: {
       'import.meta.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'import.meta.env.API_KEY': JSON.stringify(env.API_KEY || env.GEMINI_API_KEY),
+      'import.meta.env.VITE_E2E_MODE': JSON.stringify(process.env.VITE_E2E_MODE || 'false'),
     },
     build: {
       rollupOptions: {

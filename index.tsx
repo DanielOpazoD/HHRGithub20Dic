@@ -17,6 +17,7 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 
 const renderApp = () => {
+  console.log('[Index] 🚀 Rendering Application...');
   root.render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>

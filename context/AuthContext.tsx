@@ -30,7 +30,7 @@ export interface AuthContextType {
     signOut: () => Promise<void>;
     // Passport utilities
     canDownloadPassport: boolean;
-    handleDownloadPassport: () => boolean;
+    handleDownloadPassport: (password: string) => Promise<boolean>;
 }
 
 // ============================================================================

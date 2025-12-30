@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Users, Plus, Trash2, Cloud, AlertCircle, Pencil, Check, X } from 'lucide-react';
 import { saveTensCatalogToFirestore } from '../../services/storage/firestoreService';
+import { CatalogRepository } from '../../services/repositories/DailyRecordRepository';
 import { BaseModal, ModalSection } from '../shared/BaseModal';
 import { StaffNameSchema } from '../../schemas/inputSchemas';
 import clsx from 'clsx';
@@ -23,10 +24,11 @@ export const TensManagerModal: React.FC<TensManagerModalProps> = ({ isOpen, onCl
     const saveTens = async (updatedList: string[]) => {
         // Update local state first
         setTensList(updatedList);
-        // Save to localStorage
-        localStorage.setItem('hanga_roa_tens_list', JSON.stringify(updatedList));
+        // Save to IndexedDB (via Repository)
+        await CatalogRepository.saveTens(updatedList);
 
-        // Sync to Firebase
+        // Sync to Firebase (Handled by CatalogRepository.saveTens if firestoreEnabled)
+        // Manual sync below is kept for error handling UI
         setSyncing(true);
         setSyncError(null);
         try {

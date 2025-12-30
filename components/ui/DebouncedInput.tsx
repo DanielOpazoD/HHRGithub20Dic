@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import clsx from 'clsx';
 
-interface DebouncedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface DebouncedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
     value: string;
     onChange: (value: string) => void;
     debounceMs?: number;

@@ -6,6 +6,16 @@
 
 import { DailyRecord } from '../../types';
 
+import {
+    saveDemoRecord as saveDemoToIndexedDB,
+    getDemoRecordForDate as getDemoFromIndexedDB,
+    getPreviousDemoDayRecord as getPreviousDemoFromIndexedDB,
+    getAllDemoRecords,
+    clearAllDemoRecords,
+    deleteDemoRecord as deleteDemoToIndexedDB,
+    getRecordForDate as getFromIndexedDB,
+} from './indexedDBService';
+
 // Storage keys
 export const STORAGE_KEY = 'hanga_roa_hospital_data';
 export const NURSES_STORAGE_KEY = 'hanga_roa_nurses_list';
@@ -52,7 +62,9 @@ export const getRecordForDate = (date: string): DailyRecord | null => {
 };
 
 /**
- * Get all available dates from localStorage
+ * Get all available dates from localStorage.
+ * 
+ * @returns Array of date strings in YYYY-MM-DD format, sorted descending.
  */
 export const getAllDates = (): string[] => {
     const records = getStoredRecords();
@@ -60,7 +72,10 @@ export const getAllDates = (): string[] => {
 };
 
 /**
- * Find the closest previous day's record
+ * Find the closest previous day's record relative to the provided date.
+ * 
+ * @param currentDate - The reference date in YYYY-MM-DD format.
+ * @returns The closest previous DailyRecord or null if none exist.
  */
 export const getPreviousDayRecord = (currentDate: string): DailyRecord | null => {
     const records = getStoredRecords();
@@ -83,7 +98,9 @@ export const getPreviousDayRecord = (currentDate: string): DailyRecord | null =>
 // ============================================================================
 
 /**
- * Get stored nurse list from localStorage
+ * Get the stored list of nurse names from localStorage.
+ * 
+ * @returns Array of nurse name strings.
  */
 export const getStoredNurses = (): string[] => {
     try {
@@ -95,7 +112,9 @@ export const getStoredNurses = (): string[] => {
 };
 
 /**
- * Save nurse list to localStorage
+ * Save the provided nurse list to localStorage.
+ * 
+ * @param nurses - Array of nurse name strings to persist.
  */
 export const saveStoredNurses = (nurses: string[]): void => {
     localStorage.setItem(NURSES_STORAGE_KEY, JSON.stringify(nurses));
@@ -106,7 +125,9 @@ export const saveStoredNurses = (nurses: string[]): void => {
 // ============================================================================
 
 /**
- * Delete a specific date record from localStorage
+ * Delete a specific daily record from local storage.
+ * 
+ * @param date - The date identifier (YYYY-MM-DD) to remove.
  */
 export const deleteRecordLocal = (date: string): void => {
     const allRecords = getStoredRecords();
@@ -123,7 +144,9 @@ export const clearAllData = (): void => {
 };
 
 /**
- * Check if localStorage is available
+ * Verifies if the browser's localStorage is available and functional.
+ * 
+ * @returns True if available, false otherwise.
  */
 export const isLocalStorageAvailable = (): boolean => {
     try {
@@ -159,6 +182,8 @@ export const getDemoRecords = (): Record<string, DailyRecord> => {
  * Save a single demo record
  */
 export const saveDemoRecord = (record: DailyRecord): void => {
+    saveDemoToIndexedDB(record);
+    // Backward compatibility: keep in localStorage for now to avoid breaking existing users until migration
     const allRecords = getDemoRecords();
     allRecords[record.date] = record;
     localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(allRecords));
@@ -168,6 +193,10 @@ export const saveDemoRecord = (record: DailyRecord): void => {
  * Save multiple demo records at once
  */
 export const saveDemoRecords = (records: DailyRecord[]): void => {
+    records.forEach(record => {
+        saveDemoToIndexedDB(record);
+    });
+    // Backward compatibility
     const allRecords = getDemoRecords();
     records.forEach(record => {
         allRecords[record.date] = record;
@@ -179,6 +208,11 @@ export const saveDemoRecords = (records: DailyRecord[]): void => {
  * Get demo record for a specific date
  */
 export const getDemoRecordForDate = (date: string): DailyRecord | null => {
+    // We already have a migrator in indexedDBService, but let's be safe
+    return getDemoRecordForDateLegacy(date);
+};
+
+const getDemoRecordForDateLegacy = (date: string): DailyRecord | null => {
     const records = getDemoRecords();
     return records[date] || null;
 };
@@ -195,6 +229,7 @@ export const getAllDemoDates = (): string[] => {
  * Delete a specific demo record by date
  */
 export const deleteDemoRecord = (date: string): void => {
+    deleteDemoToIndexedDB(date);
     const allRecords = getDemoRecords();
     delete allRecords[date];
     localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(allRecords));
@@ -204,6 +239,7 @@ export const deleteDemoRecord = (date: string): void => {
  * Clear all demo data
  */
 export const clearAllDemoData = (): void => {
+    clearAllDemoRecords();
     localStorage.removeItem(DEMO_STORAGE_KEY);
 };
 
@@ -211,6 +247,11 @@ export const clearAllDemoData = (): void => {
  * Get previous demo day record
  */
 export const getPreviousDemoDayRecord = (currentDate: string): DailyRecord | null => {
+    // Logic moved to IndexedDB in Repository
+    return getPreviousDemoDayRecordLegacy(currentDate);
+};
+
+const getPreviousDemoDayRecordLegacy = (currentDate: string): DailyRecord | null => {
     const records = getDemoRecords();
     const dates = Object.keys(records).sort();
 

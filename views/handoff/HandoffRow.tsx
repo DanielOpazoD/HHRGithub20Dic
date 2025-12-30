@@ -111,7 +111,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
 
             {/* RUT */}
             {/* RUT - Hidden in Print */}
-            <td className="p-2 border-r border-slate-200 w-36 font-mono text-xs text-slate-600 align-middle whitespace-nowrap print:hidden">
+            <td className="p-2 border-r border-slate-200 w-36 text-xs text-slate-600 align-middle whitespace-nowrap print:hidden">
                 {patient.rut}
             </td>
 

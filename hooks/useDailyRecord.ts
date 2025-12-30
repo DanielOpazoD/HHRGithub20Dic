@@ -27,8 +27,9 @@ import {
 } from '../services/repositories/DailyRecordRepository';
 import { generateDemoRecord } from '../services/utils/demoDataGenerator';
 
-// Sync hook
+// Sync hooks
 import { useDailyRecordSync } from './useDailyRecordSync';
+import { useDailyRecordSyncQuery } from './useDailyRecordSyncQuery';
 
 // Domain hooks
 import { useBedManagement } from './useBedManagement';
@@ -49,7 +50,11 @@ export type { SyncStatus } from './useDailyRecordSync';
  * Main hook for daily record management.
  * Orchestrates sync, persistence, and domain operations.
  */
-export const useDailyRecord = (currentDateString: string, isOfflineMode: boolean = false): DailyRecordContextType => {
+export const useDailyRecord = (
+    currentDateString: string,
+    isOfflineMode: boolean = false,
+    isFirebaseConnected: boolean = false
+): DailyRecordContextType => {
     const { success, warning } = useNotification();
 
     // ========================================================================
@@ -64,7 +69,7 @@ export const useDailyRecord = (currentDateString: string, isOfflineMode: boolean
         markLocalChange,
         refresh,
         patchRecord
-    } = useDailyRecordSync(currentDateString, isOfflineMode);
+    } = useDailyRecordSyncQuery(currentDateString, isOfflineMode, isFirebaseConnected);
 
     // ========================================================================
     // Day Lifecycle
@@ -85,7 +90,7 @@ export const useDailyRecord = (currentDateString: string, isOfflineMode: boolean
         let prevDate: string | undefined = undefined;
 
         if (copyFromPrevious) {
-            const prevRecord = getPreviousDay(currentDateString);
+            const prevRecord = await getPreviousDay(currentDateString);
             if (prevRecord) {
                 prevDate = prevRecord.date;
             } else {

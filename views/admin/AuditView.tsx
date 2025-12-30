@@ -275,9 +275,17 @@ export const AuditView: React.FC = () => {
         }
     };
 
-    const [activeSection, setActiveSection] = useState<'ALL' | 'SESSIONS' | 'CENSUS' | 'CUDYR' | 'HANDOFF' | 'HANDOFF_NURSE' | 'HANDOFF_MEDICAL' | 'EXPORT_KEYS'>('ALL');
+    const [activeSection, setActiveSection] = useState<AuditSection>('ALL');
 
-    const sections = {
+    type AuditSection = 'ALL' | 'SESSIONS' | 'CENSUS' | 'CUDYR' | 'HANDOFF_NURSE' | 'HANDOFF_MEDICAL' | 'EXPORT_KEYS';
+
+    interface SectionConfig {
+        label: string;
+        color: string;
+        actions?: string[];
+    }
+
+    const sections: Record<AuditSection, SectionConfig> = {
         'ALL': { label: 'Todos', color: 'bg-slate-100 text-slate-600' },
         'SESSIONS': { label: 'Sesiones', color: 'bg-indigo-100 text-indigo-700', actions: ['USER_LOGIN', 'USER_LOGOUT'] },
         'CENSUS': { label: 'Censo Diario', color: 'bg-emerald-100 text-emerald-700', actions: ['PATIENT_ADMITTED', 'PATIENT_DISCHARGED', 'PATIENT_TRANSFERRED', 'PATIENT_MODIFIED', 'PATIENT_CLEARED', 'DAILY_RECORD_CREATED', 'DAILY_RECORD_DELETED'] },
@@ -300,7 +308,7 @@ export const AuditView: React.FC = () => {
 
             // Section categorization
             const matchesSection = activeSection === 'ALL' ||
-                (sections[activeSection] as any).actions?.includes(log.action);
+                sections[activeSection].actions?.includes(log.action);
 
             const matchesStartDate = !startDate || logDate >= new Date(startDate);
             const matchesEndDate = !endDate || logDate <= new Date(endDate + 'T23:59:59');

@@ -33,6 +33,10 @@ export const MedicalSignatureView = lazy(() =>
     import(/* webpackChunkName: "signature" */ './admin/MedicalSignatureView').then(m => ({ default: m.MedicalSignatureView }))
 );
 
+export const ErrorDashboard = lazy(() =>
+    import(/* webpackChunkName: "error-db" */ './admin/ErrorDashboard').then(m => ({ default: m.ErrorDashboard }))
+);
+
 // WhatsApp module
 export const WhatsAppIntegrationView = lazy(() =>
     import(/* webpackChunkName: "whatsapp" */ './whatsapp/WhatsAppIntegrationView').then(m => ({ default: m.WhatsAppIntegrationView }))

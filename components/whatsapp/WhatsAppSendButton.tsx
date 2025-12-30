@@ -21,6 +21,7 @@ interface WhatsAppSendButtonProps {
         signedBy: string;
         signedAt: string;
         hospitalized: number;
+        freeBeds: number;
         newAdmissions: number;
         discharges: number;
     };
@@ -97,8 +98,9 @@ export const WhatsAppSendButton: React.FC<WhatsAppSendButtonProps> = ({
 
             onSent?.({ success: true, sentAt: now });
 
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            setError(errorMessage);
             setStatus('error');
         }
     };

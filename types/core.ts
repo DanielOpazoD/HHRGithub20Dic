@@ -126,6 +126,9 @@ export interface DeviceDetails {
     'VVP#3'?: DeviceInfo; // Vía Venosa Periférica #3
 }
 
+// Extracted type for reuse
+export type DischargeType = 'Domicilio (Habitual)' | 'Voluntaria' | 'Fuga' | 'Otra';
+
 export interface DischargeData {
     id: string;
     bedName: string;
@@ -136,7 +139,7 @@ export interface DischargeData {
     diagnosis: string;
     time: string;
     status: 'Vivo' | 'Fallecido';
-    dischargeType?: 'Domicilio (Habitual)' | 'Voluntaria' | 'Fuga' | 'Otra'; // Sub-classification for 'Vivo'
+    dischargeType?: DischargeType; // Sub-classification for 'Vivo'
     dischargeTypeOther?: string; // Description if 'Otra'
     age?: string;
     insurance?: string;

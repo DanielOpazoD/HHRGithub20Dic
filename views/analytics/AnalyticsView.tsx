@@ -1,17 +1,28 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
-import { getAllDates, getRecordForDate } from '../../services/storage/localStorageService';
+import { getAllRecords } from '../../services/storage/indexedDBService';
 import { calculateStats } from '../../services/calculations/statsCalculator';
-import { Specialty, PatientData } from '../../types';
+import { DailyRecord, Specialty, PatientData } from '../../types';
 import { BEDS } from '../../constants';
+import { Loader2 } from 'lucide-react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
 export const AnalyticsView: React.FC = () => {
-    const allDates = getAllDates();
-    const allRecords = useMemo(() => {
-        return allDates.map(date => getRecordForDate(date)).filter(Boolean) as import('../../types').DailyRecord[];
-    }, [allDates]);
+    const [allRecords, setAllRecords] = useState<DailyRecord[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadData = async () => {
+            const recordsMap = await getAllRecords();
+            const recordsList = Object.values(recordsMap).sort((a, b) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+            setAllRecords(recordsList);
+            setIsLoading(false);
+        };
+        loadData();
+    }, []);
 
     // Calculate trends over time
     const trendData = useMemo(() => {
@@ -63,6 +74,15 @@ export const AnalyticsView: React.FC = () => {
         ];
     }, [latestRecord]);
 
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                <p>Cargando estadísticas...</p>
+            </div>
+        );
+    }
 
     if (allRecords.length === 0) {
         return (

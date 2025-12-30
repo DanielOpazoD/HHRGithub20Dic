@@ -4,6 +4,7 @@ import { DailyRecord } from '../types';
 import { buildCensusEmailBody, CENSUS_DEFAULT_RECIPIENTS } from '../constants/email';
 import { formatDate, getMonthRecordsFromFirestore, triggerCensusEmail, initializeDay } from '../services';
 import { isAdmin } from '../utils/permissions';
+import { getSetting, saveSetting } from '../services/storage/indexedDBService';
 
 interface UseCensusEmailParams {
   record: DailyRecord | null;
@@ -16,7 +17,7 @@ interface UseCensusEmailParams {
   role: string;
 }
 
-interface UseCensusEmailReturn {
+export interface UseCensusEmailReturn {
   // Config modal state
   showEmailConfig: boolean;
   setShowEmailConfig: (show: boolean) => void;
@@ -67,19 +68,31 @@ export const useCensusEmail = ({
   const isAdminUser = isAdmin(role);
 
   // ========== RECIPIENTS STATE ==========
-  const [recipients, setRecipients] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const stored = window.localStorage.getItem('censusEmailRecipients');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (_) {
-        // ignore parsing errors and fallback to defaults
+  const [recipients, setRecipients] = useState<string[]>(CENSUS_DEFAULT_RECIPIENTS);
+
+  // Load recipients from IndexedDB on mount
+  useEffect(() => {
+    const loadRecipients = async () => {
+      const stored = await getSetting<string[] | null>('censusEmailRecipients', null);
+      if (stored && Array.isArray(stored) && stored.length > 0) {
+        setRecipients(stored);
+      } else {
+        // Fallback to legacy localStorage migration
+        const legacy = localStorage.getItem('censusEmailRecipients');
+        if (legacy) {
+          try {
+            const parsed = JSON.parse(legacy);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setRecipients(parsed);
+              await saveSetting('censusEmailRecipients', parsed);
+              localStorage.removeItem('censusEmailRecipients');
+            }
+          } catch (_) { /* ignore */ }
+        }
       }
-    }
-    return CENSUS_DEFAULT_RECIPIENTS;
-  });
+    };
+    loadRecipients();
+  }, []);
 
   // ========== MESSAGE STATE ==========
   // Message is always generated dynamically based on date and nurses
@@ -115,9 +128,7 @@ export const useCensusEmail = ({
 
   // ========== PERSISTENCE EFFECTS ==========
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('censusEmailRecipients', JSON.stringify(recipients));
-    }
+    saveSetting('censusEmailRecipients', recipients);
   }, [recipients]);
 
   // Auto-update message when date/signature changes (if not manually edited in this session)

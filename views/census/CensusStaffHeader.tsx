@@ -2,7 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 import { DailyRecord, Statistics } from '../../types';
 import { NurseSelector, TensSelector } from './';
-import { SummaryCard } from '../../components/layout/SummaryCard';
+import { BedSummaryCard, CribSummaryCard, MovementSummaryCard } from '../../components/layout/SummaryCard';
 
 interface CensusStaffHeaderProps {
     record: DailyRecord;
@@ -30,8 +30,8 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
     const safeTensNightShift = record.tensNightShift || [];
 
     return (
-        <div className="flex justify-center items-start gap-4 flex-wrap">
-            {/* Left: Staff Selectors (Disabled in ReadOnly) */}
+        <div className="flex justify-center items-stretch gap-3 flex-wrap animate-fade-in px-4">
+            {/* Staff Selectors */}
             <div className={clsx("flex gap-3 flex-wrap", readOnly && "pointer-events-none opacity-80")}>
                 <NurseSelector
                     nursesDayShift={safeNursesDayShift}
@@ -47,14 +47,17 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
                 />
             </div>
 
-            {/* Right: Stats Summary */}
+            {/* Stats Summary Cards - Separated for consistency */}
             {stats && (
-                <SummaryCard
-                    stats={stats}
-                    discharges={record.discharges || []}
-                    transfers={record.transfers || []}
-                    cmaCount={record.cma?.length || 0}
-                />
+                <>
+                    <BedSummaryCard stats={stats} />
+                    <CribSummaryCard stats={stats} />
+                    <MovementSummaryCard
+                        discharges={record.discharges || []}
+                        transfers={record.transfers || []}
+                        cmaCount={record.cma?.length || 0}
+                    />
+                </>
             )}
         </div>
     );

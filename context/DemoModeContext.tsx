@@ -6,6 +6,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { setDemoModeActive as setRepositoryDemoMode } from '../services/repositories/DailyRecordRepository';
+import { saveSetting, getSetting } from '../services/storage/indexedDBService';
 
 // ============================================================================
 // Types
@@ -34,44 +35,61 @@ const DemoModeContext = createContext<DemoModeContextType | null>(null);
 
 const DEMO_MODE_STORAGE_KEY = 'hhr_demo_mode_state';
 
-const loadInitialState = (): DemoModeState => {
-    try {
-        const stored = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            return {
-                isActive: parsed.isActive || false,
-                period: parsed.period || 'day',
-                startDate: parsed.startDate || new Date().toISOString().split('T')[0],
-                isGenerating: false
-            };
-        }
-    } catch (e) {
-        console.error('Failed to load demo mode state:', e);
-    }
-    return {
+
+export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [state, setState] = useState<DemoModeState>({
         isActive: false,
         period: 'day',
         startDate: new Date().toISOString().split('T')[0],
         isGenerating: false
-    };
-};
+    });
 
-export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [state, setState] = useState<DemoModeState>(loadInitialState);
+    // 1. Initial Load from IndexedDB
+    useEffect(() => {
+        const init = async () => {
+            try {
+                // Try IndexedDB first
+                let stored = await getSetting<Partial<DemoModeState> | null>(DEMO_MODE_STORAGE_KEY, null);
+
+                // Fallback to localStorage for migration
+                if (!stored) {
+                    const legacy = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
+                    if (legacy) {
+                        stored = JSON.parse(legacy);
+                        if (stored) await saveSetting(DEMO_MODE_STORAGE_KEY, stored);
+                    }
+                }
+
+                if (stored) {
+                    setState(prev => ({
+                        ...prev,
+                        isActive: stored?.isActive || false,
+                        period: stored?.period || 'day',
+                        startDate: stored?.startDate || new Date().toISOString().split('T')[0]
+                    }));
+                }
+            } catch (e) {
+                console.error('Failed to load demo mode state:', e);
+            }
+        };
+        init();
+    }, []);
 
     // Sync demo mode state with Repository on mount and changes
     useEffect(() => {
         setRepositoryDemoMode(state.isActive);
     }, [state.isActive]);
 
-    const persistState = useCallback((newState: DemoModeState) => {
+    const persistState = useCallback(async (newState: DemoModeState) => {
         try {
-            localStorage.setItem(DEMO_MODE_STORAGE_KEY, JSON.stringify({
+            const data = {
                 isActive: newState.isActive,
                 period: newState.period,
                 startDate: newState.startDate
-            }));
+            };
+            await saveSetting(DEMO_MODE_STORAGE_KEY, data);
+            // Cleanup legacy
+            localStorage.removeItem(DEMO_MODE_STORAGE_KEY);
         } catch (e) {
             console.error('Failed to persist demo mode state:', e);
         }

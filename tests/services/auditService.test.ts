@@ -27,6 +27,15 @@ vi.mock('firebase/firestore', () => ({
     }
 }));
 
+const mockSaveAuditLog = vi.fn();
+const mockGetAuditLogs = vi.fn();
+
+vi.mock('../../services/storage/indexedDBService', () => ({
+    saveAuditLog: (log: any) => mockSaveAuditLog(log),
+    getAuditLogs: (limit: number) => mockGetAuditLogs(limit),
+    getAuditLogsForDate: vi.fn()
+}));
+
 // Now import the service
 import {
     logAuditEvent,
@@ -51,44 +60,22 @@ describe('AuditService', () => {
         expect(localStorage.getItem('test')).toBe('value');
     });
 
-    it('should store and retrieve audit logs locally', async () => {
+    it('should store audit logs via indexedDBService', async () => {
         await logPatientAdmission('BED_01', 'Juan Pérez', mockPatientRut, mockDate);
 
-        const logs = getLocalAuditLogs();
-        expect(logs.length).toBe(1);
-        expect(logs[0].action).toBe('PATIENT_ADMITTED');
-        expect(logs[0].patientIdentifier).toContain('***');
+        expect(mockSaveAuditLog).toHaveBeenCalled();
+        const call = mockSaveAuditLog.mock.calls[0][0];
+        expect(call.action).toBe('PATIENT_ADMITTED');
+        expect(call.patientIdentifier).toContain('***');
     });
 
-    it('should handle overflow up to 1000 entries', async () => {
-        // Create dummy logs
-        const mockLog: AuditLogEntry = {
-            id: 'old',
-            timestamp: new Date().toISOString(),
-            userId: 'sys',
-            action: 'USER_LOGIN',
-            entityType: 'user',
-            entityId: 'SYS',
-            details: { marker: 'old' }
-        };
+    it('should retrieve audit logs via indexedDBService', async () => {
+        const mockLogs = [{ id: '1', action: 'USER_LOGIN' }];
+        mockGetAuditLogs.mockResolvedValue(mockLogs);
 
-        // Fill with 999 entries
-        const initialLogs = new Array(999).fill(mockLog);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialLogs));
-
-        // Add 1000th entry
-        await logAuditEvent(mockUserId, 'PATIENT_ADMITTED', 'patient', 'B01', { marker: '1000th' }, mockPatientRut, mockDate);
-
-        let logs = getLocalAuditLogs();
-        expect(logs.length).toBe(1000);
-        expect(logs[0].details.marker).toBe('1000th');
-
-        // Add 1001st entry (should push out oldest)
-        await logAuditEvent(mockUserId, 'PATIENT_ADMITTED', 'patient', 'B02', { marker: 'overflow' }, mockPatientRut, mockDate);
-
-        logs = getLocalAuditLogs();
-        expect(logs.length).toBe(1000);
-        expect(logs[0].details.marker).toBe('overflow');
+        const logs = await getLocalAuditLogs();
+        expect(logs).toEqual(mockLogs);
+        expect(mockGetAuditLogs).toHaveBeenCalledWith(1000);
     });
 
     it('should attempt saving to firestore', async () => {

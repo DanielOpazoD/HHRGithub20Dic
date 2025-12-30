@@ -10,12 +10,21 @@ import {
 } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '../../firebaseConfig';
+import { saveSetting, getSetting } from '../storage/indexedDBService';
 
+/**
+ * User information structure used within the application's authentication state.
+ */
 export interface AuthUser {
+    /** Unique Firebase User ID */
     uid: string;
+    /** User's email address */
     email: string | null;
+    /** User's display name (usually from Google) */
     displayName: string | null;
+    /** URL to user's profile picture */
     photoURL?: string | null;
+    /** User's role assigned via whitelist (admin, nurse, etc.) */
     role?: string;
 }
 
@@ -48,46 +57,131 @@ const normalizeEmail = (email: string): string => {
     return String(email).toLowerCase().replace(/\s+/g, '').trim();
 };
 
+// ROLE CACHE KEY
+const ROLE_CACHE_PREFIX = 'hhr_role_cache_';
+
+/**
+ * Saves a role to local storage with a timestamp.
+ */
+const saveRoleToCache = async (email: string, role: string) => {
+    try {
+        const cacheData = {
+            role,
+            timestamp: Date.now()
+        };
+        const key = `${ROLE_CACHE_PREFIX}${normalizeEmail(email)}`;
+        await saveSetting(key, cacheData);
+        // Cleanup legacy localStorage
+        localStorage.removeItem(key);
+    } catch (e) {
+        console.warn('[authService] Failed to cache role:', e);
+    }
+};
+
+/**
+ * Gets a cached role if it's not older than 7 days.
+ */
+const getCachedRole = async (email: string): Promise<string | null> => {
+    try {
+        const key = `${ROLE_CACHE_PREFIX}${normalizeEmail(email)}`;
+
+        // 1. Try IndexedDB
+        let cached = await getSetting<{ role: string, timestamp: number } | null>(key, null);
+
+        // 2. Fallback to localStorage for migration
+        if (!cached) {
+            const legacy = localStorage.getItem(key);
+            if (legacy) {
+                try {
+                    cached = JSON.parse(legacy);
+                } catch {
+                    return null;
+                }
+            }
+        }
+
+        if (!cached) return null;
+
+        const { role, timestamp } = cached;
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+        if (Date.now() - timestamp < sevenDaysMs) {
+            return role;
+        }
+    } catch (e) {
+        console.warn('[authService] Failed to read role cache:', e);
+    }
+    return null;
+};
+
 /**
  * Check if an email is in the Firestore allowedUsers collection.
  * Returns the user document if found, null otherwise.
  */
+/**
+ * Checks if an email is authorized to access the system by looking up the 'allowedUsers'
+ * collection and checking against the static roles list.
+ * 
+ * @param email - The email address to check.
+ * @returns An object indicating if allowed and their assigned role.
+ */
 const checkEmailInFirestore = async (email: string): Promise<{ allowed: boolean; role?: string }> => {
+    console.log(`[authService] 🔍 Checking whitelist for: ${email}`);
     try {
-        const allowedUsersRef = collection(db, 'allowedUsers');
         const cleanEmail = normalizeEmail(email);
 
+        // 0. CHECK CACHE (Fastest)
+        const cachedRole = await getCachedRole(cleanEmail);
+        if (cachedRole) {
+            console.log(`[authService] ⚡ Role recovered from cache: ${cachedRole}`);
+            // We return but trigger a background check if possible (handled by caller)
+            return { allowed: true, role: cachedRole };
+        }
+
+        const allowedUsersRef = collection(db, 'allowedUsers');
+
         // 1. VERIFICACIÓN ESTÁTICA (Prioridad alta)
-        // Iteramos sobre los roles estáticos para buscar coincidencias robustas
         for (const [staticEmail, staticRole] of Object.entries(STATIC_ROLES)) {
-            // Usamos includes para ser flexibles con posibles prefijos/sufijos extraños
             if (cleanEmail.includes(staticEmail)) {
-                console.log(`[Auth] Access granted via static rule: ${cleanEmail} -> ${staticRole}`);
+                console.log(`[authService] ✅ Access granted via static rule: ${cleanEmail} -> ${staticRole}`);
+                await saveRoleToCache(cleanEmail, staticRole);
                 return { allowed: true, role: staticRole };
             }
         }
 
-
+        console.log(`[authService] 📡 Querying Firestore for whitelist...`);
         const q = query(allowedUsersRef, where('email', '==', email.toLowerCase().trim()));
         const querySnapshot = await getDocs(q);
+        console.log(`[authService] 📥 Firestore response received. Empty: ${querySnapshot.empty}`);
 
         if (!querySnapshot.empty) {
             const userDoc = querySnapshot.docs[0].data();
-            const rawRole = userDoc.role || 'viewer';
-            return { allowed: true, role: String(rawRole).toLowerCase().trim() };
+            const rawRole = String(userDoc.role || 'viewer').toLowerCase().trim();
+            await saveRoleToCache(cleanEmail, rawRole);
+            return { allowed: true, role: rawRole };
         }
 
+        console.warn(`[authService] ❌ Email not found in whitelist: ${email}`);
         return { allowed: false };
     } catch (error) {
-        console.error('Error checking allowed users in Firestore:', error);
-        // If Firestore fails, deny access for security
+        console.error('[authService] ‼️ Error checking allowed users in Firestore:', error);
         return { allowed: false };
     }
 };
 
+
 // ============================================================================
 // Sign in with Email and Password
 // ============================================================================
+/**
+ * Signs in a user using email and password.
+ * Checks for authorization in the whitelist after successful Firebase authentication.
+ * 
+ * @param email - User's email address.
+ * @param password - User's password.
+ * @throws {Error} If credentials are invalid or if user is not in the whitelist.
+ * @returns The authenticated AuthUser object.
+ */
 export const signIn = async (email: string, password: string): Promise<AuthUser> => {
     try {
         const result = await signInWithEmailAndPassword(auth, email, password);
@@ -133,6 +227,13 @@ googleProvider.setCustomParameters({
     prompt: 'select_account' // Always show account picker
 });
 
+/**
+ * Initiates the Google Sign-In popup flow.
+ * Checks for authorization in the whitelist after successful Google authentication.
+ * 
+ * @throws {Error} If the popup is closed, blocked, or if the user is not in the whitelist.
+ * @returns The authenticated AuthUser object.
+ */
 export const signInWithGoogle = async (): Promise<AuthUser> => {
     try {
         const result = await signInWithPopup(auth, googleProvider);
@@ -179,6 +280,14 @@ export const signInWithGoogle = async (): Promise<AuthUser> => {
 // ============================================================================
 // Create new user (for admin to create staff accounts)
 // ============================================================================
+/**
+ * Creates a new Firebase user with email and password.
+ * Note: This only creates the Firebase Auth entry, it does not add the user to the whitelist.
+ * 
+ * @param email - New user's email.
+ * @param password - New user's password.
+ * @returns The created AuthUser object.
+ */
 export const createUser = async (email: string, password: string): Promise<AuthUser> => {
     try {
         const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -202,6 +311,9 @@ export const createUser = async (email: string, password: string): Promise<AuthU
 // ============================================================================
 // Sign out
 // ============================================================================
+/**
+ * Signs out the current user from Firebase.
+ */
 export const signOut = async (): Promise<void> => {
     await firebaseSignOut(auth);
 };
@@ -209,8 +321,17 @@ export const signOut = async (): Promise<void> => {
 // ============================================================================
 // Auth State Observer
 // ============================================================================
+/**
+ * Sets up a listener for authentication state changes.
+ * Handles normal users, anonymous users (for signatures), and whitelist re-verification.
+ * 
+ * @param callback - Function to be called with the updated AuthUser or null.
+ * @returns An unsubscribe function to stop listening.
+ */
 export const onAuthChange = (callback: (user: AuthUser | null) => void): (() => void) => {
+    console.log('[authService] 🎧 Setting up onAuthStateChanged observer');
     return onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+        console.log('[authService] 👤 Firebase onAuthStateChanged triggered. User:', firebaseUser ? firebaseUser.email || 'Anonymous' : 'NULL');
         if (firebaseUser) {
             // Check if anonymous (used for signature links)
             if (firebaseUser.isAnonymous) {
@@ -279,6 +400,12 @@ export const isCurrentUserAllowed = async (): Promise<boolean> => {
  * 
  * @returns The Firebase user UID if successful, null if failed
  */
+/**
+ * Signs in anonymously for users accessing via a passport file.
+ * This is used in 'Hybrid Mode' (Offline + Online) to allow writing to Firestore.
+ * 
+ * @returns The Firebase User UID or null if failed.
+ */
 export const signInAnonymouslyForPassport = async (): Promise<string | null> => {
     try {
         // Check if already signed in
@@ -287,11 +414,22 @@ export const signInAnonymouslyForPassport = async (): Promise<string | null> => 
             return auth.currentUser.uid;
         }
 
-        const result = await signInAnonymously(auth);
-        console.log('[Auth] Signed in anonymously for passport user, uid:', result.user.uid);
-        return result.user.uid;
+        // Create a timeout promise to avoid blocking forever if offline
+        const timeoutPromise = new Promise<null>((_, reject) => {
+            setTimeout(() => reject(new Error('Auth timeout')), 2500);
+        });
+
+        const authPromise = signInAnonymously(auth);
+
+        const result = await Promise.race([authPromise, timeoutPromise]) as { user: User } | null;
+
+        if (result && result.user) {
+            console.log('[Auth] Signed in anonymously for passport user, uid:', result.user.uid);
+            return result.user.uid;
+        }
+        return null;
     } catch (error) {
-        console.warn('[Auth] Anonymous sign-in failed:', error);
+        console.warn('[Auth] Anonymous sign-in skipped or failed (likely offline):', error);
         return null;
     }
 };

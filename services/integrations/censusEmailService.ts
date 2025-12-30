@@ -24,8 +24,7 @@ interface EmailResponse {
 const ENDPOINT = '/.netlify/functions/send-census-email';
 
 // Check if we're in development mode (Vite dev server)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const isDevelopment = (import.meta as any).env?.DEV ?? false;
+const isDevelopment = import.meta.env.DEV;
 
 /**
  * Save export password to Firestore for audit purposes

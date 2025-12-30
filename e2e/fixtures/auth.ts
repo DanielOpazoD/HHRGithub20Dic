@@ -29,13 +29,18 @@ export const MOCK_USERS = {
 };
 
 /**
- * Helper to inject authenticated user before page load
+ * Helper to inject authenticated user via navigate-inject-reload pattern
+ * This ensures localStorage is populated BEFORE React renders
  */
 export async function injectMockUser(page: any, role: 'editor' | 'admin' | 'viewer' = 'editor') {
     const mockUser = MOCK_USERS[role];
 
-    await page.addInitScript((user: typeof mockUser) => {
-        // --- Passport Generation Logic (Simplified from passportService.ts) ---
+    // 1. First navigate to the app (will show login initially)
+    await page.goto('/');
+
+    // 2. Inject mock user data into localStorage
+    await page.evaluate((user: typeof mockUser) => {
+        // --- Passport Generation Logic ---
         const SIGNATURE_KEY = 'HHR-2024-OFFLINE-PASSPORT-SECRET-KEY';
         const PASSPORT_VERSION = 1;
 
@@ -69,20 +74,25 @@ export async function injectMockUser(page: any, role: 'editor' | 'admin' | 'view
         localStorage.setItem('hhr_offline_user', JSON.stringify(user));
         localStorage.setItem('hhr_offline_passport', JSON.stringify(mockPassport));
     }, mockUser);
+
+    // 3. Reload to apply auth state
+    await page.reload();
+    await page.waitForLoadState('domcontentloaded');
 }
 
 /**
  * Helper to inject mock daily record data
+ * Must be called AFTER injectMockUser since that handles navigation
  */
 export async function injectMockData(page: any, date?: string, populateWithPatient: boolean = false) {
     const targetDate = date || new Date().toISOString().split('T')[0];
 
-    await page.addInitScript(({ dateStr, populate }: { dateStr: string, populate: boolean }) => {
+    await page.evaluate(({ dateStr, populate }: { dateStr: string, populate: boolean }) => {
         const STORAGE_KEY = 'hanga_roa_hospital_data';
 
         const mockRecord = {
             date: dateStr,
-            beds: {},
+            beds: {} as Record<string, any>,
             discharges: [],
             transfers: [],
             cma: [],
@@ -101,7 +111,7 @@ export async function injectMockData(page: any, date?: string, populateWithPatie
         ];
 
         BEDS_IDS.forEach(id => {
-            (mockRecord.beds as any)[id] = {
+            mockRecord.beds[id] = {
                 id,
                 bedId: id,
                 patientName: (populate && id === 'R1') ? "MOCK PATIENT" : "",
@@ -125,6 +135,10 @@ export async function injectMockData(page: any, date?: string, populateWithPatie
         records[dateStr] = mockRecord;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     }, { dateStr: targetDate, populate: populateWithPatient });
+
+    // Reload to apply data
+    await page.reload();
+    await page.waitForLoadState('domcontentloaded');
 }
 
 /**
@@ -135,6 +149,39 @@ export async function clearAuth(page: any) {
         localStorage.removeItem('hhr_offline_user');
         localStorage.removeItem('hhr_offline_passport');
     });
+}
+
+/**
+ * Helper to ensure a record exists for current day
+ * Clicks "Registro en Blanco" if the empty day screen is shown
+ */
+export async function ensureRecordExists(page: any) {
+    // Wait for page to stabilize
+    await page.waitForTimeout(500);
+
+    const blankRecordBtn = page.locator('button:has-text("Registro en Blanco")');
+    const copyPreviousBtn = page.locator('button:has-text("Copiar del Anterior")');
+    const table = page.locator('table');
+
+    // If table already visible, we're good
+    if (await table.isVisible({ timeout: 1000 }).catch(() => false)) {
+        return;
+    }
+
+    // If blank record button visible, click it
+    if (await blankRecordBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await blankRecordBtn.click();
+        await page.waitForTimeout(1000);
+        await table.waitFor({ state: 'visible', timeout: 15000 });
+        return;
+    }
+
+    // Try copy from previous if no blank record button
+    if (await copyPreviousBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await copyPreviousBtn.click();
+        await page.waitForTimeout(1000);
+        await table.waitFor({ state: 'visible', timeout: 15000 });
+    }
 }
 
 export { expect };

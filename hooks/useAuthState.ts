@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { onAuthChange, signOut, AuthUser, hasActiveFirebaseSession, signInAnonymouslyForPassport } from '../services/auth/authService';
 import {
     getStoredPassport,
@@ -8,6 +8,7 @@ import {
     downloadPassport
 } from '../services/auth/passportService';
 import { logUserLogout, logUserLogin } from '../services/admin/auditService';
+import { getSetting, saveSetting } from '../services/storage/indexedDBService';
 
 /**
  * Available user roles in the application.
@@ -26,7 +27,7 @@ export type UserRole = 'viewer' | 'editor' | 'admin' | 'nurse_hospital' | 'docto
  * Return type for the useAuthState hook.
  * Provides user authentication state, role information, and auth actions.
  */
-interface UseAuthStateReturn {
+export interface UseAuthStateReturn {
     /** Current authenticated user or null if not logged in */
     user: AuthUser | null;
     /** True while authentication state is being determined */
@@ -82,6 +83,11 @@ export const useAuthState = (): UseAuthStateReturn => {
     // Authentication Actions
     // ========================================================================
 
+    /**
+     * Performs a full sign-out, clearing both Firebase sessions and local passport tokens.
+     * 
+     * @param reason - Whether the logout was 'manual' (user clicked) or 'automatic' (session timeout).
+     */
     const handleLogout = useCallback(async (reason: 'manual' | 'automatic' = 'manual') => {
         // Log the logout event before clearing data
         if (user?.email) {
@@ -89,8 +95,9 @@ export const useAuthState = (): UseAuthStateReturn => {
         }
 
         // Clear offline data
-        clearStoredPassport();
-        localStorage.removeItem('hhr_offline_user');
+        await clearStoredPassport();
+        await saveSetting('hhr_offline_user', null);
+        localStorage.removeItem('hhr_offline_user'); // Cleanup
         setIsOfflineMode(false);
 
         // Firebase sign out (may fail if offline, that's ok)
@@ -137,10 +144,10 @@ export const useAuthState = (): UseAuthStateReturn => {
 
     // Network status listeners
     useEffect(() => {
-        const handleOnline = () => {
+        const handleOnline = async () => {
             console.log('[useAuthState] Network is ONLINE');
             setIsOnline(true);
-            const storedUser = localStorage.getItem('hhr_offline_user');
+            const storedUser = await getSetting<AuthUser | null>('hhr_offline_user', null);
             if (storedUser) {
                 signInAnonymouslyForPassport().catch((err: unknown) =>
                     console.warn('[useAuthState] Proactive re-auth failed:', err)
@@ -164,35 +171,53 @@ export const useAuthState = (): UseAuthStateReturn => {
 
     // Check for offline passport user on mount
     useEffect(() => {
+        console.log('[useAuthState] 🚀 Initializing Auth System...');
+
         const checkOfflineUser = async () => {
+            console.log('[useAuthState] 🔍 Checking local storage for offline user...');
             try {
-                const storedUser = localStorage.getItem('hhr_offline_user');
-                if (storedUser) {
-                    const offlineUser = JSON.parse(storedUser) as AuthUser;
-                    const passport = getStoredPassport();
+                let offlineUser = await getSetting<AuthUser | null>('hhr_offline_user', null);
+
+                // Fallback for migration
+                if (!offlineUser) {
+                    const legacy = localStorage.getItem('hhr_offline_user');
+                    if (legacy) {
+                        offlineUser = JSON.parse(legacy);
+                        await saveSetting('hhr_offline_user', offlineUser);
+                    }
+                }
+
+                if (offlineUser) {
+                    const passport = await getStoredPassport();
                     if (passport) {
                         const result = await validatePassport(passport);
                         if (result.valid) {
+                            console.log('[useAuthState] ✅ Valid offline passport found');
                             setUser(offlineUser);
                             setIsOfflineMode(true);
                             setAuthLoading(false);
                             return true;
                         } else {
-                            clearStoredPassport();
+                            console.warn('[useAuthState] ❌ Stored passport is invalid:', result.error);
+                            await clearStoredPassport();
+                            await saveSetting('hhr_offline_user', null);
                             localStorage.removeItem('hhr_offline_user');
                         }
                     }
                 }
             } catch (error) {
-                console.error('[useAuthState] Error checking offline user:', error);
+                console.error('[useAuthState] ‼️ Error checking offline user:', error);
             }
             return false;
         };
 
         const initAuth = async () => {
-            await checkOfflineUser();
+            console.log('[useAuthState] 📡 Subscribing to Firebase Auth changes...');
 
+            // Subscribe to Firebase Auth first (higher priority)
             const unsubscribe = onAuthChange(async (authUser) => {
+                console.log('[useAuthState] 🔔 Auth State Change received:', authUser ? authUser.email : 'NULL');
+
                 if (authUser) {
                     const isAnonymousUser = authUser.email === null;
                     const email = authUser.email;
@@ -205,9 +230,8 @@ export const useAuthState = (): UseAuthStateReturn => {
                     }
 
                     if (isAnonymousUser) {
-                        const storedUser = localStorage.getItem('hhr_offline_user');
-                        if (storedUser) {
-                            const passportUser = JSON.parse(storedUser) as AuthUser;
+                        const passportUser = await getSetting<AuthUser | null>('hhr_offline_user', null);
+                        if (passportUser) {
                             setUser(passportUser);
                             setIsOfflineMode(false);
                         } else {
@@ -215,16 +239,23 @@ export const useAuthState = (): UseAuthStateReturn => {
                             setIsOfflineMode(false);
                         }
                     } else {
+                        console.log('[useAuthState] 👤 Real Google user detected. Overriding any local passport.');
                         setUser(authUser);
                         setIsOfflineMode(false);
+                        await saveSetting('hhr_offline_user', null);
                         localStorage.removeItem('hhr_offline_user');
+                        await clearStoredPassport();
                     }
                 } else {
-                    await checkOfflineUser();
-                    if (!localStorage.getItem('hhr_offline_user')) {
+                    console.log('[useAuthState] 👤 Firebase user is NULL, checking offline fallback...');
+                    // Only check offline if Firebase reports no user
+                    const hasOffline = await checkOfflineUser();
+                    if (!hasOffline) {
                         setUser(null);
                     }
                 }
+
+                console.log('[useAuthState] ✨ Auth transition finished');
                 setAuthLoading(false);
             });
 
@@ -232,9 +263,22 @@ export const useAuthState = (): UseAuthStateReturn => {
         };
 
         let unsubscribe: (() => void) | undefined;
-        initAuth().then(unsub => { unsubscribe = unsub; });
+
+        // Safety timeout: If Firebase takes too long (e.g. network issues), stop loading
+        // Shorter timeout if we're already offline to show LoginPage faster
+        const timeoutMs = window.navigator.onLine ? 8000 : 3000;
+        const safetyTimeout = setTimeout(() => {
+            console.warn(`[useAuthState] ⚠️ Auth initialization timed out (${timeoutMs}ms) - forcing load completion`);
+            setAuthLoading(false);
+        }, timeoutMs);
+
+        initAuth().then(unsub => {
+            if (unsub) unsubscribe = unsub;
+        });
 
         return () => {
+            console.log('[useAuthState] 🧹 Cleaning up Auth subscription');
+            clearTimeout(safetyTimeout);
             if (unsubscribe) unsubscribe();
         };
     }, []);
@@ -255,6 +299,12 @@ export const useAuthState = (): UseAuthStateReturn => {
         };
     }, [user, isOfflineMode, isOnline]);
 
+    /**
+     * Generates and downloads an encrypted passport file for the current user.
+     * 
+     * @param password - The password used to encrypt the passport file.
+     * @returns True if the download was successful, false otherwise.
+     */
     const handleDownloadPassport = useCallback(async (password: string) => {
         if (!user) return false;
         return await downloadPassport(user, password);

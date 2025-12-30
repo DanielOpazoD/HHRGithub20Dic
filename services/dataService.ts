@@ -17,12 +17,15 @@
 // Storage
 // ============================================================================
 export {
+  getRecordForDate as getStoredRecords,
+  saveRecord as saveRecordLocal,
+  getCatalog as getStoredNurses,
+  saveCatalog as saveStoredNurses,
+} from './storage/indexedDBService';
+
+export {
   STORAGE_KEY,
-  getStoredRecords,
-  saveRecordLocal,
-  getStoredNurses,
-  saveStoredNurses,
-  getAllDates
+  NURSES_STORAGE_KEY,
 } from './storage/localStorageService';
 
 // ============================================================================

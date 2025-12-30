@@ -7,14 +7,20 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Passport File Authentication UI', () => {
     test.beforeEach(async ({ page }) => {
+        // Clear any existing auth state
         await page.goto('/');
+        await page.evaluate(() => {
+            localStorage.removeItem('hhr_offline_user');
+            localStorage.removeItem('hhr_offline_passport');
+        });
+        await page.reload();
         await page.waitForLoadState('domcontentloaded');
     });
 
     test('should display passport upload option on login page', async ({ page }) => {
         // Find the "Acceso Offline con Pasaporte" area
         const passportToggle = page.locator('text=Acceso Offline con Pasaporte').first();
-        await expect(passportToggle).toBeVisible();
+        await expect(passportToggle).toBeVisible({ timeout: 10000 });
 
         await passportToggle.click();
 
@@ -24,6 +30,7 @@ test.describe('Passport File Authentication UI', () => {
 
     test('should show error for invalid passport file', async ({ page }) => {
         const passportToggle = page.locator('text=Acceso Offline con Pasaporte').first();
+        await expect(passportToggle).toBeVisible({ timeout: 10000 });
         await passportToggle.click();
 
         const fileInput = page.locator('input[type="file"]');
@@ -35,7 +42,7 @@ test.describe('Passport File Authentication UI', () => {
             buffer: Buffer.from('invalid-passport-content')
         });
 
-        // App should show an error message in the login form
-        await expect(page.locator('text=No se pudo leer el archivo pasaporte')).toBeVisible();
+        // App should show an error message
+        await expect(page.locator('text=No se pudo leer el archivo pasaporte')).toBeVisible({ timeout: 5000 });
     });
 });

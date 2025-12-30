@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { LayoutList, BarChart2, FileJson, Upload, Settings, ShieldCheck, MessageSquare, FileSpreadsheet, ChevronDown, LucideIcon } from 'lucide-react';
+import { LayoutList, BarChart2, FileJson, Upload, Settings, ShieldCheck, MessageSquare, FileSpreadsheet, ChevronDown, LucideIcon, Bug } from 'lucide-react';
 import clsx from 'clsx';
 import { ModuleType } from './Navbar';
 
@@ -39,7 +39,7 @@ interface NavbarMenuProps {
     onOpenSettings: () => void;
     // Permissions
     isUserAdmin: boolean;
-    visibleModules: ModuleType[];
+    visibleModules: readonly ModuleType[];
 }
 
 export const NavbarMenu: React.FC<NavbarMenuProps> = ({
@@ -139,6 +139,11 @@ export const NavbarMenu: React.FC<NavbarMenuProps> = ({
                                         icon={MessageSquare}
                                         label="WhatsApp"
                                         onClick={() => handleModuleChange('WHATSAPP')}
+                                    />
+                                    <MenuItem
+                                        icon={Bug}
+                                        label="Monitor de Errores"
+                                        onClick={() => handleModuleChange('ERRORS')}
                                     />
                                 </>
                             )}

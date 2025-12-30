@@ -9,32 +9,34 @@ import { DailyRecord } from '../types';
 import {
     getForDate,
     save,
+    updatePartial,
     subscribe
 } from '../services/repositories/DailyRecordRepository';
 import { useEffect } from 'react';
+import { DailyRecordPatchLoose } from './useDailyRecordTypes';
+import { applyPatches } from '../utils/patchUtils';
 
 /**
  * Hook for fetching a daily record by date with React Query.
  * Provides automatic caching and background refetching.
  * 
  * @param date - Date string in YYYY-MM-DD format
+ * @param isOfflineMode - Whether the app is forced to offline
+ * @param isFirebaseConnected - Whether Firebase Auth is ready
  * @returns Query result with data, loading, and error states
- * 
- * @example
- * ```typescript
- * const { data: record, isLoading, error } = useDailyRecordQuery('2024-12-23');
- * if (isLoading) return <Skeleton />;
- * if (error) return <Error />;
- * return <CensusTable record={record} />;
- * ```
  */
-export const useDailyRecordQuery = (date: string) => {
+export const useDailyRecordQuery = (
+    date: string,
+    isOfflineMode: boolean = false,
+    isFirebaseConnected: boolean = false
+) => {
     const queryClient = useQueryClient();
 
+    const queryKey = queryKeys.dailyRecord.byDate(date);
     const query = useQuery({
-        queryKey: queryKeys.dailyRecord.byDate(date),
+        queryKey,
         queryFn: async () => {
-            const record = getForDate(date);
+            const record = await getForDate(date);
             return record;
         },
         enabled: !!date,
@@ -42,7 +44,7 @@ export const useDailyRecordQuery = (date: string) => {
 
     // Subscribe to real-time updates
     useEffect(() => {
-        if (!date) return;
+        if (!date || isOfflineMode || !isFirebaseConnected) return;
 
         const unsubscribe = subscribe(date, (record, hasPendingWrites) => {
             // Only update the query cache if it's not a local echo
@@ -108,6 +110,55 @@ export const useSaveDailyRecordMutation = () => {
                     queryKey: queryKeys.dailyRecord.byDate(record.date)
                 });
             }
+        },
+    });
+};
+
+/**
+ * Hook for partial updates (patches).
+ * Provides granular optimistic updates for better performance.
+ */
+export const usePatchDailyRecordMutation = (date: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (partial: DailyRecordPatchLoose) => {
+            await updatePartial(date, partial);
+            return partial;
+        },
+        onMutate: async (partial) => {
+            await queryClient.cancelQueries({
+                queryKey: queryKeys.dailyRecord.byDate(date)
+            });
+
+            const previousRecord = queryClient.getQueryData<DailyRecord>(
+                queryKeys.dailyRecord.byDate(date)
+            );
+
+            if (previousRecord) {
+                const updatedRecord = applyPatches(previousRecord, partial);
+                updatedRecord.lastUpdated = new Date().toISOString();
+
+                queryClient.setQueryData(
+                    queryKeys.dailyRecord.byDate(date),
+                    updatedRecord
+                );
+            }
+
+            return { previousRecord };
+        },
+        onError: (err, partial, context) => {
+            if (context?.previousRecord) {
+                queryClient.setQueryData(
+                    queryKeys.dailyRecord.byDate(date),
+                    context.previousRecord
+                );
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.dailyRecord.byDate(date)
+            });
         },
     });
 };

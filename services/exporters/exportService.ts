@@ -2,11 +2,12 @@
 
 import { DailyRecord, PatientData } from '../../types';
 import { BEDS, CSV_HEADERS } from '../../constants';
-import { getStoredRecords, STORAGE_KEY, formatDateDDMMYYYY } from '../dataService';
+import { formatDateDDMMYYYY } from '../dataService';
 import { validateBackupData } from '../../schemas/validation';
+import { getAllRecords, saveRecord } from '../storage/indexedDBService';
 
-export const exportDataJSON = () => {
-    const data = getStoredRecords();
+export const exportDataJSON = async () => {
+    const data = await getAllRecords();
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -165,10 +166,17 @@ export const importDataJSON = async (file: File): Promise<boolean> => {
                     return;
                 }
 
-                const current = getStoredRecords();
-                const merged = { ...current, ...validation.data };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-                resolve(true);
+                // Import each record to IndexedDB
+                const records = Object.values(validation.data as Record<string, DailyRecord>);
+                const promises = records.map(record => saveRecord(record));
+
+                Promise.all(promises).then(() => {
+                    console.log(`✅ Imported ${records.length} records to IndexedDB`);
+                    resolve(true);
+                }).catch(err => {
+                    console.error("Import failed in DB stage", err);
+                    resolve(false);
+                });
             } catch (err) {
                 console.error("Import failed", err);
                 alert("Error al procesar el archivo JSON.");

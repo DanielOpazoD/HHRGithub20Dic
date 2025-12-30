@@ -1,9 +1,9 @@
 import React from 'react';
-import { Copy, Move, ClipboardCheck } from 'lucide-react';
+import { Copy, Move } from 'lucide-react';
 import clsx from 'clsx';
 import { BEDS } from '../../../constants';
 import { useDailyRecordContext } from '../../../context/DailyRecordContext';
-import { BaseModal, ModalSection } from '../../shared/BaseModal';
+import { BaseModal } from '../../shared/BaseModal';
 
 export interface MoveCopyModalProps {
     isOpen: boolean;
@@ -32,53 +32,70 @@ export const MoveCopyModal: React.FC<MoveCopyModalProps> = ({
             onClose={onClose}
             title={type === 'move' ? 'Mover Paciente' : 'Copiar Datos'}
             icon={type === 'move' ? <Move size={18} /> : <Copy size={18} />}
-            size="md"
+            size="lg" // Larger width for more columns
             headerIconColor="text-medical-600"
+            variant="white"
         >
-            <div className="space-y-6">
-                <ModalSection
-                    title="Seleccionar Destino"
-                    icon={<ClipboardCheck size={14} />}
-                    description={`${type === 'move' ? 'Mover' : 'Copiar'} desde ${sourceBedName} hacia:`}
-                >
-                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
-                        {visibleBeds.filter(b => b.id !== sourceBedId).map(bed => (
-                            <button
-                                key={bed.id}
-                                onClick={() => onSetTarget(bed.id)}
-                                className={clsx(
-                                    "p-3 rounded-xl border text-sm text-left transition-all shadow-sm",
-                                    targetBedId === bed.id
-                                        ? "bg-medical-600 text-white border-medical-600 shadow-medical-600/20"
-                                        : "bg-white/60 border-white/60 text-slate-700 hover:bg-white/80 hover:border-medical-200"
-                                )}
-                            >
-                                <p className="font-bold">{bed.name}</p>
-                                <p className={clsx(
-                                    "text-[10px] uppercase tracking-wider mt-0.5",
-                                    targetBedId === bed.id ? "text-medical-100" : "text-slate-400"
-                                )}>
-                                    {record.beds[bed.id].patientName ? 'Ocupada' : 'Libre'}
-                                </p>
-                            </button>
-                        ))}
-                    </div>
-                </ModalSection>
+            <div className="space-y-4">
+                <div className="space-y-1">
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                        Destino del {type === 'move' ? 'Movimiento' : 'Copiado'}
+                    </label>
+                    <p className="text-[11px] text-slate-500 mb-2 ml-1">
+                        Desde <span className="font-bold text-slate-700">{sourceBedName}</span> hacia:
+                    </p>
 
-                {/* Footer Actions */}
-                <div className="pt-4 border-t border-white/20 flex justify-end gap-3">
+                    <div className="grid grid-cols-3 gap-1.5 max-h-[60vh] overflow-y-auto pr-1">
+                        {visibleBeds.filter(b => b.id !== sourceBedId).map(bed => {
+                            const isOccupied = !!record.beds[bed.id].patientName;
+                            const isSelected = targetBedId === bed.id;
+
+                            return (
+                                <button
+                                    key={bed.id}
+                                    onClick={() => onSetTarget(bed.id)}
+                                    className={clsx(
+                                        "p-2 rounded-lg border text-left transition-all h-[52px] flex flex-col justify-between",
+                                        isSelected
+                                            ? "bg-medical-50 border-medical-500 ring-1 ring-medical-500 shadow-sm"
+                                            : "bg-slate-50 border-slate-200 hover:border-medical-300 hover:bg-white"
+                                    )}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <p className={clsx("font-bold text-[11px] truncate", isSelected ? "text-medical-800" : "text-slate-700")}>
+                                            {bed.name}
+                                        </p>
+                                        <div className={clsx(
+                                            "w-1.5 h-1.5 rounded-full shrink-0",
+                                            isOccupied ? "bg-amber-400" : "bg-emerald-400"
+                                        )} />
+                                    </div>
+                                    <p className={clsx(
+                                        "text-[8px] uppercase tracking-wider font-semibold",
+                                        isSelected ? "text-medical-600" : "text-slate-400"
+                                    )}>
+                                        {isOccupied ? 'Ocupada' : 'Libre'}
+                                    </p>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Footer Actions - Standard Clean Style */}
+                <div className="pt-4 flex justify-end items-center gap-3 border-t border-slate-50">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-slate-500 hover:bg-white/40 rounded-xl text-sm font-semibold transition-all"
+                        className="text-slate-500 hover:text-slate-700 text-xs font-semibold transition-colors"
                     >
                         Cancelar
                     </button>
                     <button
                         disabled={!targetBedId}
                         onClick={onConfirm}
-                        className="px-6 py-2 bg-medical-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-medical-600/20 hover:bg-medical-700 hover:shadow-medical-600/30 transition-all transform active:scale-95 disabled:opacity-50 disabled:transform-none disabled:shadow-none"
+                        className="px-5 py-2 bg-medical-600 text-white rounded-lg text-xs font-bold shadow-md shadow-medical-600/10 hover:bg-medical-700 transition-all transform active:scale-95 disabled:opacity-50 disabled:transform-none"
                     >
-                        Confirmar
+                        Confirmar {type === 'move' ? 'Traslado' : 'Copia'}
                     </button>
                 </div>
             </div>

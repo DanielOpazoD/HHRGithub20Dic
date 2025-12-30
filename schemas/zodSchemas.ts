@@ -201,18 +201,20 @@ export const parseDailyRecordWithDefaults = (data: unknown, docId: string): z.in
         // First try strict parsing
         return DailyRecordSchema.parse(data);
     } catch {
-        // If strict fails, apply defaults and try again
+        // If strict fails, apply defaults and try to recover what's possible
         console.warn('⚠️ Applying defaults to DailyRecord for date:', docId);
+
+        const raw = (typeof data === 'object' && data !== null ? data : {}) as any;
+
         return {
-            date: docId,
-            beds: {},
-            discharges: [],
-            transfers: [],
-            cma: [],
-            lastUpdated: new Date().toISOString(),
-            nurses: ['', ''],
-            activeExtraBeds: [],
-            ...(typeof data === 'object' && data !== null ? data : {}),
+            date: typeof raw.date === 'string' ? raw.date : docId,
+            beds: (typeof raw.beds === 'object' && raw.beds !== null && !Array.isArray(raw.beds)) ? raw.beds : {},
+            discharges: Array.isArray(raw.discharges) ? raw.discharges : [],
+            transfers: Array.isArray(raw.transfers) ? raw.transfers : [],
+            cma: Array.isArray(raw.cma) ? raw.cma : [],
+            lastUpdated: typeof raw.lastUpdated === 'string' ? raw.lastUpdated : new Date().toISOString(),
+            nurses: Array.isArray(raw.nurses) ? raw.nurses : ['', ''],
+            activeExtraBeds: Array.isArray(raw.activeExtraBeds) ? raw.activeExtraBeds : [],
         };
     }
 };

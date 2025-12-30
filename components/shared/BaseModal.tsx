@@ -22,6 +22,7 @@
  */
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
 import { useScrollLock } from '../../hooks/useScrollLock';
@@ -111,10 +112,10 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         }
     };
 
-    return (
+    const modalContent = (
         <div
             className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in print:hidden"
-            style={{ isolation: 'isolate', willChange: 'opacity' }}
+            style={{ isolation: 'isolate' }}
             onClick={handleBackdropClick}
             role="dialog"
             aria-modal="true"
@@ -163,6 +164,9 @@ export const BaseModal: React.FC<BaseModalProps> = ({
             </div>
         </div>
     );
+
+    // Render modal via portal to document.body to escape stacking context issues
+    return createPortal(modalContent, document.body);
 };
 
 /**

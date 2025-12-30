@@ -46,13 +46,12 @@ export const buildCensusMasterBuffer = async (records: DailyRecord[]): Promise<B
 
 /**
  * Helper to build the canonical filename for the master census export.
+ * Format: "Censo diario HHR DD-MM-YYYY.xlsx"
  */
 export const getCensusMasterFilename = (date: string): string => {
-    const [yearStr, monthStr] = date.split('-');
-    const monthIndex = Math.max(0, Math.min(11, Number(monthStr) - 1));
-    const year = Number(yearStr);
-    const monthName = MONTH_NAMES[monthIndex] || monthStr;
-    return `Censo Diario - ${monthName} ${year} - Hospital Hanga Roa.xlsx`;
+    const [year, month, day] = date.split('-');
+    const formattedDate = `${day}-${month}-${year}`;
+    return `Censo diario HHR ${formattedDate}.xlsx`;
 };
 
 // ============================================================================

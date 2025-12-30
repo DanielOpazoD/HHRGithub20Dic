@@ -4,35 +4,37 @@
     background: white;
   }
 
-  /* Reduce spacing and optimize for print */
+  /* Force white background on root elements and use system fonts */
   html,
   body,
   #root,
   main {
     background: white !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  /* Remove residual tinted backgrounds, pseudo elements, and shadows from every element to avoid gray boxes */
-  *,
-  *::before,
-  *::after {
-    background: transparent !important;
-    background-color: transparent !important;
-    background-image: none !important;
+  /* 
+   * Targeted reset instead of aggressive universal selector (*).
+   * Removing backgrounds/shadows only where needed to prevent
+   * heavy rasterization while keeping checklist/header colors.
+   */
+
+  /* Reset shadows and filters globally for performance */
+  * {
     box-shadow: none !important;
+    text-shadow: none !important;
     filter: none !important;
+    backdrop-filter: none !important;
   }
 
-  /* After clearing backgrounds globally, force the page canvas to stay white */
-  html,
-  body,
-  #root,
-  main {
-    background: white !important;
-    background-color: white !important;
+  /* Hide common decorative elements */
+  ::-webkit-scrollbar {
+    display: none;
   }
 
-  /* Neutralize entrance animations so printed elements stay visible */
+  /* Disable animations */
   .animate-fade-in,
   .animate-scale-in {
     animation: none !important;
@@ -41,47 +43,20 @@
     transition: none !important;
   }
 
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* Ensure appended print-only sections render on a white canvas */
+  /* Ensure print header visibility */
   .handoff-cudyr-print {
+    display: block !important;
     background: white !important;
     page-break-before: always;
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-    overflow: visible !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+    page-break-inside: avoid;
   }
 
-  /* Neutralize any residual tinted backgrounds inside the printout */
-  .handoff-cudyr-print,
-  .handoff-cudyr-print * {
-    background: white !important;
-    background-color: white !important;
-  }
-
-  .handoff-cudyr-print table,
-  .handoff-cudyr-print tbody,
-  .handoff-cudyr-print tr,
-  .handoff-cudyr-print td,
-  .handoff-cudyr-print th {
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-  }
-
-  /* Prevent residual spacing or shadows at the end of the document */
-  .handoff-cudyr-print,
-  .handoff-cudyr-print div,
-  .handoff-cudyr-print table {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-  }
-
-  [class*="shadow"] {
-    box-shadow: none !important;
+  /* Table optimizations */
+  table,
+  tr,
+  td,
+  th {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 }

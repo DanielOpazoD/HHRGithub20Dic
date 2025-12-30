@@ -155,10 +155,12 @@ export const usePatchDailyRecordMutation = (date: string) => {
                 );
             }
         },
+        // Note: We don't invalidate queries here because the Firestore subscription
+        // will automatically update the cache when the write completes.
+        // Forcing invalidation here can cause "echo" effects where the UI flickers
+        // between states as it refetches data that might still be propagating.
         onSettled: () => {
-            queryClient.invalidateQueries({
-                queryKey: queryKeys.dailyRecord.byDate(date)
-            });
+            // No-op - let Firestore subscription handle sync
         },
     });
 };

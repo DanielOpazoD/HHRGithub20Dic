@@ -1,5 +1,6 @@
 import { CENSUS_DEFAULT_RECIPIENTS } from '../../constants/email';
 import { buildCensusMasterBuffer, getCensusMasterFilename } from '../../services/exporters/censusMasterWorkbook';
+import { validateExcelBuffer, validateExcelFilename, MIN_EXCEL_SIZE } from '../../services/exporters/excelValidation';
 import { sendCensusEmail } from '../../services/email/gmailClient';
 import type { DailyRecord } from '../../types';
 
@@ -60,6 +61,26 @@ export const handler = async (event: any) => {
         const attachmentBufferRaw = await buildCensusMasterBuffer(monthRecords);
         const attachmentName = getCensusMasterFilename(date);
 
+        // Validate buffer before proceeding
+        const bufferValidation = validateExcelBuffer(attachmentBufferRaw);
+        if (!bufferValidation.valid) {
+            console.error('[CensusEmail] Buffer validation failed:', bufferValidation.error);
+            return {
+                statusCode: 500,
+                body: `Error: El archivo Excel generado es inválido. ${bufferValidation.error} No se enviará el correo.`
+            };
+        }
+
+        // Validate filename
+        const filenameValidation = validateExcelFilename(attachmentName);
+        if (!filenameValidation.valid) {
+            console.error('[CensusEmail] Filename validation failed:', filenameValidation.error);
+            return {
+                statusCode: 500,
+                body: `Error: El nombre del archivo es inválido. ${filenameValidation.error}`
+            };
+        }
+
         // Generate deterministic password based on census date
         // Use numeric PIN generator (pure function, no Firebase deps)
         const { generateCensusPassword } = await import('../../services/security/passwordGenerator');
@@ -90,6 +111,15 @@ export const handler = async (event: any) => {
         const XlsxPopulate = require('xlsx-populate');
         const attachmentBuffer = await XlsxPopulate.fromDataAsync(attachmentBufferRaw)
             .then((workbook: any) => workbook.outputAsync({ password }));
+
+        // Validate encrypted buffer
+        if (!attachmentBuffer || attachmentBuffer.length < MIN_EXCEL_SIZE) {
+            console.error('[CensusEmail] Encrypted buffer validation failed: buffer is too small or empty');
+            return {
+                statusCode: 500,
+                body: 'Error: El archivo Excel encriptado es inválido o está vacío. No se enviará el correo.'
+            };
+        }
 
         const resolvedRecipients: string[] = Array.isArray(recipients) && recipients.length > 0
             ? recipients

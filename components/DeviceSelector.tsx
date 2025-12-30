@@ -81,29 +81,11 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 
     // ========================================================================
     // Normalize legacy VVP representations
-    // Instead of using useEffect to modify parent state, we normalize in render
-    // and use the normalized value for all internal operations.
+    // We use useMemo to normalize for internal UI operations but do NOT 
+    // attempt to update the parent state. This prevents render loops and 
+    // hook count mismatches when switching between dates quickly.
     // ========================================================================
     const normalizedDevices = useMemo(() => normalizeDevices(devices), [devices]);
-
-    // Notify parent of normalization only once when devices change and need normalization
-    const prevDevicesRef = useRef<string[]>(devices);
-    useEffect(() => {
-        const normalized = normalizeDevices(devices);
-        const needsNormalization = !areArraysEqual(devices, normalized);
-        const isFirstRender = prevDevicesRef.current === devices;
-
-        // Only call onChange if normalization is needed and this isn't a re-render
-        // with the same devices prop
-        if (needsNormalization && !areArraysEqual(prevDevicesRef.current, devices)) {
-            // Use setTimeout to avoid calling onChange during render
-            const timer = setTimeout(() => {
-                onChangeRef.current(normalized);
-            }, 0);
-            return () => clearTimeout(timer);
-        }
-        prevDevicesRef.current = devices;
-    }, [devices]);
 
     // ========================================================================
     // VVP State

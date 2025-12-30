@@ -36,6 +36,11 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
 
     const [showAdmissionTime, setShowAdmissionTime] = React.useState(false);
 
+    // Memoize devices and deviceDetails to prevent unnecessary re-renders
+    // These must be defined outside conditional rendering to follow hook rules
+    const memoizedDevices = React.useMemo(() => data.devices || [], [data.devices]);
+    const memoizedDeviceDetails = React.useMemo(() => data.deviceDetails || {}, [data.deviceDetails]);
+
     // Helper for text fields - adapts debounced handler to original event-based API
     const handleDebouncedText = (field: keyof PatientData) => (value: string) => {
         // Create synthetic event-like object to match existing handler signature
@@ -220,8 +225,8 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                     <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <DeviceSelector
-                        devices={React.useMemo(() => data.devices || [], [data.devices])}
-                        deviceDetails={React.useMemo(() => data.deviceDetails || {}, [data.deviceDetails])}
+                        devices={memoizedDevices}
+                        deviceDetails={memoizedDeviceDetails}
                         onChange={onChange.devices}
                         onDetailsChange={onChange.deviceDetails}
                         currentDate={currentDateString}

@@ -58,8 +58,8 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
             <tr className="bg-slate-50 border-b border-slate-200 text-sm print:last:border-b-0 print:text-[10px]">
                 <td className="p-2 font-semibold text-slate-700 text-center align-middle border-r border-slate-200 print:p-1">{bedName}</td>
                 <td colSpan={7} className="p-2 text-slate-600 align-middle print:p-1 print:whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5">
-                        <AlertCircle size={14} className="text-slate-500 print:w-3 print:h-3" />
+                    <span className="inline-flex items-center gap-1.5 print:gap-1">
+                        <AlertCircle size={14} className="text-slate-500 print:hidden" />
                         <span className="font-medium">BLOQUEADA:</span> {patient.blockedReason || 'Sin motivo'}
                     </span>
                 </td>
@@ -76,7 +76,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
     return (
         <tr className={clsx(
             "border-b border-slate-200 hover:bg-slate-50 transition-colors text-sm print:last:border-b-0",
-            isSubRow ? "bg-pink-50/40" : "bg-white"
+            isSubRow ? "bg-pink-50/40 print:bg-pink-50" : "bg-white"
         )}>
             {/* Cama + Días Hosp - Vertically Centered */}
             <td className="p-2 border-r border-slate-200 text-center w-20 align-middle print:w-auto print:text-[10px] print:p-1">
@@ -85,8 +85,8 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
                 </div>
                 {!isSubRow && daysHospitalized !== null && (
                     <div className="flex flex-col items-center justify-center mt-1 text-slate-500 print:text-[8px]" title="Días Hospitalizado">
-                        <Clock size={12} />
-                        <span className="text-[10px] font-bold print:text-[8px]">{daysHospitalized}d</span>
+                        <Clock size={12} className="print:hidden" />
+                        <span className="text-[10px] font-bold print:text-[8px] print:font-normal">{daysHospitalized}d</span>
                     </div>
                 )}
             </td>
@@ -95,7 +95,8 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
             <td className="p-2 border-r border-slate-200 min-w-[150px] align-middle print:min-w-0 print:w-auto print:text-[10px] print:p-1">
                 <div className="font-medium text-slate-800 flex flex-col gap-0.5 leading-snug print:leading-none">
                     <div className="flex items-center gap-1 flex-wrap">
-                        {isSubRow && <Baby size={14} className="text-pink-400" />}
+                        {isSubRow && <Baby size={14} className="text-pink-400 print:hidden" />}
+                        {isSubRow && <span className="hidden print:inline text-[8px] text-pink-600 font-bold">(RN)</span>}
                         <span>{patient.patientName}</span>
                     </div>
                     {/* Print: RUT below name */}
@@ -171,9 +172,9 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
             </td>
 
             {/* Observaciones */}
-            <td className="p-2 w-full min-w-[300px] align-top print:w-auto print:min-w-[40%] print:text-[8px] print:p-0.5">
+            <td className="p-2 w-full min-w-[300px] align-top print:w-auto print:min-w-0 print:text-[8px] print:p-0.5">
                 {readOnly ? (
-                    <div className="whitespace-pre-wrap text-sm text-slate-800 p-2 min-h-[50px] print:min-h-0 print:p-0 print:text-[8px] print:leading-tight">
+                    <div className="whitespace-pre-wrap break-words text-sm text-slate-800 p-2 min-h-[50px] print:min-h-0 print:p-0 print:text-[8px] print:leading-tight">
                         {noteValue || <span className="text-slate-400 italic">Sin observaciones</span>}
                     </div>
                 ) : (
@@ -189,7 +190,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
                             />
                         </div>
                         {/* Print: Read-only Div (Ensures full expansion) */}
-                        <div className="hidden print:block whitespace-pre-wrap text-slate-800 print:text-[8px] print:leading-tight">
+                        <div className="hidden print:block w-full whitespace-pre-wrap break-words text-slate-800 print:text-[8px] print:leading-tight">
                             {noteValue}
                         </div>
                     </>

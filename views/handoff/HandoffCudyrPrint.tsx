@@ -70,21 +70,21 @@ export const HandoffCudyrPrint: React.FC = () => {
                                     <span className="hidden print:inline">RUT</span>
                                 </th>
 
-                                <VerticalHeader text="Cuidados Cambio Ropa" colorClass="bg-blue-50/50" />
-                                <VerticalHeader text="Cuidados de Movilización" colorClass="bg-blue-50/50" />
-                                <VerticalHeader text="Cuidados de Alimentación" colorClass="bg-blue-50/50" />
-                                <VerticalHeader text="Cuidados de Eliminación" colorClass="bg-blue-50/50" />
-                                <VerticalHeader text="Apoyo Psicosocial y Emocional" colorClass="bg-blue-50/50" />
-                                <VerticalHeader text="Vigilancia" colorClass="bg-blue-50/50" />
+                                <VerticalHeader text="Cuidados Cambio Ropa" colorClass="bg-blue-50 print:bg-white" />
+                                <VerticalHeader text="Cuidados de Movilización" colorClass="bg-blue-50 print:bg-white" />
+                                <VerticalHeader text="Cuidados de Alimentación" colorClass="bg-blue-50 print:bg-white" />
+                                <VerticalHeader text="Cuidados de Eliminación" colorClass="bg-blue-50 print:bg-white" />
+                                <VerticalHeader text="Apoyo Psicosocial y Emocional" colorClass="bg-blue-50 print:bg-white" />
+                                <VerticalHeader text="Vigilancia" colorClass="bg-blue-50 print:bg-white" />
 
-                                <VerticalHeader text="Medicición Signos Vitales" colorClass="bg-red-50/50" />
-                                <VerticalHeader text="Balance Hìdrico" colorClass="bg-red-50/50" />
-                                <VerticalHeader text="Cuidados de Oxigenoterapia" colorClass="bg-red-50/50" />
-                                <VerticalHeader text="Cuidados diarios de Vía Aérea" colorClass="bg-red-50/50" />
-                                <VerticalHeader text="Intervenciones Profesionales" colorClass="bg-red-50/50" />
-                                <VerticalHeader text="Cuidados de la Piel y Curaciones" colorClass="bg-red-50/50" />
-                                <VerticalHeader text="Administración Tto Farmacológico" colorClass="bg-red-50/50" />
-                                <VerticalHeader text="Presencia Elem. Invasivos" colorClass="bg-red-50/50" />
+                                <VerticalHeader text="Medicición Signos Vitales" colorClass="bg-red-50 print:bg-white" />
+                                <VerticalHeader text="Balance Hìdrico" colorClass="bg-red-50 print:bg-white" />
+                                <VerticalHeader text="Cuidados de Oxigenoterapia" colorClass="bg-red-50 print:bg-white" />
+                                <VerticalHeader text="Cuidados diarios de Vía Aérea" colorClass="bg-red-50 print:bg-white" />
+                                <VerticalHeader text="Intervenciones Profesionales" colorClass="bg-red-50 print:bg-white" />
+                                <VerticalHeader text="Cuidados de la Piel y Curaciones" colorClass="bg-red-50 print:bg-white" />
+                                <VerticalHeader text="Administración Tto Farmacológico" colorClass="bg-red-50 print:bg-white" />
+                                <VerticalHeader text="Presencia Elem. Invasivos" colorClass="bg-red-50 print:bg-white" />
 
                                 <th className="border border-slate-300 p-1 w-14 bg-slate-50 align-middle print:w-auto print:p-0.5 print:bg-white">CAT</th>
                             </tr>
@@ -103,7 +103,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                                             key={bed.id}
                                             className={clsx(
                                                 'border-b border-slate-300 h-8 print:h-6',
-                                                isUTI ? 'bg-yellow-50/60' : 'bg-white'
+                                                isUTI ? 'bg-yellow-50 print:bg-white' : 'bg-white'
                                             )}
                                         >
                                             <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">{bed.name}</td>
@@ -121,7 +121,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                                         key={bed.id}
                                         className={clsx(
                                             'border-b border-slate-300 h-8 print:h-6',
-                                            isUTI ? 'bg-yellow-50/60' : 'bg-white'
+                                            isUTI ? 'bg-yellow-50 print:bg-white' : 'bg-white'
                                         )}
                                     >
                                         <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">{bed.name}</td>
@@ -149,7 +149,12 @@ export const HandoffCudyrPrint: React.FC = () => {
                                         <td className="border-r border-slate-300 p-1 text-center">{renderScore(cudyr.invasiveElements)}</td>
 
                                         <td className="p-1 text-center print:p-0.5">
-                                            <span className={clsx('px-2 py-0.5 rounded font-bold text-xs block w-full shadow-sm print:px-1 print:text-[10px] print:shadow-none', badgeColor)}>
+                                            <span className={clsx(
+                                                'px-2 py-0.5 rounded font-bold text-xs block w-full shadow-sm print:px-1 print:text-[10px] print:shadow-none',
+                                                badgeColor,
+                                                // Print Override: Force B/W aggressively
+                                                'print:!bg-white print:!text-black print:!border print:!border-black'
+                                            )}>
                                                 {finalCat}
                                             </span>
                                         </td>

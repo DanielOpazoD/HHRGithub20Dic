@@ -96,12 +96,16 @@ export const DeviceMenu: React.FC<DeviceMenuProps> = ({
                                 <div key={dev} className="relative">
                                     <div
                                         className={clsx(
-                                            "w-full flex items-center gap-2 px-2 py-1.5 rounded border text-xs text-left transition-colors cursor-pointer",
+                                            "w-full flex items-center gap-2 px-2 py-1.5 rounded border text-xs text-left transition-colors cursor-pointer select-none",
                                             isSelected
                                                 ? "bg-medical-50 border-medical-200 text-medical-800"
                                                 : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                                         )}
-                                        onClick={() => onToggleDevice(dev)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            onToggleDevice(dev);
+                                        }}
                                     >
                                         <div className={clsx(
                                             "w-3 h-3 rounded-sm border flex items-center justify-center flex-shrink-0",

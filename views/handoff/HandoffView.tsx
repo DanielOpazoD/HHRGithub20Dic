@@ -95,6 +95,26 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
         }
     }, [record?.date, type, selectedShift, isMedical, logEvent, userId, record?.nursesDayShift, record?.nursesNightShift]);
 
+    // Update document title for PDF export filename
+    useEffect(() => {
+        if (!record?.date) return;
+
+        const [year, month, day] = record.date.split('-');
+        const formattedDate = `${day}-${month}-${year}`;
+
+        if (isMedical) {
+            document.title = `Entrega Medico ${formattedDate}`;
+        } else {
+            const prefix = selectedShift === 'day' ? 'TL' : 'TN';
+            document.title = `${prefix} ${formattedDate}`;
+        }
+
+        // Cleanup: Reset title when unmounting
+        return () => {
+            document.title = 'Hospital Hanga Roa';
+        };
+    }, [record?.date, selectedShift, isMedical]);
+
 
     const title = isMedical
         ? 'Entrega Turno Médicos'
@@ -234,17 +254,17 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none print:overflow-visible">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:[&_th]:text-[10px] print:[&_td]:text-[10px]">
+                    <table className="w-full text-left border-collapse print:table-fixed print:[&_th]:p-1 print:[&_td]:p-1 print:[&_th]:text-[10px] print:[&_td]:text-[10px]">
                         <thead>
                             <tr className={tableHeaderClass}>
-                                <th className="p-2 border-r border-slate-200 text-center w-20 print:w-[40px] print:text-[10px] print:p-1">Cama</th>
+                                <th className="p-2 border-r border-slate-200 text-center w-20 print:w-[35px] print:text-[10px] print:p-1">Cama</th>
                                 <th className="p-2 border-r border-slate-200 min-w-[150px] print:w-[15%] print:text-[10px] print:p-1">Nombre Paciente</th>
                                 <th className="p-2 border-r border-slate-200 w-36 print:hidden">RUT</th>
-                                <th className="p-2 border-r border-slate-200 w-64 print:w-[12%] print:text-[10px] print:p-1">Diagnóstico</th>
-                                <th className="p-2 border-r border-slate-200 w-20 print:w-[50px] print:text-[10px] print:p-1">Estado</th>
+                                <th className="p-2 border-r border-slate-200 w-64 print:w-[20%] print:text-[10px] print:p-1">Diagnóstico</th>
+                                <th className="p-2 border-r border-slate-200 w-20 print:w-[45px] print:text-[10px] print:p-1">Estado</th>
                                 <th className="p-2 border-r border-slate-200 w-28 text-center print:hidden">F. Ingreso</th>
-                                <th className="p-2 border-r border-slate-200 w-20 print:w-[55px] print:text-[10px] print:p-1" title="Dispositivos médicos invasivos">DMI</th>
-                                <th className="p-2 min-w-[300px] print:w-auto print:text-[10px] print:p-1">Observaciones</th>
+                                <th className="p-2 border-r border-slate-200 w-20 print:w-[50px] print:text-[10px] print:p-1" title="Dispositivos médicos invasivos">DMI</th>
+                                <th className="p-2 min-w-[300px] print:w-[45%] print:min-w-0 print:text-[10px] print:p-1">Observaciones</th>
                             </tr>
                         </thead>
                         <tbody>

@@ -70,15 +70,24 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
     const anchorRef = useRef<HTMLDivElement>(null);
     const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
+    // Stable refs for callbacks to prevent effect re-runs
+    const onChangeRef = useRef(onChange);
+    const onDetailsChangeRef = useRef(onDetailsChange);
+
+    useEffect(() => {
+        onChangeRef.current = onChange;
+        onDetailsChangeRef.current = onDetailsChange;
+    }, [onChange, onDetailsChange]);
+
     // ========================================================================
     // Normalize legacy VVP representations
     // ========================================================================
     useEffect(() => {
         const normalized = normalizeDevices(devices);
         if (!areArraysEqual(devices, normalized)) {
-            onChange(normalized);
+            onChangeRef.current(normalized);
         }
-    }, [devices, onChange]);
+    }, [devices]); // Removed onChangeRef from dependencies as it's a ref
 
     // ========================================================================
     // VVP State
@@ -130,13 +139,13 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
     }, [devices, onChange]);
 
     const handleDeviceConfigSave = useCallback((info: DeviceInfo) => {
-        if (editingDevice && onDetailsChange) {
-            onDetailsChange({
+        if (editingDevice && onDetailsChangeRef.current) {
+            onDetailsChangeRef.current({
                 ...deviceDetails,
                 [editingDevice]: info
             });
         }
-    }, [editingDevice, deviceDetails, onDetailsChange]);
+    }, [editingDevice, deviceDetails]);
 
     // ========================================================================
     // Menu Position
@@ -155,10 +164,13 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 
     useEffect(() => {
         if (!showMenu) return;
+
         updateMenuPosition();
+
         const handle = () => updateMenuPosition();
         window.addEventListener('resize', handle);
         window.addEventListener('scroll', handle, true);
+
         return () => {
             window.removeEventListener('resize', handle);
             window.removeEventListener('scroll', handle, true);

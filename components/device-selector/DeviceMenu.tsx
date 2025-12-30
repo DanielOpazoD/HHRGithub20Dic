@@ -94,14 +94,14 @@ export const DeviceMenu: React.FC<DeviceMenuProps> = ({
 
                             return (
                                 <div key={dev} className="relative">
-                                    <button
-                                        onClick={() => onToggleDevice(dev)}
+                                    <div
                                         className={clsx(
-                                            "w-full flex items-center gap-2 px-2 py-1.5 rounded border text-xs text-left transition-colors",
+                                            "w-full flex items-center gap-2 px-2 py-1.5 rounded border text-xs text-left transition-colors cursor-pointer",
                                             isSelected
                                                 ? "bg-medical-50 border-medical-200 text-medical-800"
                                                 : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                                         )}
+                                        onClick={() => onToggleDevice(dev)}
                                     >
                                         <div className={clsx(
                                             "w-3 h-3 rounded-sm border flex items-center justify-center flex-shrink-0",
@@ -127,7 +127,7 @@ export const DeviceMenu: React.FC<DeviceMenuProps> = ({
                                                 <Settings size={12} />
                                             </button>
                                         )}
-                                    </button>
+                                    </div>
                                 </div>
                             );
                         })}

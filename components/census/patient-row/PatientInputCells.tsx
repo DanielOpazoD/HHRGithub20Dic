@@ -220,8 +220,8 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                     <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <DeviceSelector
-                        devices={data.devices || []}
-                        deviceDetails={data.deviceDetails}
+                        devices={React.useMemo(() => data.devices || [], [data.devices])}
+                        deviceDetails={React.useMemo(() => data.deviceDetails || {}, [data.deviceDetails])}
                         onChange={onChange.devices}
                         onDetailsChange={onChange.deviceDetails}
                         currentDate={currentDateString}

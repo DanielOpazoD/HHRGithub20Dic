@@ -138,7 +138,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
             <HandoffPrintHeader
                 title={title}
                 dateString={formatPrintDate()}
-                Icon={Icon}
                 isMedical={isMedical}
                 schedule={schedule}
                 selectedShift={selectedShift}
@@ -146,6 +145,25 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                 receivesList={receivesList}
                 tensList={tensList}
             />
+
+            {/* Print-only Checklist Section - shown in PDF for both shifts */}
+            {!isMedical && (
+                <div className="hidden print:block mb-1 pb-1 border-b border-slate-300">
+                    {selectedShift === 'day' ? (
+                        <HandoffChecklistDay
+                            data={record.handoffDayChecklist}
+                            onUpdate={() => { }}
+                            readOnly={true}
+                        />
+                    ) : (
+                        <HandoffChecklistNight
+                            data={record.handoffNightChecklist}
+                            onUpdate={() => { }}
+                            readOnly={true}
+                        />
+                    )}
+                </div>
+            )}
 
             {/* Main Header (Visible) with integrated Shift Switcher */}
             <header className="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-3 print:hidden">

@@ -1,10 +1,8 @@
 import React from 'react';
-import { LucideIcon } from 'lucide-react';
 
 interface HandoffPrintHeaderProps {
     title: string;
     dateString: string;
-    Icon: LucideIcon;
     schedule?: {
         dayStart: string;
         dayEnd: string;
@@ -21,7 +19,6 @@ interface HandoffPrintHeaderProps {
 export const HandoffPrintHeader: React.FC<HandoffPrintHeaderProps> = ({
     title,
     dateString,
-    Icon,
     schedule,
     selectedShift,
     isMedical,
@@ -30,16 +27,22 @@ export const HandoffPrintHeader: React.FC<HandoffPrintHeaderProps> = ({
     tensList = []
 }) => {
     return (
-        <div className="hidden print:block mb-4 pb-4 border-b-2 border-slate-800">
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h1 className="text-2xl print:text-lg font-bold text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                        <Icon size={28} className="text-slate-900 print:w-6 print:h-6" />
-                        {title}
-                    </h1>
-                    <p className="text-sm text-slate-600 font-medium mt-1 uppercase tracking-wide print:text-xs">
-                        Servicio Hospitalizados Hanga Roa
-                    </p>
+        <div className="hidden print:block mb-2 pb-2 border-b border-slate-400">
+            <div className="flex justify-between items-start mb-2">
+                <div className="flex items-start gap-3">
+                    <img
+                        src="/images/logos/logo_HHR.png"
+                        alt="Hospital Hanga Roa"
+                        className="h-12 w-auto print:h-10"
+                    />
+                    <div>
+                        <h1 className="text-2xl print:text-lg font-bold text-slate-900 uppercase tracking-tight">
+                            {title}
+                        </h1>
+                        <p className="text-sm text-slate-600 font-medium mt-1 uppercase tracking-wide print:text-xs">
+                            Servicio Hospitalizados Hanga Roa
+                        </p>
+                    </div>
                 </div>
                 <div className="text-right">
                     <div className="text-xl print:text-base font-bold text-slate-900">{dateString}</div>
@@ -54,26 +57,28 @@ export const HandoffPrintHeader: React.FC<HandoffPrintHeaderProps> = ({
                 </div>
             </div>
 
-            {/* Print: Show Responsible Nurses & TENS */}
+            {/* Print: Show Responsible Nurses & TENS - Compact inline layout */}
             {!isMedical && (
-                <div className="grid grid-cols-3 gap-6 text-xs border-t border-slate-300 pt-3">
-                    <div>
-                        <span className="block font-bold text-slate-900 uppercase text-[9px] mb-0.5">Enfermero(a) Entrega:</span>
-                        <div className="text-slate-800 text-[11px]">
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[10px] border-t border-slate-300 pt-2">
+                    <div className="flex items-baseline gap-1">
+                        <span className="font-bold text-slate-900 uppercase whitespace-nowrap">Entrega:</span>
+                        <span className="text-slate-800">
                             {deliversList.length > 0 ? deliversList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin especificar</span>}
-                        </div>
+                        </span>
                     </div>
-                    <div>
-                        <span className="block font-bold text-slate-900 uppercase text-[9px] mb-0.5">Enfermero(a) Recibe:</span>
-                        <div className="text-slate-800 text-[11px]">
+                    <span className="text-slate-400">|</span>
+                    <div className="flex items-baseline gap-1">
+                        <span className="font-bold text-slate-900 uppercase whitespace-nowrap">Recibe:</span>
+                        <span className="text-slate-800">
                             {receivesList.length > 0 ? receivesList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin especificar</span>}
-                        </div>
+                        </span>
                     </div>
-                    <div>
-                        <span className="block font-bold text-slate-900 uppercase text-[9px] mb-0.5">TENS de Turno:</span>
-                        <div className="text-slate-800 text-[11px]">
+                    <span className="text-slate-400">|</span>
+                    <div className="flex items-baseline gap-1">
+                        <span className="font-bold text-slate-900 uppercase whitespace-nowrap">TENS:</span>
+                        <span className="text-slate-800">
                             {tensList.length > 0 ? tensList.filter(Boolean).join(', ') : <span className="italic text-slate-400">Sin registro</span>}
-                        </div>
+                        </span>
                     </div>
                 </div>
             )}

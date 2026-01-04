@@ -308,15 +308,27 @@ export const isAdmittedDuringShift = (
     const isDayTime = isWithinDayShift(admissionTime);
 
     if (shift === 'day') {
-        // Day shift: Only include patients admitted on the same date AND during day hours
-        // OR patients admitted on earlier dates (already hospitalized)
+        // Day shift: Include patients admitted on earlier dates (already hospitalized)
+        // OR patients admitted on same date during day hours OR early morning
         if (patientAdmissionDate < recordDate) {
             return true; // Already hospitalized before this record date
         }
-        if (patientAdmissionDate === recordDate && isDayTime) {
-            return true; // Admitted on the same day during day shift
+        if (patientAdmissionDate === recordDate) {
+            // Patient admitted on the SAME calendar day as the record
+            // - Day time (08:00-20:00): Show - admitted during this day shift
+            // - Early morning (00:00-08:00): Show - admitted during PREVIOUS night shift
+            //   These patients belong to the census now, the night shift is over
+            // - Night time (20:00-24:00): Hide - admitted during CURRENT night shift
+            //   This night shift hasn't ended yet, so filter by shift applies
+            if (isDayTime) {
+                return true; // Admitted during day shift hours
+            }
+            // Check if early morning (00:00-08:00) vs night (20:00-24:00)
+            const hour = admissionTime ? parseInt(admissionTime.split(':')[0]) : 8;
+            const isEarlyMorning = hour >= 0 && hour < 8;
+            return isEarlyMorning; // Early morning = show, night = hide
         }
-        return false; // Admitted at night or on a future date
+        return false; // Admitted on a future date
     } else {
         // Night shift: Include all patients from day shift PLUS:
         // 1. Patients admitted on record date during night hours (after 20:00)

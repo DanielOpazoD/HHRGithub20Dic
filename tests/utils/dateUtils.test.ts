@@ -196,9 +196,18 @@ describe('dateUtils', () => {
                 expect(isAdmittedDuringShift(recordDate, recordDate, '20:00', 'day')).toBe(false);
             });
 
-            it('should exclude patients admitted on next day', () => {
+            it('should exclude patients admitted on next day (future admissions)', () => {
+                // Next day admissions should not appear (they are future patients)
                 expect(isAdmittedDuringShift(recordDate, nextDay, '02:00', 'day')).toBe(false);
                 expect(isAdmittedDuringShift(recordDate, nextDay, '10:00', 'day')).toBe(false);
+            });
+
+            it('should include patients admitted on record date early morning (previous night shift)', () => {
+                // Patient admitted on Jan 3rd at 02:00 - belongs to night shift of Jan 2nd
+                // BUT should appear in day shift of Jan 3rd since that night shift has ended
+                expect(isAdmittedDuringShift(recordDate, recordDate, '02:00', 'day')).toBe(true);
+                expect(isAdmittedDuringShift(recordDate, recordDate, '05:00', 'day')).toBe(true);
+                expect(isAdmittedDuringShift(recordDate, recordDate, '07:59', 'day')).toBe(true);
             });
 
             it('should include patients already hospitalized (earlier date)', () => {

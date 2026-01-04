@@ -25,8 +25,20 @@ describe('useHandoffLogic - Staff List Synchronization', () => {
     // Create a proper beds structure that the hook expects
     const createEmptyBeds = () => {
         const beds: Record<string, any> = {};
-        // Add a few sample bed IDs that BEDS constant might contain
-        ['BED_01', 'BED_02', 'BED_03', 'BED_04', 'BED_05', 'BED_06', 'BED_07', 'BED_08'].forEach(id => {
+        // Use real BED IDs from constants
+        import('@/constants').then(m => {
+            // This is just a fallback for the helper, 
+            // ideally we map the real IDs if possible or just more IDs
+        });
+
+        // Let's use the real IDs to make it robust
+        [
+            'R1', 'R2', 'R3', 'R4',
+            'NEO1', 'NEO2',
+            'H1C1', 'H1C2', 'H2C1', 'H2C2', 'H3C1', 'H3C2',
+            'H4C1', 'H4C2', 'H5C1', 'H5C2', 'H6C1', 'H6C2',
+            'E1', 'E2', 'E3', 'E4', 'E5'
+        ].forEach(id => {
             beds[id] = {
                 bedId: id,
                 patientName: '',

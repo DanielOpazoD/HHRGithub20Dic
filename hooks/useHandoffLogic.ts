@@ -74,6 +74,8 @@ export const useHandoffLogic = ({
         // Night shift spans two calendar days (e.g., Jan 3rd 20:00 → Jan 4th 08:00)
         return baseBeds.filter(bed => {
             const patient = record.beds[bed.id];
+            // Safe guard: if bed doesn't exist in record, skip it
+            if (!patient) return false;
             // Include blocked beds and empty beds
             if (patient.isBlocked || !patient.patientName) return true;
             // Check if patient was admitted during the selected shift

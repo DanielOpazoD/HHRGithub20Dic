@@ -6,8 +6,9 @@ import clsx from 'clsx';
 interface CudyrRowProps {
     bed: BedDefinition;
     patient: PatientData;
-    onScoreChange: (bedId: string, field: keyof CudyrScore, value: number) => void;
+    onScoreChange: (bedId: string, field: keyof CudyrScore, value: number, isNested?: boolean) => void;
     readOnly?: boolean;
+    isNested?: boolean;
 }
 
 // Reusable Header Cell for Vertical Text
@@ -56,27 +57,35 @@ const ScoreInput: React.FC<{
     );
 };
 
-export const CudyrRow: React.FC<CudyrRowProps> = ({ bed, patient, onScoreChange, readOnly = false }) => {
+export const CudyrRow: React.FC<CudyrRowProps> = ({ bed, patient, onScoreChange, readOnly = false, isNested = false }) => {
     const isOccupied = !!patient.patientName;
     const isUTI = bed.type === 'UTI';
     const cudyrScores = patient.cudyr;
 
     const { finalCat, depScore, riskScore, badgeColor } = getCategorization(patient.cudyr);
 
+    // Generate bed display name (add "(Cuna)" suffix for nested clinical cribs)
+    const bedDisplayName = isNested ? `${bed.name} (Cuna)` : bed.name;
+
+    // Wrapper to pass isNested to parent
+    const handleScoreChange = (bedId: string, field: keyof CudyrScore, value: number) => {
+        onScoreChange(bedId, field, value, isNested);
+    };
+
     if (!isOccupied) {
         return (
-            <tr className={clsx("border-b border-slate-300 hover:bg-slate-100 transition-colors", isUTI ? "bg-yellow-50/60" : "bg-white")}>
-                <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">{bed.name}</td>
+            <tr className={clsx("border-b border-slate-300 hover:bg-slate-100 transition-colors", isUTI ? "bg-yellow-50/60" : "bg-white", isNested && "bg-pink-50/40")}>
+                <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">{bedDisplayName}</td>
                 <td colSpan={17} className="p-2 text-center text-slate-400 italic text-[10px]">
-                    Cama disponible
+                    {isNested ? 'Cuna clínica disponible' : 'Cama disponible'}
                 </td>
             </tr>
         );
     }
 
     return (
-        <tr className={clsx("border-b border-slate-300 hover:bg-slate-100 transition-colors", isUTI ? "bg-yellow-50/60" : "bg-white")}>
-            <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">{bed.name}</td>
+        <tr className={clsx("border-b border-slate-300 hover:bg-slate-100 transition-colors", isUTI ? "bg-yellow-50/60" : "bg-white", isNested && "bg-pink-50/40")}>
+            <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">{bedDisplayName}</td>
             <td className="border-r border-slate-300 p-1 truncate font-medium text-slate-700 w-[100px] max-w-[100px] print:w-[88px] print:max-w-[88px] print:whitespace-nowrap print:overflow-visible" title={patient.patientName}>
                 {/* Show name on screen, RUT when printing */}
                 <span className="print:hidden">{patient.patientName}</span>
@@ -85,48 +94,48 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({ bed, patient, onScoreChange,
 
             {/* Dependency Inputs */}
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
-                <ScoreInput bedId={bed.id} field="changeClothes" value={cudyrScores?.changeClothes} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="changeClothes" value={cudyrScores?.changeClothes} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
-                <ScoreInput bedId={bed.id} field="mobilization" value={cudyrScores?.mobilization} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="mobilization" value={cudyrScores?.mobilization} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
-                <ScoreInput bedId={bed.id} field="feeding" value={cudyrScores?.feeding} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="feeding" value={cudyrScores?.feeding} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
-                <ScoreInput bedId={bed.id} field="elimination" value={cudyrScores?.elimination} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="elimination" value={cudyrScores?.elimination} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
-                <ScoreInput bedId={bed.id} field="psychosocial" value={cudyrScores?.psychosocial} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="psychosocial" value={cudyrScores?.psychosocial} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
-                <ScoreInput bedId={bed.id} field="surveillance" value={cudyrScores?.surveillance} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="surveillance" value={cudyrScores?.surveillance} onScoreChange={handleScoreChange} />
             </td>
 
             {/* Risk Inputs */}
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
-                <ScoreInput bedId={bed.id} field="vitalSigns" value={cudyrScores?.vitalSigns} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="vitalSigns" value={cudyrScores?.vitalSigns} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
-                <ScoreInput bedId={bed.id} field="fluidBalance" value={cudyrScores?.fluidBalance} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="fluidBalance" value={cudyrScores?.fluidBalance} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
-                <ScoreInput bedId={bed.id} field="oxygenTherapy" value={cudyrScores?.oxygenTherapy} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="oxygenTherapy" value={cudyrScores?.oxygenTherapy} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
-                <ScoreInput bedId={bed.id} field="airway" value={cudyrScores?.airway} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="airway" value={cudyrScores?.airway} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
-                <ScoreInput bedId={bed.id} field="proInterventions" value={cudyrScores?.proInterventions} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="proInterventions" value={cudyrScores?.proInterventions} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
-                <ScoreInput bedId={bed.id} field="skinCare" value={cudyrScores?.skinCare} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="skinCare" value={cudyrScores?.skinCare} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
-                <ScoreInput bedId={bed.id} field="pharmacology" value={cudyrScores?.pharmacology} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="pharmacology" value={cudyrScores?.pharmacology} onScoreChange={handleScoreChange} />
             </td>
             <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
-                <ScoreInput bedId={bed.id} field="invasiveElements" value={cudyrScores?.invasiveElements} onScoreChange={onScoreChange} />
+                <ScoreInput bedId={bed.id} field="invasiveElements" value={cudyrScores?.invasiveElements} onScoreChange={handleScoreChange} />
             </td>
 
             {/* Results - P.DEP and P.RIES first (hidden on print), then CAT */}

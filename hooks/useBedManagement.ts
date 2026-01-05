@@ -29,6 +29,11 @@ export interface BedManagementActions {
     updateCudyr: (bedId: string, field: keyof CudyrScore, value: number) => void;
 
     /**
+     * Updates a specific field in the CUDYR score for a clinical crib patient.
+     */
+    updateClinicalCribCudyr: (bedId: string, field: keyof CudyrScore, value: number) => void;
+
+    /**
      * Manages clinical crib operations (create, remove, or update fields).
      */
     updateClinicalCrib: (bedId: string, field: keyof PatientData | 'create' | 'remove', value?: PatientFieldValue) => void;
@@ -259,6 +264,44 @@ export const useBedManagement = (
         });
     }, [record, patchRecord, logDebouncedEvent, userId]);
 
+    /**
+     * Update CUDYR score for a clinical crib (nested patient)
+     */
+    const updateClinicalCribCudyr = useCallback((
+        bedId: string,
+        field: keyof CudyrScore,
+        value: number
+    ) => {
+        if (!record) return;
+
+        const parentPatient = record.beds[bedId];
+        if (!parentPatient?.clinicalCrib?.patientName) return;
+
+        // Audit Log (Smart/Debounced)
+        const authors = getAttributedAuthors(userId, record);
+
+        logDebouncedEvent(
+            'CUDYR_MODIFIED',
+            'dailyRecord',
+            record.date,
+            {
+                patientName: parentPatient.clinicalCrib.patientName,
+                bedId: `${bedId}-crib`,
+                field,
+                value,
+                oldValue: parentPatient.clinicalCrib.cudyr?.[field] || 0,
+                isNested: true
+            },
+            parentPatient.clinicalCrib.rut,
+            record.date,
+            authors
+        );
+
+        patchRecord({
+            [`beds.${bedId}.clinicalCrib.cudyr.${field}`]: value
+        });
+    }, [record, patchRecord, logDebouncedEvent, userId]);
+
     // ========================================================================
     // Clinical Crib Wrapper (maintains backwards compatibility)
     // ========================================================================
@@ -293,6 +336,7 @@ export const useBedManagement = (
         updatePatient,
         updatePatientMultiple,
         updateCudyr,
+        updateClinicalCribCudyr,
 
         // Clinical Crib (delegated)
         updateClinicalCrib,

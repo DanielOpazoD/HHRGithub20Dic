@@ -42,6 +42,7 @@ export interface UseDailyRecordSyncResult {
 type PatientFieldPath = `beds.${string}.${keyof PatientData}`;
 type PatientCudyrPath = `beds.${string}.cudyr.${keyof CudyrScore}`;
 type PatientClinicalCribPath = `beds.${string}.clinicalCrib.${keyof PatientData}`;
+type PatientClinicalCribCudyrPath = `beds.${string}.clinicalCrib.cudyr.${keyof CudyrScore}`;
 type PatientDeviceDetailsPath = `beds.${string}.deviceDetails.${string}`;
 
 // Type-safe paths for Top-level DailyRecord fields
@@ -133,6 +134,7 @@ export interface DailyRecordContextType {
     updateClinicalCrib: (bedId: string, field: keyof PatientData | 'create' | 'remove', value?: PatientFieldValue) => void;
     updateClinicalCribMultiple: (bedId: string, fields: Partial<PatientData>) => void;
     updateCudyr: (bedId: string, field: keyof CudyrScore, value: number) => void;
+    updateClinicalCribCudyr: (bedId: string, field: keyof CudyrScore, value: number) => void;
     clearPatient: (bedId: string) => void;
     clearAllBeds: () => void;
     moveOrCopyPatient: (type: 'move' | 'copy', sourceBedId: string, targetBedId: string) => void;

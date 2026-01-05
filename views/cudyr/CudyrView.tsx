@@ -18,7 +18,7 @@ import { getAttributedAuthors } from '../../services/admin/attributionService';
 import { useEffect } from 'react';
 
 export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
-    const { record, updateCudyr } = useDailyRecordContext();
+    const { record, updateCudyr, updateClinicalCribCudyr } = useDailyRecordContext();
     const { logEvent } = useAuditContext();
 
     // MINSAL Traceability: Log when patient CUDYR is viewed
@@ -49,24 +49,32 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     }, [record]);
 
     // Calculate statistics - MUST be called before any early return
+    // Now includes clinical crib patients
     const stats = useMemo(() => {
         if (!record) return { occupiedCount: 0, categorizedCount: 0 };
 
-        const occupied = visibleBeds.filter(b => {
+        let occupiedCount = 0;
+        let categorizedCount = 0;
+
+        visibleBeds.forEach(b => {
             const p = record.beds[b.id];
-            return p.patientName && !p.isBlocked;
+
+            // Count main bed patient
+            if (p.patientName && !p.isBlocked) {
+                occupiedCount++;
+                const { isCategorized } = getCategorization(p.cudyr);
+                if (isCategorized) categorizedCount++;
+            }
+
+            // Count clinical crib patient (nested)
+            if (p.clinicalCrib?.patientName) {
+                occupiedCount++;
+                const { isCategorized } = getCategorization(p.clinicalCrib.cudyr);
+                if (isCategorized) categorizedCount++;
+            }
         });
 
-        const categorized = occupied.filter(b => {
-            const p = record.beds[b.id];
-            const { isCategorized } = getCategorization(p.cudyr);
-            return isCategorized;
-        });
-
-        return {
-            occupiedCount: occupied.length,
-            categorizedCount: categorized.length
-        };
+        return { occupiedCount, categorizedCount };
     }, [visibleBeds, record]);
 
     // Early return AFTER all hooks have been called
@@ -74,8 +82,13 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
         return <div className="p-8 text-center text-slate-500">Seleccione una fecha con registros para ver el CUDYR.</div>;
     }
 
-    const handleScoreChange = (bedId: string, field: keyof CudyrScore, value: number) => {
-        updateCudyr(bedId, field, value);
+    // Handle score changes - routes to appropriate function based on isNested flag
+    const handleScoreChange = (bedId: string, field: keyof CudyrScore, value: number, isNested?: boolean) => {
+        if (isNested) {
+            updateClinicalCribCudyr(bedId, field, value);
+        } else {
+            updateCudyr(bedId, field, value);
+        }
     };
 
     // Format date for print header
@@ -171,15 +184,32 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {visibleBeds.map(bed => (
-                                <CudyrRow
-                                    key={bed.id}
-                                    bed={bed}
-                                    patient={record.beds[bed.id]}
-                                    onScoreChange={handleScoreChange}
-                                    readOnly={readOnly}
-                                />
-                            ))}
+                            {visibleBeds.map(bed => {
+                                const patient = record.beds[bed.id];
+                                const hasClinicalCrib = patient.clinicalCrib?.patientName;
+
+                                return (
+                                    <React.Fragment key={bed.id}>
+                                        {/* Main bed row */}
+                                        <CudyrRow
+                                            bed={bed}
+                                            patient={patient}
+                                            onScoreChange={handleScoreChange}
+                                            readOnly={readOnly}
+                                        />
+                                        {/* Clinical crib row (if exists and has patient) */}
+                                        {hasClinicalCrib && (
+                                            <CudyrRow
+                                                bed={bed}
+                                                patient={patient.clinicalCrib!}
+                                                onScoreChange={handleScoreChange}
+                                                readOnly={readOnly}
+                                                isNested={true}
+                                            />
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

@@ -154,25 +154,32 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                                         <div className="overflow-x-auto">
                                             <table className="w-full">
                                                 <thead>
-                                                    <tr className="bg-slate-50 text-slate-500 uppercase">
-                                                        <th className="px-2 py-1 text-left font-semibold">Cat</th>
-                                                        <th className="px-2 py-1 text-right font-semibold">Pac</th>
+                                                    <tr className="bg-slate-50 text-slate-500 uppercase text-[10px]">
+                                                        <th className="px-2 py-1 text-left font-semibold w-10">Cat</th>
+                                                        <th className="px-2 py-1 text-right font-semibold">1</th>
+                                                        <th className="px-2 py-1 text-right font-semibold">2</th>
+                                                        <th className="px-2 py-1 text-right font-semibold">3</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {CATEGORY_CODES.map(cat => (
-                                                        <tr key={cat} className="border-t border-slate-100">
-                                                            <td className="px-2 py-1">{cat}</td>
-                                                            <td className="px-2 py-1 text-right font-semibold text-slate-700">
-                                                                {dailySummary.countsByType[type][cat]}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                    {['A', 'B', 'C', 'D'].map(letter => {
+                                                        const codes = CATEGORY_CODES.filter(code => code.startsWith(letter));
+                                                        return (
+                                                            <tr key={letter} className="border-t border-slate-100">
+                                                                <td className="px-2 py-1 font-semibold text-slate-700">{letter}</td>
+                                                                {codes.map(code => (
+                                                                    <td key={code} className="px-2 py-1 text-right font-semibold text-slate-700">
+                                                                        {dailySummary.countsByType[type][code as typeof CATEGORY_CODES[number]]}
+                                                                    </td>
+                                                                ))}
+                                                            </tr>
+                                                        );
+                                                    })}
                                                 </tbody>
                                                 <tfoot>
                                                     <tr className="border-t border-slate-200 bg-slate-50 text-slate-700 font-bold">
                                                         <td className="px-2 py-1">Total</td>
-                                                        <td className="px-2 py-1 text-right">{dailySummary.totalsByType[type]}</td>
+                                                        <td className="px-2 py-1 text-right" colSpan={3}>{dailySummary.totalsByType[type]}</td>
                                                     </tr>
                                                 </tfoot>
                                             </table>

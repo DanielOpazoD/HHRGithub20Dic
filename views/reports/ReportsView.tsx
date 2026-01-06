@@ -101,7 +101,7 @@ export const ReportsView: React.FC = () => {
                             className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors group"
                         >
                             <span className="font-medium text-green-800 flex items-center gap-2">
-                                <FileDown size={18} /> Exportar Excel (Datos Brutos {activeTab === 'CUDYR' ? 'CUDYR' : 'Censo'})
+                                <FileDown size={18} /> Exportar Excel ({activeTab === 'CUDYR' ? 'CUDYR Diario' : 'Censo Bruto'})
                             </span>
                             <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">XLSX</span>
                         </button>
@@ -144,7 +144,7 @@ export const ReportsView: React.FC = () => {
                             onClick={handleDownloadMonthRaw}
                             className="w-full btn-secondary py-2 flex items-center justify-center gap-2 bg-slate-800 text-white hover:bg-slate-900 rounded"
                         >
-                            <FileDown size={16} /> Descargar Mes Completo {activeTab === 'CUDYR' ? 'CUDYR' : 'Censo'}
+                            <FileDown size={16} /> Descargar Excel {activeTab === 'CUDYR' ? 'CUDYR (mes a la fecha)' : 'Censo (mes completo)'}
                         </button>
                     </div>
 

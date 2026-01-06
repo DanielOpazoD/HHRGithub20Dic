@@ -143,20 +143,20 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                 <div className="overflow-x-auto print:overflow-visible">
                     {/* Daily categorized summary */}
                     {dailySummary && (
-                        <div className="mb-4">
-                            <h3 className="text-sm font-semibold text-slate-700 mb-2">Resumen por categoría y tipo de cama</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="mb-3">
+                            <h3 className="text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Resumen por categoría y tipo de cama</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] leading-tight">
                                 {(['UTI', 'MEDIA'] as const).map(type => (
-                                    <div key={type} className="border border-slate-200 rounded-lg shadow-sm">
-                                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wide">
+                                    <div key={type} className="border border-slate-200 rounded-md shadow-sm">
+                                        <div className="px-2 py-1 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-700 uppercase tracking-wide">
                                             {type === 'UTI' ? 'UTI (R1-R4)' : 'Camas medias'}
                                         </div>
                                         <div className="overflow-x-auto">
-                                            <table className="w-full text-xs">
+                                            <table className="w-full">
                                                 <thead>
-                                                    <tr className="bg-slate-50 text-slate-600">
-                                                        <th className="px-2 py-1 text-left">Categoría</th>
-                                                        <th className="px-2 py-1 text-right">Pacientes</th>
+                                                    <tr className="bg-slate-50 text-slate-500 uppercase">
+                                                        <th className="px-2 py-1 text-left font-semibold">Cat</th>
+                                                        <th className="px-2 py-1 text-right font-semibold">Pac</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>

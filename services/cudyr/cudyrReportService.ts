@@ -180,11 +180,20 @@ export const aggregateMonthlySummaries = (
     };
 };
 
-export const getCudyrMonthlyTotals = async (year: number, monthIndex: number): Promise<CudyrMonthlyTotals> => {
+export const getCudyrMonthlyTotals = async (
+    year: number,
+    monthIndex: number,
+    endDate?: string
+): Promise<CudyrMonthlyTotals> => {
     const monthNumber = monthIndex + 1;
     const records = await getRecordsForMonth(year, monthNumber);
     const sortedRecords = [...records].sort((a, b) => a.date.localeCompare(b.date));
-    const summaries = sortedRecords.map(buildDailyCudyrSummary);
+
+    const filtered = endDate
+        ? sortedRecords.filter(r => r.date <= endDate)
+        : sortedRecords;
+
+    const summaries = filtered.map(buildDailyCudyrSummary);
 
     return aggregateMonthlySummaries(summaries, year, monthIndex);
 };

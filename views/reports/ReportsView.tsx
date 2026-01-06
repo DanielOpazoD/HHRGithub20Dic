@@ -20,15 +20,27 @@ export const ReportsView: React.FC = () => {
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
 
     const handleDownloadDailyRaw = () => {
-        ReportService.generateCensusDailyRaw(currentDateString);
+        if (activeTab === 'CUDYR') {
+            ReportService.generateCudyrDailyRaw(currentDateString);
+        } else {
+            ReportService.generateCensusDailyRaw(currentDateString);
+        }
     };
 
     const handleDownloadRangeRaw = () => {
-        ReportService.generateCensusRangeRaw(rangeStart, rangeEnd);
+        if (activeTab === 'CUDYR') {
+            alert('Exportación por rango para CUDYR no disponible. Use el reporte mensual.');
+        } else {
+            ReportService.generateCensusRangeRaw(rangeStart, rangeEnd);
+        }
     };
 
     const handleDownloadMonthRaw = () => {
-        ReportService.generateCensusMonthRaw(selectedYear, selectedMonth);
+        if (activeTab === 'CUDYR') {
+            ReportService.generateCudyrMonthlyExcel(selectedYear, selectedMonth);
+        } else {
+            ReportService.generateCensusMonthRaw(selectedYear, selectedMonth);
+        }
     };
 
     return (
@@ -64,7 +76,6 @@ export const ReportsView: React.FC = () => {
 
             {/* CONTENT */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                 {/* --- SECCION: HOJA DEL DIA --- */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 className="font-bold text-lg text-slate-700 mb-4 flex items-center gap-2">
@@ -74,36 +85,63 @@ export const ReportsView: React.FC = () => {
                         <span className="font-bold">Fecha:</span> {currentDateString}
                     </div>
 
-                    <div className="space-y-3">
-                        <button
-                            onClick={() => window.print()}
-                            className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors group"
-                        >
-                            <span className="font-medium text-slate-700 group-hover:text-black flex items-center gap-2">
-                                <Printer size={18} /> Imprimir Hoja del Día (PDF)
-                            </span>
-                            <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded">Nativo</span>
-                        </button>
+                    <div className={clsx("space-y-3", activeTab === 'CUDYR' && "space-y-0")}>
+                        {activeTab === 'CUDYR' ? (
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <button
+                                    onClick={() => window.print()}
+                                    className="flex-1 flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors group"
+                                >
+                                    <span className="font-medium text-slate-700 group-hover:text-black flex items-center gap-2">
+                                        <Printer size={18} /> Imprimir Hoja del Día (PDF)
+                                    </span>
+                                    <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded">Nativo</span>
+                                </button>
+                                <button
+                                    onClick={handleDownloadDailyRaw}
+                                    className="flex-1 flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors group"
+                                >
+                                    <span className="font-medium text-green-800 flex items-center gap-2">
+                                        <FileDown size={18} /> Excel CUDYR (Diario)
+                                    </span>
+                                    <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">XLSX</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => window.print()}
+                                    className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors group"
+                                >
+                                    <span className="font-medium text-slate-700 group-hover:text-black flex items-center gap-2">
+                                        <Printer size={18} /> Imprimir Hoja del Día (PDF)
+                                    </span>
+                                    <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded">Nativo</span>
+                                </button>
 
-                        <button
-                            onClick={handleDownloadDailyRaw}
-                            className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors group"
-                        >
-                            <span className="font-medium text-green-800 flex items-center gap-2">
-                                <FileDown size={18} /> Exportar Excel (Datos Brutos)
-                            </span>
-                            <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">XLSX</span>
-                        </button>
+                                <button
+                                    onClick={handleDownloadDailyRaw}
+                                    className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors group"
+                                >
+                                    <span className="font-medium text-green-800 flex items-center gap-2">
+                                        <FileDown size={18} /> Exportar Excel (Censo Bruto)
+                                    </span>
+                                    <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">XLSX</span>
+                                </button>
+                            </>
+                        )}
 
-                        <button
-                            onClick={() => ReportService.generateCensusDailyFormatted(currentDateString)}
-                            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors group opacity-60 cursor-not-allowed"
-                        >
-                            <span className="font-medium text-slate-400 flex items-center gap-2">
-                                <Download size={18} /> Exportar Excel (Formato Especial)
-                            </span>
-                            <span className="text-xs bg-slate-100 text-slate-400 px-2 py-1 rounded">Pronto</span>
-                        </button>
+                        {activeTab === 'CENSUS' && (
+                            <button
+                                onClick={() => ReportService.generateCensusDailyFormatted(currentDateString)}
+                                className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors group opacity-60 cursor-not-allowed"
+                            >
+                                <span className="font-medium text-slate-400 flex items-center gap-2">
+                                    <Download size={18} /> Exportar Excel (Formato Especial)
+                                </span>
+                                <span className="text-xs bg-slate-100 text-slate-400 px-2 py-1 rounded">Pronto</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -131,7 +169,7 @@ export const ReportsView: React.FC = () => {
                             onClick={handleDownloadMonthRaw}
                             className="w-full btn-secondary py-2 flex items-center justify-center gap-2 bg-slate-800 text-white hover:bg-slate-900 rounded"
                         >
-                            <FileDown size={16} /> Descargar Mes Completo
+                            <FileDown size={16} /> Descargar Excel {activeTab === 'CUDYR' ? 'CUDYR (mes a la fecha)' : 'Censo (mes completo)'}
                         </button>
                     </div>
 
@@ -154,6 +192,9 @@ export const ReportsView: React.FC = () => {
                         >
                             <FileDown size={16} /> Descargar Rango
                         </button>
+                        {activeTab === 'CUDYR' && (
+                            <p className="mt-2 text-xs text-amber-600">Para CUDYR utilice el resumen mensual.</p>
+                        )}
                     </div>
                 </div>
 

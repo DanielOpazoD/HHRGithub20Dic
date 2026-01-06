@@ -6,6 +6,12 @@ import { getStoredRecords, getRecordForDate } from '../dataService';
 import { buildCensusDailyRawWorkbook, extractRowsFromRecord, getCensusRawHeader } from './censusRawWorkbook';
 import { BEDS } from '../../constants';
 import { createWorkbook } from './excelUtils';
+import {
+    buildDailyCudyrSummary,
+    collectDailyCudyrPatients,
+    getCudyrMonthlyTotals,
+    CATEGORY_CODES
+} from '../cudyr/cudyrReportService';
 
 
 // --- UTILS ---
@@ -82,22 +88,83 @@ export const generateCudyrDailyRaw = async (date: string) => {
     if (!record) { alert("Sin datos"); return; }
 
     const workbook = createWorkbook();
-    const sheet = workbook.addWorksheet('CUDYR Diario');
+    const detailSheet = workbook.addWorksheet('CUDYR Diario');
+    detailSheet.addRow(['FECHA', 'CAMA', 'PACIENTE', 'RUT', 'DEPENDENCIA', 'RIESGO', 'CATEGORIA', 'TIPO CAMA']);
 
-    sheet.addRow(['FECHA', 'CAMA', 'PACIENTE', 'RUT', 'PUNTAJE_TOTAL', 'CATEGORIA', 'DEPENDENCIA', 'RIESGO']);
+    const patients = collectDailyCudyrPatients(record);
+    patients.forEach(p => {
+        detailSheet.addRow([
+            date,
+            p.bedName,
+            p.patientName,
+            p.rut,
+            p.depScore,
+            p.riskScore,
+            p.category,
+            p.bedType
+        ]);
+    });
 
-    BEDS.forEach(bed => {
-        const p = record.beds[bed.id];
-        if (p && p.patientName && p.cudyr) {
-            // Simple sum for demo
-            const total = Object.values(p.cudyr).reduce((a: number, b: number) => a + b, 0);
-            sheet.addRow([
-                date, bed.name, p.patientName, p.rut, total,
-                total >= 19 ? 'C1' : 'C2', // Fake logic, normally calculated properly
-                '?', '?'
-            ]);
-        }
+    const summary = buildDailyCudyrSummary(record);
+    const summarySheet = workbook.addWorksheet('Resumen Diario');
+    summarySheet.addRow(['TIPO CAMA', ...CATEGORY_CODES, 'TOTAL']);
+    (['UTI', 'MEDIA'] as const).forEach(type => {
+        summarySheet.addRow([
+            type,
+            ...CATEGORY_CODES.map(code => summary.countsByType[type][code]),
+            summary.totalsByType[type]
+        ]);
     });
 
     await saveWorkbook(workbook, `CUDYR_${date}`);
+};
+
+export const generateCudyrMonthlyExcel = async (year: number, month: number) => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const todayIso = today.toISOString().split('T')[0];
+
+    const endDate = year === currentYear && month === currentMonth ? todayIso : undefined;
+    const totals = await getCudyrMonthlyTotals(year, month, endDate);
+    const workbook = createWorkbook();
+
+    // Sheet 1: resumen maestro (mes a la fecha)
+    const summarySheet = workbook.addWorksheet('Resumen Mensual');
+    summarySheet.addRow(['AÑO', 'MES', totals.year, month + 1]);
+    summarySheet.addRow(['HASTA', endDate ?? 'Mes completo']);
+    summarySheet.addRow([]);
+    summarySheet.addRow(['TIPO CAMA', ...CATEGORY_CODES, 'TOTAL']);
+    (['UTI', 'MEDIA'] as const).forEach(type => {
+        summarySheet.addRow([
+            type,
+            ...CATEGORY_CODES.map(code => totals.countsByType[type][code]),
+            totals.totalsByType[type]
+        ]);
+    });
+    summarySheet.addRow([]);
+    summarySheet.addRow(['TOTAL CATEGORIZADOS', totals.categorizedPatients]);
+    summarySheet.addRow(['TOTAL OCUPADOS', totals.occupiedPatients]);
+
+    // Sheets por día con resumen compacto
+    totals.summaries.forEach(summary => {
+        const [y, m, d] = summary.date.split('-');
+        const sheetName = `${d}-${m}-${y}`;
+        const sheet = workbook.addWorksheet(sheetName);
+        sheet.addRow(['Fecha', summary.date]);
+        sheet.addRow([]);
+        sheet.addRow(['TIPO CAMA', ...CATEGORY_CODES, 'TOTAL']);
+        (['UTI', 'MEDIA'] as const).forEach(type => {
+            sheet.addRow([
+                type,
+                ...CATEGORY_CODES.map(code => summary.countsByType[type][code]),
+                summary.totalsByType[type]
+            ]);
+        });
+        sheet.addRow([]);
+        sheet.addRow(['Categorizados', summary.categorizedPatients]);
+        sheet.addRow(['Ocupados', summary.occupiedPatients]);
+    });
+
+    await saveWorkbook(workbook, `CUDYR_Mensual_${totals.year}-${String(month + 1).padStart(2, '0')}`);
 };

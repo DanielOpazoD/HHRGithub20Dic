@@ -97,6 +97,7 @@ export {
     importDataCSV
 } from './exporters/exportService';
 export { generateCensusMasterExcel } from './exporters/censusMasterExport';
+export { generateCudyrMonthlyExcel } from './exporters/cudyrExportService';
 
 // ============================================================
 // REPORTS
@@ -137,6 +138,13 @@ export {
     calculateStats
 } from './calculations/statsCalculator';
 export type { CensusStatistics } from './calculations/statsCalculator';
+
+export {
+    collectDailyCudyrPatients,
+    buildDailyCudyrSummary,
+    getCudyrMonthlyTotals
+} from './calculations/cudyrSummary';
+export type { CudyrSummary } from './calculations/cudyrSummary';
 
 // ============================================================
 // UTILITIES

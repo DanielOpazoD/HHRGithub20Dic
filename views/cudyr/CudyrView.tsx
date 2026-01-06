@@ -8,6 +8,8 @@ import { ClipboardList } from 'lucide-react';
 import { CudyrHeader } from './CudyrHeader';
 import { CudyrRow, VerticalHeader } from './CudyrRow';
 import { getCategorization } from './CudyrScoreUtils';
+import { CudyrSummaryTable } from './CudyrSummaryTable';
+import { buildDailyCudyrSummary } from '../../services';
 
 interface CudyrViewProps {
     readOnly?: boolean;
@@ -50,8 +52,11 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
 
     // Calculate statistics - MUST be called before any early return
     // Now includes clinical crib patients
-    const stats = useMemo(() => {
-        if (!record) return { occupiedCount: 0, categorizedCount: 0 };
+    const { stats, dailySummary } = useMemo(() => {
+        if (!record) return {
+            stats: { occupiedCount: 0, categorizedCount: 0 },
+            dailySummary: null
+        };
 
         let occupiedCount = 0;
         let categorizedCount = 0;
@@ -74,7 +79,13 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
             }
         });
 
-        return { occupiedCount, categorizedCount };
+        // Detailed summary by category and bed type
+        const dailySummary = buildDailyCudyrSummary(record);
+
+        return {
+            stats: { occupiedCount, categorizedCount },
+            dailySummary
+        };
     }, [visibleBeds, record]);
 
     // Early return AFTER all hooks have been called
@@ -137,6 +148,9 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                         categorizedCount={stats.categorizedCount}
                     />
                 </div>
+
+                {/* Statistical Summary Table */}
+                {dailySummary && <CudyrSummaryTable summary={dailySummary} />}
 
                 <div className="overflow-x-auto print:overflow-visible">
                     <table className="w-full text-left text-xs border-collapse border border-slate-300 min-w-[900px] print:table-auto print:min-w-0 print:text-[7px]">

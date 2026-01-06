@@ -78,7 +78,9 @@ export const AppContent: React.FC<AppContentProps> = ({
                         onOpenBedManager={ui.currentModule === 'CENSUS' ? ui.bedManagerModal.open : undefined}
                         onExportExcel={ui.currentModule === 'CENSUS'
                             ? () => generateCensusMasterExcel(dateNav.selectedYear, dateNav.selectedMonth, dateNav.selectedDay)
-                            : undefined}
+                            : ui.currentModule === 'CUDYR'
+                                ? () => import('@/services').then(s => s.generateCudyrMonthlyExcel(dateNav.selectedYear, dateNav.selectedMonth, currentDateString))
+                                : undefined}
                         onConfigureEmail={ui.currentModule === 'CENSUS' ? () => censusEmail.setShowEmailConfig(true) : undefined}
                         onSendEmail={ui.currentModule === 'CENSUS' ? censusEmail.sendEmail : undefined}
                         emailStatus={censusEmail.status}

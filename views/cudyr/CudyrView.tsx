@@ -8,6 +8,7 @@ import { ClipboardList } from 'lucide-react';
 import { CudyrHeader } from './CudyrHeader';
 import { CudyrRow, VerticalHeader } from './CudyrRow';
 import { getCategorization } from './CudyrScoreUtils';
+import { buildDailyCudyrSummary, CATEGORY_CODES } from '../../services/cudyr/cudyrReportService';
 
 interface CudyrViewProps {
     readOnly?: boolean;
@@ -99,6 +100,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
 
     // Get night shift nurses for print header (CUDYR is filled by night nurses)
     const responsibleNurses = (record.nursesNightShift || []).filter(n => n && n.trim() !== '');
+    const dailySummary = useMemo(() => record ? buildDailyCudyrSummary(record) : null, [record]);
 
     return (
         <div className="space-y-6 animate-fade-in pb-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:px-0 print:space-y-2 print:pb-0 print:break-inside-avoid">
@@ -139,6 +141,48 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                 </div>
 
                 <div className="overflow-x-auto print:overflow-visible">
+                    {/* Daily categorized summary */}
+                    {dailySummary && (
+                        <div className="mb-4">
+                            <h3 className="text-sm font-semibold text-slate-700 mb-2">Resumen por categoría y tipo de cama</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {(['UTI', 'MEDIA'] as const).map(type => (
+                                    <div key={type} className="border border-slate-200 rounded-lg shadow-sm">
+                                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wide">
+                                            {type === 'UTI' ? 'UTI (R1-R4)' : 'Camas medias'}
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-xs">
+                                                <thead>
+                                                    <tr className="bg-slate-50 text-slate-600">
+                                                        <th className="px-2 py-1 text-left">Categoría</th>
+                                                        <th className="px-2 py-1 text-right">Pacientes</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {CATEGORY_CODES.map(cat => (
+                                                        <tr key={cat} className="border-t border-slate-100">
+                                                            <td className="px-2 py-1">{cat}</td>
+                                                            <td className="px-2 py-1 text-right font-semibold text-slate-700">
+                                                                {dailySummary.countsByType[type][cat]}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr className="border-t border-slate-200 bg-slate-50 text-slate-700 font-bold">
+                                                        <td className="px-2 py-1">Total</td>
+                                                        <td className="px-2 py-1 text-right">{dailySummary.totalsByType[type]}</td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <table className="w-full text-left text-xs border-collapse border border-slate-300 min-w-[900px] print:table-auto print:min-w-0 print:text-[7px]">
                         <thead>
                             {/* Group Headers */}

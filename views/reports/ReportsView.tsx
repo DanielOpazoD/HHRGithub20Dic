@@ -20,15 +20,27 @@ export const ReportsView: React.FC = () => {
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
 
     const handleDownloadDailyRaw = () => {
-        ReportService.generateCensusDailyRaw(currentDateString);
+        if (activeTab === 'CUDYR') {
+            ReportService.generateCudyrDailyRaw(currentDateString);
+        } else {
+            ReportService.generateCensusDailyRaw(currentDateString);
+        }
     };
 
     const handleDownloadRangeRaw = () => {
-        ReportService.generateCensusRangeRaw(rangeStart, rangeEnd);
+        if (activeTab === 'CUDYR') {
+            alert('Exportación por rango para CUDYR no disponible. Use el reporte mensual.');
+        } else {
+            ReportService.generateCensusRangeRaw(rangeStart, rangeEnd);
+        }
     };
 
     const handleDownloadMonthRaw = () => {
-        ReportService.generateCensusMonthRaw(selectedYear, selectedMonth);
+        if (activeTab === 'CUDYR') {
+            ReportService.generateCudyrMonthlyExcel(selectedYear, selectedMonth);
+        } else {
+            ReportService.generateCensusMonthRaw(selectedYear, selectedMonth);
+        }
     };
 
     return (
@@ -64,7 +76,6 @@ export const ReportsView: React.FC = () => {
 
             {/* CONTENT */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                 {/* --- SECCION: HOJA DEL DIA --- */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 className="font-bold text-lg text-slate-700 mb-4 flex items-center gap-2">
@@ -90,20 +101,22 @@ export const ReportsView: React.FC = () => {
                             className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors group"
                         >
                             <span className="font-medium text-green-800 flex items-center gap-2">
-                                <FileDown size={18} /> Exportar Excel (Datos Brutos)
+                                <FileDown size={18} /> Exportar Excel (Datos Brutos {activeTab === 'CUDYR' ? 'CUDYR' : 'Censo'})
                             </span>
                             <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded">XLSX</span>
                         </button>
 
-                        <button
-                            onClick={() => ReportService.generateCensusDailyFormatted(currentDateString)}
-                            className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors group opacity-60 cursor-not-allowed"
-                        >
-                            <span className="font-medium text-slate-400 flex items-center gap-2">
-                                <Download size={18} /> Exportar Excel (Formato Especial)
-                            </span>
-                            <span className="text-xs bg-slate-100 text-slate-400 px-2 py-1 rounded">Pronto</span>
-                        </button>
+                        {activeTab === 'CENSUS' && (
+                            <button
+                                onClick={() => ReportService.generateCensusDailyFormatted(currentDateString)}
+                                className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors group opacity-60 cursor-not-allowed"
+                            >
+                                <span className="font-medium text-slate-400 flex items-center gap-2">
+                                    <Download size={18} /> Exportar Excel (Formato Especial)
+                                </span>
+                                <span className="text-xs bg-slate-100 text-slate-400 px-2 py-1 rounded">Pronto</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -131,7 +144,7 @@ export const ReportsView: React.FC = () => {
                             onClick={handleDownloadMonthRaw}
                             className="w-full btn-secondary py-2 flex items-center justify-center gap-2 bg-slate-800 text-white hover:bg-slate-900 rounded"
                         >
-                            <FileDown size={16} /> Descargar Mes Completo
+                            <FileDown size={16} /> Descargar Mes Completo {activeTab === 'CUDYR' ? 'CUDYR' : 'Censo'}
                         </button>
                     </div>
 
@@ -154,6 +167,9 @@ export const ReportsView: React.FC = () => {
                         >
                             <FileDown size={16} /> Descargar Rango
                         </button>
+                        {activeTab === 'CUDYR' && (
+                            <p className="mt-2 text-xs text-amber-600">Para CUDYR utilice el resumen mensual.</p>
+                        )}
                     </div>
                 </div>
 

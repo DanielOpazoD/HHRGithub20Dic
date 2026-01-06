@@ -2,12 +2,13 @@ import React, { useMemo } from 'react';
 import { useDailyRecordContext } from '../../context/DailyRecordContext';
 import { BEDS } from '../../constants';
 import { CudyrScore } from '../../types';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, FileDown, Printer } from 'lucide-react';
 
 // Sub-components
 import { CudyrHeader } from './CudyrHeader';
 import { CudyrRow, VerticalHeader } from './CudyrRow';
 import { getCategorization } from './CudyrScoreUtils';
+import * as ReportService from '../../services/exporters/reportService';
 import { buildDailyCudyrSummary, CATEGORY_CODES } from '../../services/cudyr/cudyrReportService';
 
 interface CudyrViewProps {
@@ -101,9 +102,36 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     // Get night shift nurses for print header (CUDYR is filled by night nurses)
     const responsibleNurses = (record.nursesNightShift || []).filter(n => n && n.trim() !== '');
     const dailySummary = useMemo(() => record ? buildDailyCudyrSummary(record) : null, [record]);
+    const handleExcel = () => {
+        if (record?.date) {
+            ReportService.generateCudyrDailyRaw(record.date);
+        }
+    };
 
     return (
         <div className="space-y-6 animate-fade-in pb-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:px-0 print:space-y-2 print:pb-0 print:break-inside-avoid">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 print:hidden">
+                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <ClipboardList className="text-medical-600" />
+                    Instrumento CUDYR
+                </h2>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={() => window.print()}
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors"
+                    >
+                        <Printer size={16} /> PDF
+                    </button>
+                    <button
+                        onClick={handleExcel}
+                        disabled={!record}
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-green-800 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <FileDown size={16} /> Excel
+                    </button>
+                </div>
+            </div>
+
             {/* Print-only Header with Icon, Date, Nurses, and Stats */}
             <div className="hidden print:block mb-2 pb-2 border-b border-slate-300">
                 <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
@@ -169,7 +197,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                                                                 <td className="px-2 py-1 font-semibold text-slate-700">{letter}</td>
                                                                 {codes.map(code => (
                                                                     <td key={code} className="px-2 py-1 text-right font-semibold text-slate-700">
-                                                                        {dailySummary.countsByType[type][code as typeof CATEGORY_CODES[number]]}
+                                                                        {`${code}= ${dailySummary.countsByType[type][code as typeof CATEGORY_CODES[number]]}`}
                                                                     </td>
                                                                 ))}
                                                             </tr>

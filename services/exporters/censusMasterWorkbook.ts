@@ -2,6 +2,7 @@ import type { Workbook, Worksheet, Fill, Borders, Font } from 'exceljs';
 import { DailyRecord, PatientData, DischargeData, TransferData, CMAData } from '../../types';
 import { BEDS, MONTH_NAMES } from '../../constants';
 import { calculateStats, CensusStatistics } from '../calculations/statsCalculator';
+import { formatDateDDMMYYYY } from '../../utils/dateUtils';
 import { createWorkbook, BORDER_THIN, HEADER_FILL } from './excelUtils';
 
 // Local styles specific to this workbook
@@ -261,7 +262,7 @@ function addCensusRow(
         formatAge(patient?.age),
         patient?.pathology || '',
         patient?.specialty || '',
-        formatDateDDMMYYYY(patient?.admissionDate),
+        patient?.admissionDate ? formatDateDDMMYYYY(patient.admissionDate) : '',
         isBlocked ? 'Bloqueada' : patient?.status || (isFree ? 'Libre' : ''),
         patient ? (patient.hasWristband ? 'Sí' : 'No') : 'No',
         patient ? (patient.surgicalComplication ? 'Sí' : 'No') : 'No',
@@ -474,17 +475,6 @@ function addCMATable(sheet: Worksheet, cma: CMAData[], startRow: number): number
     });
 
     return currentRow;
-}
-
-function formatDateDDMMYYYY(date?: string): string {
-    if (!date) return '';
-    const parsed = new Date(date);
-    if (Number.isNaN(parsed.getTime())) return '';
-
-    const day = String(parsed.getDate()).padStart(2, '0');
-    const month = String(parsed.getMonth() + 1).padStart(2, '0');
-    const year = parsed.getFullYear();
-    return `${day}-${month}-${year}`;
 }
 
 function formatAge(age?: string): string {

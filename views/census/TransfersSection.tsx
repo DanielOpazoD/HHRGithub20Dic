@@ -17,21 +17,21 @@ export const TransfersSection: React.FC<TransfersSectionProps> = ({
     const { handleEditTransfer } = useCensusActions();
 
     return (
-        <div className="card mt-6 animate-fade-in print:p-2 print:border-t-2 print:border-slate-800 print:shadow-none">
-            <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+        <div className="card mt-4 animate-fade-in print:p-2 print:border-t-2 print:border-slate-800 print:shadow-none">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-white">
                 <div className="flex items-center gap-2">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shadow-sm">
+                    <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
                         <ArrowRightLeft size={18} />
                     </div>
                     <div>
-                        <h2 className="text-base font-bold text-slate-800 leading-tight">
+                        <h2 className="text-sm font-bold text-slate-800 leading-tight">
                             Traslados
                         </h2>
                     </div>
                 </div>
             </div>
 
-            <div className="p-4">
+            <div className="p-3">
                 {(!transfers || transfers.length === 0) ? (
                     <p className="text-slate-400 italic text-sm text-center py-4">No hay traslados registrados para hoy.</p>
                 ) : (

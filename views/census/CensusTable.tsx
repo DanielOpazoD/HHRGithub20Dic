@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { DailyRecord } from '../../types';
 import { BEDS } from '../../constants';
 import { PatientRow } from '../../components/census/PatientRow';
@@ -26,12 +26,36 @@ export const CensusTable: React.FC<CensusTableProps> = ({
     const { confirm } = useConfirmDialog();
     const { config, isEditMode, setEditMode, updateColumnWidth } = useTableConfig();
     const { columns } = config;
+    const [bedFilter, setBedFilter] = useState<'ALL' | 'HOSPITALIZED' | 'POLICLINICO' | 'SHIFT' | 'EXTRA'>('ALL');
 
     // Filter beds to display: All normal beds + Enabled extra beds
     const visibleBeds = useMemo(() => {
         const activeExtras = record.activeExtraBeds || [];
         return BEDS.filter(b => !b.isExtra || activeExtras.includes(b.id));
     }, [record.activeExtraBeds]);
+
+    const filteredBeds = useMemo(() => {
+        return visibleBeds.filter((bed) => {
+            const patient = record.beds[bed.id];
+            const hasPatient = !!patient.patientName && !patient.isBlocked;
+            const isExtra = !!bed.isExtra;
+            const isTodayAdmission = !!patient.admissionDate && patient.admissionDate === currentDateString;
+            const isPoliclinico = ['CAE', 'APS'].includes(patient.admissionOrigin || '');
+
+            switch (bedFilter) {
+                case 'HOSPITALIZED':
+                    return hasPatient;
+                case 'POLICLINICO':
+                    return hasPatient && isPoliclinico;
+                case 'SHIFT':
+                    return hasPatient && isTodayAdmission;
+                case 'EXTRA':
+                    return isExtra;
+                default:
+                    return true;
+            }
+        });
+    }, [visibleBeds, record.beds, bedFilter, currentDateString]);
 
     const handleClearAll = useCallback(async () => {
         const confirmed = await confirm({
@@ -52,10 +76,37 @@ export const CensusTable: React.FC<CensusTableProps> = ({
     }, [updateColumnWidth]);
 
     // Common header classes
-    const headerClass = "sticky top-0 z-20 bg-slate-50 py-1 px-1 border-r border-slate-100 text-center text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm";
+    const headerClass = "sticky top-0 z-20 bg-white py-1 px-1 border-r border-slate-100 text-center text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-[0_1px_0_0_rgba(15,23,42,0.04)]";
 
     return (
         <div className="card print:border-none print:shadow-none flex flex-col">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 bg-white">
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-700">Agenda diaria</span>
+                    <span className="text-[10px] uppercase tracking-wide text-slate-400 bg-slate-50 border border-slate-200 rounded-full px-2 py-0.5">
+                        Pacientes
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Ver</span>
+                    <div className="relative">
+                        <select
+                            value={bedFilter}
+                            onChange={(e) => setBedFilter(e.target.value as typeof bedFilter)}
+                            className="appearance-none bg-white border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg pl-3 pr-7 py-1.5 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-medical-500/20 focus:border-medical-400 transition"
+                        >
+                            <option value="ALL">Todos</option>
+                            <option value="HOSPITALIZED">Hospitalizados</option>
+                            <option value="POLICLINICO">Policlínico</option>
+                            <option value="SHIFT">Turno</option>
+                            <option value="EXTRA">Extra</option>
+                        </select>
+                        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-400">
+                            ▾
+                        </span>
+                    </div>
+                </div>
+            </div>
             <div className="relative overflow-x-auto">
                 <table className="w-full text-left border-collapse print:text-xs relative text-[12px] leading-tight table-fixed">
                     <thead>
@@ -214,7 +265,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {visibleBeds.map((bed, index) => (
+                        {filteredBeds.map((bed, index) => (
                             <PatientRow
                                 key={bed.id}
                                 bed={bed}
@@ -223,7 +274,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
                                 onAction={handleRowAction}
                                 showCribControls={showCribConfig}
                                 readOnly={readOnly}
-                                actionMenuAlign={index >= visibleBeds.length - 4 ? 'bottom' : 'top'}
+                                actionMenuAlign={index >= filteredBeds.length - 4 ? 'bottom' : 'top'}
                             />
                         ))}
                     </tbody>

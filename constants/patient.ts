@@ -8,6 +8,7 @@ import { PatientData, Specialty, PatientStatus } from '../types';
 export const EMPTY_PATIENT: Omit<PatientData, 'bedId'> = {
     isBlocked: false,
     blockedReason: '',
+    bedTypeLabel: undefined,
     bedMode: 'Cama',
     hasCompanionCrib: false,
     clinicalCrib: undefined,

@@ -63,6 +63,7 @@ const BasePatientSchema = z.object({
   bedId: z.string().min(1, 'Bed ID is required'),
   isBlocked: z.boolean(),
   blockedReason: z.string().optional(),
+  bedTypeLabel: z.enum(['UTI', 'UCI']).optional(),
 
   // Furniture configuration
   bedMode: z.enum(['Cama', 'Cuna']).default('Cama'),
@@ -142,6 +143,7 @@ export const TransferDataSchema = z.object({
   diagnosis: z.string().optional(),
   time: z.string().default(''),
   evacuationMethod: z.string(),
+  evacuationMethodOther: z.string().optional(),
   receivingCenter: z.string(),
   receivingCenterOther: z.string().optional(),
   transferEscort: z.string().optional(),
@@ -308,4 +310,3 @@ export type DailyRecordValidated = z.infer<typeof DailyRecordSchema>;
 export type CudyrScoreValidated = z.infer<typeof CudyrScoreSchema>;
 export type DischargeDataValidated = z.infer<typeof DischargeDataSchema>;
 export type TransferDataValidated = z.infer<typeof TransferDataSchema>;
-

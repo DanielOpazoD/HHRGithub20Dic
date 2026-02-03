@@ -161,7 +161,7 @@ describe('Patient Flow Integration', () => {
 
         // 1. Transfer
         act(() => {
-            result.current.addTransfer('R1', 'Ambulancia', 'Hospital Regional', '');
+            result.current.addTransfer('R1', 'Ambulancia', '', 'Hospital Regional', '');
         });
 
         await waitFor(() => {

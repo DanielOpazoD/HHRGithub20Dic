@@ -55,7 +55,7 @@ export const TransfersSection: React.FC<TransfersSectionProps> = ({
                                         <td className="p-2">{t.patientName}</td>
                                         <td className="p-2 font-mono text-xs">{t.rut}</td>
                                         <td className="p-2">{t.diagnosis}</td>
-                                        <td className="p-2">{t.evacuationMethod}</td>
+                                        <td className="p-2">{t.evacuationMethod === 'Otro' ? (t.evacuationMethodOther || 'Otro') : t.evacuationMethod}</td>
                                         <td className="p-2">
                                             {t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}
                                         </td>

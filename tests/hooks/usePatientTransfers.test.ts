@@ -54,7 +54,7 @@ describe('usePatientTransfers', () => {
             const { result } = renderHook(() => usePatientTransfers(record, mockSaveAndUpdate));
 
             act(() => {
-                result.current.addTransfer('R1', 'Avión Ambulancia', 'H. Regional Valdivia', '');
+                result.current.addTransfer('R1', 'Avión Ambulancia', '', 'H. Regional Valdivia', '');
             });
 
             expect(mockSaveAndUpdate).toHaveBeenCalledWith(
@@ -139,7 +139,7 @@ describe('usePatientTransfers', () => {
             const { result } = renderHook(() => usePatientTransfers(record, mockSaveAndUpdate));
 
             act(() => {
-                result.current.addTransfer('R1', 'Avión FACH', 'Hospital Sótero del Río', '');
+                result.current.addTransfer('R1', 'Avión FACH', '', 'Hospital Sótero del Río', '');
             });
 
             expect(mockSaveAndUpdate).toHaveBeenCalled();
@@ -162,7 +162,7 @@ describe('usePatientTransfers', () => {
             const { result } = renderHook(() => usePatientTransfers(record, mockSaveAndUpdate));
 
             act(() => {
-                result.current.addTransfer('R1', 'Avión', 'Hospital', '');
+                result.current.addTransfer('R1', 'Avión', '', 'Hospital', '');
             });
 
             expect(mockSaveAndUpdate).not.toHaveBeenCalled();

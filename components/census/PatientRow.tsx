@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { BedDefinition, PatientData, DeviceDetails } from '../../types';
-import { AlertCircle, GitBranch, User } from 'lucide-react';
+import { AlertCircle, GitBranch, RefreshCw, User } from 'lucide-react';
 import clsx from 'clsx';
 import { useDailyRecordContext } from '../../context/DailyRecordContext';
 import { useConfirmDialog } from '../../context/UIContext';
 import { DemographicsModal } from '../modals/DemographicsModal';
+import { getBedTypeLabel, isBedTypeToggleable } from '../../utils';
 
 // Sub-components
 import { PatientActionMenu } from './patient-row/PatientActionMenu';
@@ -27,6 +28,8 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
     const isBlocked = data.isBlocked;
     const [showDemographics, setShowDemographics] = useState(false);
     const [showCribDemographics, setShowCribDemographics] = useState(false);
+    const bedTypeLabel = getBedTypeLabel(bed, data);
+    const canToggleBedType = isBedTypeToggleable(bed.id);
 
     // Defaults
     const isCunaMode = data.bedMode === 'Cuna';
@@ -142,6 +145,11 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
         onAction(action, bed.id);
     }, [onAction, bed.id]);
 
+    const toggleBedTypeLabel = useCallback(() => {
+        const nextType = bedTypeLabel === 'UCI' ? 'UTI' : 'UCI';
+        updatePatient(bed.id, 'bedTypeLabel', nextType);
+    }, [bed.id, bedTypeLabel, updatePatient]);
+
     return (
         <>
             {/* MAIN ROW */}
@@ -182,14 +190,25 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                 />
 
                 {/* Bed Type */}
-                <td className="p-0 border-r border-slate-100 text-center w-16">
+                <td className="p-0 border-r border-slate-100 text-center w-16 relative">
+                    {canToggleBedType && !readOnly && (
+                        <button
+                            type="button"
+                            onClick={toggleBedTypeLabel}
+                            className="absolute top-0.5 right-0.5 p-0.5 rounded-sm text-slate-400 hover:text-slate-600 hover:bg-slate-100 opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 transition"
+                            title={`Cambiar a ${bedTypeLabel === 'UCI' ? 'UTI' : 'UCI'}`}
+                            aria-label={`Cambiar tipo de cama ${bed.id} a ${bedTypeLabel === 'UCI' ? 'UTI' : 'UCI'}`}
+                        >
+                            <RefreshCw size={10} />
+                        </button>
+                    )}
                     <span className={clsx(
                         "text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border block tracking-tighter",
-                        bed.type === 'UTI'
+                        bedTypeLabel === 'UTI' || bedTypeLabel === 'UCI'
                             ? "bg-purple-50 text-purple-600 border-purple-100"
                             : "bg-blue-50 text-blue-600 border-blue-100"
                     )}>
-                        {bed.type}
+                        {bedTypeLabel}
                     </span>
                 </td>
 

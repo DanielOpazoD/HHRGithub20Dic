@@ -3,6 +3,7 @@ import { DailyRecord, PatientData } from '../../types';
 import { BEDS } from '../../constants';
 import { formatDateDDMMYYYY } from '../utils/dateFormatter';
 import { createWorkbook } from './excelUtils';
+import { getBedTypeLabel } from '../../utils';
 
 
 const getRawHeader = () => [
@@ -73,7 +74,7 @@ export const extractRowsFromRecord = (record: DailyRecord): CensusRawRow[] => {
         const hasClinicalCrib = p.clinicalCrib && p.clinicalCrib.patientName;
 
         if (isOccupied || isBlocked) {
-            rows.push(generateRawRow(date, bed.id, bed.type, p, nurses, record.lastUpdated));
+            rows.push(generateRawRow(date, bed.id, getBedTypeLabel(bed, p), p, nurses, record.lastUpdated));
         }
 
         if (hasClinicalCrib && p.clinicalCrib) {

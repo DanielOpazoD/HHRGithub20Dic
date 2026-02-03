@@ -2,6 +2,7 @@ import { DailyRecord, DischargeData, DischargeType } from '../types';
 import { createEmptyPatient } from '../services/factories/patientFactory';
 import { BEDS } from '../constants';
 import { logPatientDischarge } from '../services/admin/auditService';
+import { getBedTypeLabel } from '../utils';
 
 export const usePatientDischarges = (
     record: DailyRecord | null,
@@ -33,7 +34,7 @@ export const usePatientDischarges = (
             id: crypto.randomUUID(),
             bedName: bedDef?.name || bedId,
             bedId: bedId,
-            bedType: bedDef?.type || '',
+            bedType: bedDef ? getBedTypeLabel(bedDef, patient) : '',
             patientName: patient.patientName,
             rut: patient.rut,
             diagnosis: patient.pathology,

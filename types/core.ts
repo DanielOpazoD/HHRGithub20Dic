@@ -59,6 +59,7 @@ export interface PatientData {
     bedId: string;
     isBlocked: boolean;
     blockedReason?: string;
+    bedTypeLabel?: 'UTI' | 'UCI';
 
     // Dynamic Furniture Configuration
     bedMode: 'Cama' | 'Cuna'; // Defines if the physical spot is set up as a Bed or a Crib (Census relevant)
@@ -158,6 +159,7 @@ export interface TransferData {
     diagnosis: string;
     time: string;
     evacuationMethod: string;
+    evacuationMethodOther?: string;
     receivingCenter: string;
     receivingCenterOther?: string;
     transferEscort?: string;

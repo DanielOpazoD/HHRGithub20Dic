@@ -22,9 +22,10 @@ export type DeviceType = typeof DEVICE_OPTIONS[number] | typeof VVP_DEVICE_KEYS[
 export const EVACUATION_METHODS: string[] = [
     'Avión comercial',
     'Aerocardal',
-    'Avión FACH'
+    'Avión FACH',
+    'Otro'
 ];
-export type EvacuationMethod = 'Avión comercial' | 'Aerocardal' | 'Avión FACH';
+export type EvacuationMethod = 'Avión comercial' | 'Aerocardal' | 'Avión FACH' | 'Otro';
 
 // Receiving Centers for Transfers
 export const RECEIVING_CENTERS: string[] = [

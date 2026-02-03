@@ -44,18 +44,18 @@ export interface TransferState {
 interface CensusActionsContextType {
     // Move/Copy State
     actionState: ActionState;
-    setActionState: (state: ActionState) => void;
+    setActionState: React.Dispatch<React.SetStateAction<ActionState>>;
     executeMoveOrCopy: () => void;
 
     // Discharge State
     dischargeState: DischargeState;
-    setDischargeState: (state: DischargeState) => void;
+    setDischargeState: React.Dispatch<React.SetStateAction<DischargeState>>;
     executeDischarge: (data?: { status: 'Vivo' | 'Fallecido', type?: string, typeOther?: string, time?: string }) => void;
     handleEditDischarge: (d: DischargeData) => void;
 
     // Transfer State
     transferState: TransferState;
-    setTransferState: (state: TransferState) => void;
+    setTransferState: React.Dispatch<React.SetStateAction<TransferState>>;
     executeTransfer: (data?: { time?: string }) => void;
     handleEditTransfer: (t: TransferData) => void;
 
@@ -202,12 +202,15 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
 
     const executeTransfer = useCallback((data?: { time?: string }) => {
         const time = data?.time || transferState.time || new Date().toTimeString().slice(0, 5);
+        const transferEscort = transferState.evacuationMethod === 'Avión comercial'
+            ? transferState.transferEscort
+            : '';
         if (transferState.recordId) {
             updateTransfer(transferState.recordId, {
                 evacuationMethod: transferState.evacuationMethod,
                 receivingCenter: transferState.receivingCenter,
                 receivingCenterOther: transferState.receivingCenterOther,
-                transferEscort: transferState.transferEscort,
+                transferEscort,
                 evacuationMethodOther: transferState.evacuationMethodOther,
                 time
             });
@@ -217,7 +220,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 transferState.evacuationMethod,
                 transferState.receivingCenter,
                 transferState.receivingCenterOther,
-                transferState.transferEscort,
+                transferEscort,
                 time,
                 transferState.evacuationMethodOther
             );
@@ -246,7 +249,9 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
             evacuationMethodOther: t.evacuationMethodOther || '',
             receivingCenter: t.receivingCenter,
             receivingCenterOther: t.receivingCenterOther || '',
-            transferEscort: t.transferEscort || 'Enfermera',
+            transferEscort: t.evacuationMethod === 'Avión comercial'
+                ? (t.transferEscort || 'Enfermera')
+                : '',
             time: t.time
         });
     }, []);

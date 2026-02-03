@@ -2,7 +2,7 @@ import type { Workbook, Worksheet, Fill, Borders, Font } from 'exceljs';
 import { DailyRecord, PatientData, DischargeData, TransferData, CMAData } from '../../types';
 import { BEDS, MONTH_NAMES } from '../../constants';
 import { calculateStats, CensusStatistics } from '../calculations/statsCalculator';
-import { formatDateDDMMYYYY } from '../../utils/dateUtils';
+import { formatDateDDMMYYYY, getBedTypeLabel } from '../../utils';
 import { createWorkbook, BORDER_THIN, HEADER_FILL } from './excelUtils';
 
 // Local styles specific to this workbook
@@ -228,7 +228,7 @@ function addCensusTable(sheet: Worksheet, record: DailyRecord, startRow: number)
         if (!shouldRenderExtra) return;
 
         const hasClinicalCrib = Boolean(patient?.clinicalCrib?.patientName?.trim());
-        currentRow = addCensusRow(sheet, currentRow, index++, bed.id, bed.type, patient);
+        currentRow = addCensusRow(sheet, currentRow, index++, bed.id, getBedTypeLabel(bed, patient), patient);
 
         if (hasClinicalCrib && patient?.clinicalCrib) {
             currentRow = addCensusRow(sheet, currentRow, index++, `${bed.id}-C`, 'Cuna', patient.clinicalCrib, patient.location);
@@ -404,7 +404,7 @@ function addTransfersTable(sheet: Worksheet, transfers: TransferData[], startRow
             formatAge(t.age),
             t.diagnosis || '',
             destination,
-            t.evacuationMethod || ''
+            t.evacuationMethod === 'Otro' ? (t.evacuationMethodOther || 'Otro') : (t.evacuationMethod || '')
         ];
 
         values.forEach((value, cellIdx) => {

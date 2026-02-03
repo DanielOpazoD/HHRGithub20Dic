@@ -32,6 +32,7 @@ export interface TransferState {
     recordId?: string;
     isOpen: boolean;
     evacuationMethod: string;
+    evacuationMethodOther: string;
     receivingCenter: string;
     receivingCenterOther: string;
     transferEscort: string;
@@ -106,6 +107,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
         bedId: null,
         isOpen: false,
         evacuationMethod: EVACUATION_METHODS[0],
+        evacuationMethodOther: '',
         receivingCenter: RECEIVING_CENTERS[0],
         receivingCenterOther: '',
         transferEscort: 'Enfermera'
@@ -153,6 +155,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 recordId: undefined,
                 isOpen: true,
                 evacuationMethod: EVACUATION_METHODS[0],
+                evacuationMethodOther: '',
                 receivingCenter: RECEIVING_CENTERS[0],
                 receivingCenterOther: '',
                 transferEscort: 'Enfermera',
@@ -202,6 +205,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
         if (transferState.recordId) {
             updateTransfer(transferState.recordId, {
                 evacuationMethod: transferState.evacuationMethod,
+                evacuationMethodOther: transferState.evacuationMethodOther,
                 receivingCenter: transferState.receivingCenter,
                 receivingCenterOther: transferState.receivingCenterOther,
                 transferEscort: transferState.transferEscort,
@@ -211,6 +215,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
             addTransfer(
                 transferState.bedId,
                 transferState.evacuationMethod,
+                transferState.evacuationMethodOther,
                 transferState.receivingCenter,
                 transferState.receivingCenterOther,
                 transferState.transferEscort,
@@ -238,6 +243,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
             recordId: t.id,
             isOpen: true,
             evacuationMethod: t.evacuationMethod,
+            evacuationMethodOther: t.evacuationMethodOther || '',
             receivingCenter: t.receivingCenter,
             receivingCenterOther: t.receivingCenterOther || '',
             transferEscort: t.transferEscort || 'Enfermera',

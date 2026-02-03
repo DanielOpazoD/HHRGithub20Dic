@@ -155,7 +155,7 @@ export interface DailyRecordContextType {
     undoDischarge: (id: string) => void;
 
     // Transfer Management (from usePatientTransfers)
-    addTransfer: (bedId: string, method: string, center: string, centerOther: string, escort?: string, time?: string) => void;
+    addTransfer: (bedId: string, method: string, methodOther: string, center: string, centerOther: string, escort?: string, time?: string) => void;
     updateTransfer: (id: string, updates: Partial<TransferData>) => void;
     deleteTransfer: (id: string) => void;
     undoTransfer: (id: string) => void;

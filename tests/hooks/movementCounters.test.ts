@@ -142,7 +142,7 @@ describe('Movement Counters', () => {
             const { result } = renderHook(() => usePatientTransfers(record, saveAndUpdate));
 
             act(() => {
-                result.current.addTransfer('bed-1', 'Avión Comercial', 'Hospital Santiago', '');
+                result.current.addTransfer('bed-1', 'Avión Comercial', '', 'Hospital Santiago', '');
             });
 
             expect(saveAndUpdate).toHaveBeenCalled();
@@ -170,7 +170,7 @@ describe('Movement Counters', () => {
             const { result } = renderHook(() => usePatientTransfers(record, saveAndUpdate));
 
             act(() => {
-                result.current.addTransfer('bed-3', 'Avión', 'Hospital', ''); // bed-3 is empty
+                result.current.addTransfer('bed-3', 'Avión', '', 'Hospital', ''); // bed-3 is empty
             });
 
             expect(saveAndUpdate).not.toHaveBeenCalled();

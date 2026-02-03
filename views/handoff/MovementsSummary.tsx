@@ -108,7 +108,9 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record, sele
                                         <div className="text-[10px] text-slate-500 font-mono print:text-[8px]">{t.rut}</div>
                                     </td>
                                     <td className="p-2 border-r border-slate-200 truncate">{t.diagnosis}</td>
-                                    <td className="p-2 border-r border-slate-200 truncate">{t.evacuationMethod}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">
+                                        {t.evacuationMethod === 'Otro' ? (t.evacuationMethodOther || 'Otro') : t.evacuationMethod}
+                                    </td>
                                     <td className="p-2 border-r border-slate-200 truncate">{t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}</td>
                                     <td className="p-2 border-r border-slate-200 truncate">{t.transferEscort || '-'}</td>
                                     <td className="p-2">{t.time || '-'}</td>

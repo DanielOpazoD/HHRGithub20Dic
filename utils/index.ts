@@ -50,3 +50,9 @@ export {
     unique,
     uniqueBy
 } from './arrayUtils';
+
+// Bed type utilities
+export {
+    getBedTypeLabel,
+    isBedTypeToggleable
+} from './bedTypeUtils';

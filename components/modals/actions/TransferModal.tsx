@@ -84,6 +84,11 @@ export const TransferModal: React.FC<TransferModalProps> = ({
                                 onChange={(e) => {
                                     const nextValue = e.target.value;
                                     onUpdate('evacuationMethod', nextValue);
+                                    if (nextValue !== 'Avión comercial') {
+                                        onUpdate('transferEscort', '');
+                                    } else if (!transferEscort) {
+                                        onUpdate('transferEscort', 'Enfermera');
+                                    }
                                     if (nextValue !== 'Otro') {
                                         onUpdate('evacuationMethodOther', '');
                                         setErrors(prev => ({ ...prev, otherMethod: undefined }));

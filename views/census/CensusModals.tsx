@@ -103,8 +103,8 @@ export const CensusModals: React.FC<CensusModalsProps> = ({
                 hasClinicalCrib={transferState.hasClinicalCrib}
                 clinicalCribName={transferState.clinicalCribName}
                 initialTime={transferState.time}
-                onUpdate={(field, val) => setTransferState({ ...transferState, [field]: val })}
-                onClose={() => setTransferState({ ...transferState, isOpen: false })}
+                onUpdate={(field, val) => setTransferState(prev => ({ ...prev, [field]: val }))}
+                onClose={() => setTransferState(prev => ({ ...prev, isOpen: false }))}
                 onConfirm={executeTransfer}
             />
         </>

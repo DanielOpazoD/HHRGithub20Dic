@@ -2,6 +2,7 @@ import type { Workbook } from 'exceljs';
 import { DailyRecord, PatientData } from '../../types';
 import { BEDS } from '../../constants';
 import { formatDateDDMMYYYY } from '../utils/dateFormatter';
+import { getBedTypeForRecord } from '../../utils';
 import { createWorkbook } from './excelUtils';
 
 
@@ -73,7 +74,7 @@ export const extractRowsFromRecord = (record: DailyRecord): CensusRawRow[] => {
         const hasClinicalCrib = p.clinicalCrib && p.clinicalCrib.patientName;
 
         if (isOccupied || isBlocked) {
-            rows.push(generateRawRow(date, bed.id, bed.type, p, nurses, record.lastUpdated));
+            rows.push(generateRawRow(date, bed.id, getBedTypeForRecord(bed, record), p, nurses, record.lastUpdated));
         }
 
         if (hasClinicalCrib && p.clinicalCrib) {

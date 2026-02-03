@@ -177,6 +177,7 @@ export const useDailyRecord = (
         toggleBlockBed: bedManagement.toggleBlockBed,
         updateBlockedReason: bedManagement.updateBlockedReason,
         toggleExtraBed: bedManagement.toggleExtraBed,
+        toggleBedTypeOverride: bedManagement.toggleBedTypeOverride,
 
         // Nurse Management
         updateNurse: nurseManagement.updateNurse,

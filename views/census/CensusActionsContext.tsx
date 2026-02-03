@@ -32,6 +32,7 @@ export interface TransferState {
     recordId?: string;
     isOpen: boolean;
     evacuationMethod: string;
+    evacuationMethodOther: string;
     receivingCenter: string;
     receivingCenterOther: string;
     transferEscort: string;
@@ -106,6 +107,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
         bedId: null,
         isOpen: false,
         evacuationMethod: EVACUATION_METHODS[0],
+        evacuationMethodOther: '',
         receivingCenter: RECEIVING_CENTERS[0],
         receivingCenterOther: '',
         transferEscort: 'Enfermera'
@@ -153,6 +155,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 recordId: undefined,
                 isOpen: true,
                 evacuationMethod: EVACUATION_METHODS[0],
+                evacuationMethodOther: '',
                 receivingCenter: RECEIVING_CENTERS[0],
                 receivingCenterOther: '',
                 transferEscort: 'Enfermera',
@@ -205,6 +208,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 receivingCenter: transferState.receivingCenter,
                 receivingCenterOther: transferState.receivingCenterOther,
                 transferEscort: transferState.transferEscort,
+                evacuationMethodOther: transferState.evacuationMethodOther,
                 time
             });
         } else if (transferState.bedId) {
@@ -214,7 +218,8 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
                 transferState.receivingCenter,
                 transferState.receivingCenterOther,
                 transferState.transferEscort,
-                time
+                time,
+                transferState.evacuationMethodOther
             );
         }
         setTransferState(prev => ({ ...prev, isOpen: false }));
@@ -238,6 +243,7 @@ export const CensusActionsProvider: React.FC<CensusActionsProviderProps> = ({ ch
             recordId: t.id,
             isOpen: true,
             evacuationMethod: t.evacuationMethod,
+            evacuationMethodOther: t.evacuationMethodOther || '',
             receivingCenter: t.receivingCenter,
             receivingCenterOther: t.receivingCenterOther || '',
             transferEscort: t.transferEscort || 'Enfermera',

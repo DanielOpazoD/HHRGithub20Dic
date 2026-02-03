@@ -252,7 +252,8 @@ export const generateDemoRecord = (date: string): DailyRecord => {
         lastUpdated: new Date().toISOString(),
         nurses: ["Enfermero Demo 1", "Enfermero Demo 2"],
         activeExtraBeds: [],
-        cma: []
+        cma: [],
+        bedTypeOverrides: {}
     };
 };
 
@@ -341,6 +342,7 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
 
             } else if (rand < dischargeChance + transferChance) {
                 // Transfer this patient
+                const evacuationMethod = randomItem(EVACUATION_METHODS);
                 transfers.push({
                     id: crypto.randomUUID(),
                     bedName: bedDef?.name || bedId,
@@ -350,7 +352,8 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                     rut: patient.rut,
                     diagnosis: patient.pathology,
                     time: getTimeRoundedToStep(),
-                    evacuationMethod: randomItem(EVACUATION_METHODS),
+                    evacuationMethod,
+                    evacuationMethodOther: evacuationMethod === 'Otro' ? 'Ambulancia' : undefined,
                     receivingCenter: randomItem(RECEIVING_CENTERS),
                     receivingCenterOther: '',
                     age: patient.age,
@@ -400,7 +403,8 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
         lastUpdated: new Date().toISOString(),
         nurses: previousRecord.nurses,
         activeExtraBeds: previousRecord.activeExtraBeds,
-        cma: []
+        cma: [],
+        bedTypeOverrides: previousRecord.bedTypeOverrides ? { ...previousRecord.bedTypeOverrides } : {}
     };
 };
 

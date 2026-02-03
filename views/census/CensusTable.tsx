@@ -4,6 +4,7 @@ import { BEDS } from '../../constants';
 import { PatientRow } from '../../components/census/PatientRow';
 import { useCensusActions } from './CensusActionsContext';
 import { useConfirmDialog } from '../../context/UIContext';
+import { getBedTypeForRecord } from '../../utils';
 import { useTableConfig, TableColumnConfig } from '../../context/TableConfigContext';
 import { ResizableHeader } from '../../components/ui/ResizableHeader';
 import { Trash2, Baby, Settings2 } from 'lucide-react';
@@ -218,6 +219,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
                             <PatientRow
                                 key={bed.id}
                                 bed={bed}
+                                bedType={getBedTypeForRecord(bed, record)}
                                 data={record.beds[bed.id]}
                                 currentDateString={currentDateString}
                                 onAction={handleRowAction}

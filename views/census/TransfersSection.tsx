@@ -1,5 +1,6 @@
 import React from 'react';
 import { TransferData } from '../../types';
+import { formatEvacuationMethod } from '../../utils';
 import { useCensusActions } from './CensusActionsContext';
 import { ArrowRightLeft, RotateCcw, Pencil, Trash2 } from 'lucide-react';
 
@@ -55,7 +56,7 @@ export const TransfersSection: React.FC<TransfersSectionProps> = ({
                                         <td className="p-2">{t.patientName}</td>
                                         <td className="p-2 font-mono text-xs">{t.rut}</td>
                                         <td className="p-2">{t.diagnosis}</td>
-                                        <td className="p-2">{t.evacuationMethod}</td>
+                                        <td className="p-2">{formatEvacuationMethod(t.evacuationMethod, t.evacuationMethodOther)}</td>
                                         <td className="p-2">
                                             {t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}
                                         </td>

@@ -5,6 +5,7 @@
 
 export enum BedType {
     UTI = 'UTI',
+    UCI = 'UCI',
     MEDIA = 'MEDIA',
 }
 
@@ -158,6 +159,7 @@ export interface TransferData {
     diagnosis: string;
     time: string;
     evacuationMethod: string;
+    evacuationMethodOther?: string;
     receivingCenter: string;
     receivingCenterOther?: string;
     transferEscort?: string;
@@ -196,6 +198,7 @@ export interface DailyRecord {
     tensDayShift?: string[]; // Turno Largo TENS (max 3)
     tensNightShift?: string[]; // Turno Noche TENS (max 3)
     activeExtraBeds: string[];
+    bedTypeOverrides?: Record<string, BedType>;
 
     // ===== Handoff Checklist - Day Shift (Turno Largo) =====
     handoffDayChecklist?: {

@@ -56,6 +56,7 @@ type TopLevelPath = keyof Pick<DailyRecord,
     | 'tensDayShift'
     | 'tensNightShift'
     | 'activeExtraBeds'
+    | 'bedTypeOverrides'
     | 'discharges'
     | 'transfers'
     | 'cma'
@@ -141,6 +142,7 @@ export interface DailyRecordContextType {
     toggleBlockBed: (bedId: string, reason?: string) => void;
     updateBlockedReason: (bedId: string, reason: string) => void;
     toggleExtraBed: (bedId: string) => void;
+    toggleBedTypeOverride: (bedId: string) => void;
 
     // Nurse Management (from useNurseManagement)
     updateNurse: (shift: 'day' | 'night', index: number, name: string) => void;
@@ -155,7 +157,7 @@ export interface DailyRecordContextType {
     undoDischarge: (id: string) => void;
 
     // Transfer Management (from usePatientTransfers)
-    addTransfer: (bedId: string, method: string, center: string, centerOther: string, escort?: string, time?: string) => void;
+    addTransfer: (bedId: string, method: string, center: string, centerOther: string, escort?: string, time?: string, methodOther?: string) => void;
     updateTransfer: (id: string, updates: Partial<TransferData>) => void;
     deleteTransfer: (id: string) => void;
     undoTransfer: (id: string) => void;

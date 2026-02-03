@@ -5,12 +5,13 @@
  */
 
 import { useCallback } from 'react';
-import { DailyRecord, PatientData } from '../types';
+import { BedType, DailyRecord, PatientData } from '../types';
 import { createEmptyPatient } from '../services/factories/patientFactory';
 import { BEDS } from '../constants';
 import { logPatientCleared, logAuditEvent } from '../services/admin/auditService';
 import { useAuditContext } from '../context/AuditContext';
 import { DailyRecordPatchLoose } from './useDailyRecordTypes';
+import { getBedTypeForRecord } from '../utils';
 
 // ============================================================================
 // Types
@@ -42,6 +43,11 @@ export interface BedOperationsActions {
      * Toggle extra bed activation
      */
     toggleExtraBed: (bedId: string) => void;
+
+    /**
+     * Toggle UTI/UCI bed type override.
+     */
+    toggleBedTypeOverride: (bedId: string) => void;
 }
 
 // ============================================================================
@@ -251,6 +257,25 @@ export const useBedOperations = (
         );
     }, [record, patchRecord, logEvent]);
 
+    const toggleBedTypeOverride = useCallback((bedId: string) => {
+        if (!record) return;
+
+        const bedDef = BEDS.find(bed => bed.id === bedId);
+        if (!bedDef) return;
+
+        const currentType = getBedTypeForRecord(bedDef, record);
+        const nextType = currentType === BedType.UTI ? BedType.UCI : BedType.UTI;
+        const updatedOverrides = { ...(record.bedTypeOverrides || {}) };
+
+        if (nextType === bedDef.type) {
+            delete updatedOverrides[bedId];
+        } else {
+            updatedOverrides[bedId] = nextType;
+        }
+
+        patchRecord({ bedTypeOverrides: updatedOverrides });
+    }, [record, patchRecord]);
+
     // ========================================================================
     // Return API
     // ========================================================================
@@ -261,6 +286,7 @@ export const useBedOperations = (
         moveOrCopyPatient,
         toggleBlockBed,
         updateBlockedReason,
-        toggleExtraBed
+        toggleExtraBed,
+        toggleBedTypeOverride
     };
 };

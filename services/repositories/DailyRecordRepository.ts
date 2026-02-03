@@ -325,6 +325,7 @@ export const initializeDay = async (
         tensDayShift: tensDay,
         tensNightShift: tensNight,
         activeExtraBeds: activeExtras,
+        bedTypeOverrides: prevRecord?.bedTypeOverrides ? { ...prevRecord.bedTypeOverrides } : {},
         // Copy previous handoff novedades (Inter-day persistence)
         // Logic: Day starts with previous Night's notes, or fallback to Day notes if Night was just inherited
         handoffNovedadesDayShift: prevRecord

@@ -1,6 +1,7 @@
 import { DailyRecord, PatientData, BedType } from '../../types';
 import { getCategorization } from '../../views/cudyr/CudyrScoreUtils';
 import { BEDS } from '../../constants';
+import { getBedTypeForRecord, isIntensiveBedType } from '../../utils';
 import { getAllRecords } from '../storage/indexedDBService';
 
 /**
@@ -48,7 +49,7 @@ export const collectDailyCudyrPatients = (record: DailyRecord): { patient: Patie
         if (p.patientName) {
             const { isCategorized } = getCategorization(p.cudyr);
             if (isCategorized) {
-                results.push({ patient: p, bedType: bed.type });
+                results.push({ patient: p, bedType: getBedTypeForRecord(bed, record) });
             }
         }
 
@@ -60,7 +61,7 @@ export const collectDailyCudyrPatients = (record: DailyRecord): { patient: Patie
                 // for CUDYR categorization totals, they follow the room/bed type? 
                 // Usually clinical cribs are in NEO (Media) or with mother (Media).
                 // We'll use the bed type they are in.
-                results.push({ patient: p.clinicalCrib, bedType: bed.type });
+                results.push({ patient: p.clinicalCrib, bedType: getBedTypeForRecord(bed, record) });
             }
         }
     });
@@ -90,7 +91,7 @@ export const buildDailyCudyrSummary = (record: DailyRecord): CudyrSummary & { oc
             if (isCategorized) {
                 categorizedCount++;
                 if (CATEGORIES.includes(finalCat)) {
-                    if (bed.type === BedType.UTI) {
+                    if (isIntensiveBedType(getBedTypeForRecord(bed, record))) {
                         summary.uti[finalCat]++;
                     } else {
                         summary.media[finalCat]++;
@@ -107,7 +108,7 @@ export const buildDailyCudyrSummary = (record: DailyRecord): CudyrSummary & { oc
             if (isCategorized) {
                 categorizedCount++;
                 if (CATEGORIES.includes(finalCat)) {
-                    if (bed.type === BedType.UTI) {
+                    if (isIntensiveBedType(getBedTypeForRecord(bed, record))) {
                         summary.uti[finalCat]++;
                     } else {
                         summary.media[finalCat]++;

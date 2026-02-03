@@ -68,6 +68,11 @@ export interface BedManagementActions {
      * Toggles an extra bed visibility.
      */
     toggleExtraBed: (bedId: string) => void;
+
+    /**
+     * Toggles UTI/UCI bed type override.
+     */
+    toggleBedTypeOverride: (bedId: string) => void;
 }
 
 // ============================================================================
@@ -348,7 +353,7 @@ export const useBedManagement = (
         moveOrCopyPatient: bedOperations.moveOrCopyPatient,
         toggleBlockBed: bedOperations.toggleBlockBed,
         updateBlockedReason: bedOperations.updateBlockedReason,
-        toggleExtraBed: bedOperations.toggleExtraBed
+        toggleExtraBed: bedOperations.toggleExtraBed,
+        toggleBedTypeOverride: bedOperations.toggleBedTypeOverride
     };
 };
-

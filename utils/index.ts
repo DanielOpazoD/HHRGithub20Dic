@@ -50,3 +50,14 @@ export {
     unique,
     uniqueBy
 } from './arrayUtils';
+
+// Bed type utilities
+export {
+    getBedTypeForRecord,
+    isIntensiveBedType
+} from './bedTypeUtils';
+
+// Transfer utilities
+export {
+    formatEvacuationMethod
+} from './transferUtils';

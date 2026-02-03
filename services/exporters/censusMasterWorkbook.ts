@@ -3,6 +3,7 @@ import { DailyRecord, PatientData, DischargeData, TransferData, CMAData } from '
 import { BEDS, MONTH_NAMES } from '../../constants';
 import { calculateStats, CensusStatistics } from '../calculations/statsCalculator';
 import { formatDateDDMMYYYY } from '../../utils/dateUtils';
+import { formatEvacuationMethod, getBedTypeForRecord } from '../../utils';
 import { createWorkbook, BORDER_THIN, HEADER_FILL } from './excelUtils';
 
 // Local styles specific to this workbook
@@ -228,7 +229,7 @@ function addCensusTable(sheet: Worksheet, record: DailyRecord, startRow: number)
         if (!shouldRenderExtra) return;
 
         const hasClinicalCrib = Boolean(patient?.clinicalCrib?.patientName?.trim());
-        currentRow = addCensusRow(sheet, currentRow, index++, bed.id, bed.type, patient);
+        currentRow = addCensusRow(sheet, currentRow, index++, bed.id, getBedTypeForRecord(bed, record), patient);
 
         if (hasClinicalCrib && patient?.clinicalCrib) {
             currentRow = addCensusRow(sheet, currentRow, index++, `${bed.id}-C`, 'Cuna', patient.clinicalCrib, patient.location);
@@ -404,7 +405,7 @@ function addTransfersTable(sheet: Worksheet, transfers: TransferData[], startRow
             formatAge(t.age),
             t.diagnosis || '',
             destination,
-            t.evacuationMethod || ''
+            formatEvacuationMethod(t.evacuationMethod || '', t.evacuationMethodOther)
         ];
 
         values.forEach((value, cellIdx) => {

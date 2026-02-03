@@ -142,6 +142,7 @@ export const TransferDataSchema = z.object({
   diagnosis: z.string().optional(),
   time: z.string().default(''),
   evacuationMethod: z.string(),
+  evacuationMethodOther: z.string().optional(),
   receivingCenter: z.string(),
   receivingCenterOther: z.string().optional(),
   transferEscort: z.string().optional(),
@@ -167,6 +168,7 @@ export const DailyRecordSchema = z.object({
   nurses: z.array(z.string()).default([]),
   nurseName: z.string().optional(),
   activeExtraBeds: z.array(z.string()).default([]),
+  bedTypeOverrides: z.record(z.string(), z.string()).optional(),
 
   // ===== Shift-based Staff =====
   nursesDayShift: z.array(z.string()).optional(),
@@ -308,4 +310,3 @@ export type DailyRecordValidated = z.infer<typeof DailyRecordSchema>;
 export type CudyrScoreValidated = z.infer<typeof CudyrScoreSchema>;
 export type DischargeDataValidated = z.infer<typeof DischargeDataSchema>;
 export type TransferDataValidated = z.infer<typeof TransferDataSchema>;
-

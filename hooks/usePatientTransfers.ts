@@ -2,13 +2,14 @@ import { DailyRecord, TransferData } from '../types';
 import { createEmptyPatient } from '../services/factories/patientFactory';
 import { BEDS } from '../constants';
 import { logPatientTransfer } from '../services/admin/auditService';
+import { getBedTypeForRecord } from '../utils';
 
 export const usePatientTransfers = (
     record: DailyRecord | null,
     saveAndUpdate: (updatedRecord: DailyRecord) => void
 ) => {
 
-    const addTransfer = (bedId: string, method: string, center: string, centerOther: string, escort?: string, time?: string) => {
+    const addTransfer = (bedId: string, method: string, center: string, centerOther: string, escort?: string, time?: string, methodOther?: string) => {
         if (!record) return;
         const patient = record.beds[bedId];
         const bedDef = BEDS.find(b => b.id === bedId);
@@ -26,12 +27,13 @@ export const usePatientTransfers = (
             id: crypto.randomUUID(),
             bedName: bedDef?.name || bedId,
             bedId: bedId,
-            bedType: bedDef?.type || '',
+            bedType: bedDef ? getBedTypeForRecord(bedDef, record) : '',
             patientName: patient.patientName,
             rut: patient.rut,
             diagnosis: patient.pathology,
             time: time || '',
             evacuationMethod: method,
+            evacuationMethodOther: methodOther,
             receivingCenter: center,
             receivingCenterOther: centerOther,
             transferEscort: escort,
@@ -47,17 +49,18 @@ export const usePatientTransfers = (
         if (patient.clinicalCrib && patient.clinicalCrib.patientName) {
             newTransfers.push({
                 id: crypto.randomUUID(),
-                bedName: (bedDef?.name || bedId) + " (Cuna)",
-                bedId: bedId,
-                bedType: 'Cuna',
-                patientName: patient.clinicalCrib.patientName,
+            bedName: (bedDef?.name || bedId) + " (Cuna)",
+            bedId: bedId,
+            bedType: 'Cuna',
+            patientName: patient.clinicalCrib.patientName,
                 rut: patient.clinicalCrib.rut,
                 diagnosis: patient.clinicalCrib.pathology,
-                time: time || '',
-                evacuationMethod: method,
-                receivingCenter: center,
-                receivingCenterOther: centerOther,
-                transferEscort: escort,
+            time: time || '',
+            evacuationMethod: method,
+            evacuationMethodOther: methodOther,
+            receivingCenter: center,
+            receivingCenterOther: centerOther,
+            transferEscort: escort,
                 age: patient.clinicalCrib.age,
                 insurance: patient.insurance,
                 origin: patient.origin,

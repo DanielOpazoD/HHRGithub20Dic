@@ -5,6 +5,7 @@ import { BEDS, CSV_HEADERS } from '../../constants';
 import { formatDateDDMMYYYY } from '../dataService';
 import { validateBackupData } from '../../schemas/validation';
 import { getAllRecords, saveRecord } from '../storage/indexedDBService';
+import { formatEvacuationMethod, getBedTypeForRecord } from '../../utils';
 
 export const exportDataJSON = async () => {
     const data = await getAllRecords();
@@ -98,7 +99,7 @@ export const exportDataCSV = (record: DailyRecord | null) => {
 
         // Export Main Patient
         if (p.isBlocked || isMainOccupied) {
-            rows.push(generateRow(bed.id, bed.name, bed.type, p));
+            rows.push(generateRow(bed.id, bed.name, getBedTypeForRecord(bed, record), p));
         }
 
         // Export Clinical Crib (Baby) if exists
@@ -131,7 +132,7 @@ export const exportDataCSV = (record: DailyRecord | null) => {
         record.transfers.forEach(t => {
             const escape = (val: unknown): string => val ? `"${String(val).replace(/"/g, '""')}"` : '';
             const center = t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter;
-            rows.push(`${t.bedName},${t.bedType},${escape(t.patientName)},${t.rut},${escape(t.diagnosis)},${t.evacuationMethod},${escape(center)},${escape(t.transferEscort)},${t.age || ''},${t.insurance || ''}`);
+            rows.push(`${t.bedName},${t.bedType},${escape(t.patientName)},${t.rut},${escape(t.diagnosis)},${formatEvacuationMethod(t.evacuationMethod, t.evacuationMethodOther)},${escape(center)},${escape(t.transferEscort)},${t.age || ''},${t.insurance || ''}`);
         });
     }
 

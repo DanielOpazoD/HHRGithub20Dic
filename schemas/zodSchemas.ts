@@ -132,6 +132,7 @@ export const TransferDataSchema = z.object({
     diagnosis: z.string().default(''),
     time: z.string().default(''),
     evacuationMethod: z.string().default(''),
+    evacuationMethodOther: z.string().optional(),
     receivingCenter: z.string().default(''),
     receivingCenterOther: z.string().optional(),
     transferEscort: z.string().optional(),
@@ -174,6 +175,7 @@ export const DailyRecordSchema = z.object({
     tensDayShift: z.array(z.string()).optional(),
     tensNightShift: z.array(z.string()).optional(),
     activeExtraBeds: z.array(z.string()).default([]),
+    bedTypeOverrides: z.record(z.string(), z.string()).default({}),
 }).passthrough(); // Allow additional fields not defined here
 
 // ============================================================================
@@ -215,6 +217,7 @@ export const parseDailyRecordWithDefaults = (data: unknown, docId: string): z.in
             lastUpdated: typeof raw.lastUpdated === 'string' ? raw.lastUpdated : new Date().toISOString(),
             nurses: Array.isArray(raw.nurses) ? raw.nurses : ['', ''],
             activeExtraBeds: Array.isArray(raw.activeExtraBeds) ? raw.activeExtraBeds : [],
+            bedTypeOverrides: (typeof raw.bedTypeOverrides === 'object' && raw.bedTypeOverrides !== null && !Array.isArray(raw.bedTypeOverrides)) ? raw.bedTypeOverrides : {},
         };
     }
 };

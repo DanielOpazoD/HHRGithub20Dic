@@ -96,6 +96,7 @@ export const CensusModals: React.FC<CensusModalsProps> = ({
                 isOpen={transferState.isOpen}
                 isEditing={!!transferState.recordId}
                 evacuationMethod={transferState.evacuationMethod}
+                evacuationMethodOther={transferState.evacuationMethodOther}
                 receivingCenter={transferState.receivingCenter}
                 receivingCenterOther={transferState.receivingCenterOther}
                 transferEscort={transferState.transferEscort}

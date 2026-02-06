@@ -72,6 +72,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
 
     const daysHospitalized = calculateHospitalizedDays(patient.admissionDate, reportDate);
     const noteValue = (patient[noteField] as string) || '';
+    const devices = Array.isArray(patient.devices) ? patient.devices : [];
 
     return (
         <tr className={clsx(
@@ -148,7 +149,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
             {/* Dispositivos with days like census */}
             <td className="p-2 border-r border-slate-200 w-20 text-xs align-middle print:w-auto print:text-[9px] print:p-1">
                 <div className="flex flex-wrap gap-1">
-                    {patient.devices.length > 0 ? patient.devices.map(d => {
+                    {devices.length > 0 ? devices.map(d => {
                         // Get days for device from deviceDetails if available
                         let deviceDays: number | null = null;
                         const details = patient.deviceDetails;

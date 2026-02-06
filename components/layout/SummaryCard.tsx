@@ -13,9 +13,9 @@ interface SummaryCardProps {
  * Common Card Wrapper to maintain consistency with Nurse/Tens selectors
  */
 const BaseSummaryCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
-    <div className="card px-3 py-2 flex flex-col justify-between gap-2 hover:border-slate-300 transition-colors min-w-[140px] min-h-[88px] animate-fade-in">
+    <div className="card px-2.5 py-2 flex flex-col justify-between gap-1.5 hover:border-slate-300 transition-colors min-w-[130px] min-h-[78px] animate-fade-in shadow-sm">
         <div className="flex justify-between items-center pb-1 border-b border-slate-100">
-            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                 {icon} {title}
             </label>
         </div>
@@ -28,11 +28,11 @@ export const BedSummaryCard: React.FC<{ stats: Statistics }> = ({ stats }) => {
     return (
         <BaseSummaryCard title="Censo Camas" icon={<Bed size={12} className="text-medical-500" />}>
             <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-                <div className="flex justify-between items-center bg-slate-50/80 rounded px-1.5 py-0.5 border border-slate-100/50">
+                <div className="flex justify-between items-center bg-slate-50 rounded px-1.5 py-0.5 border border-slate-100/60">
                     <span className="text-slate-500 text-[10px]">Ocu.</span>
                     <span className="font-bold text-medical-900 text-[11px]">{stats.occupiedBeds}</span>
                 </div>
-                <div className="flex justify-between items-center bg-medical-50 rounded px-1.5 py-0.5 border border-medical-100/50">
+                <div className="flex justify-between items-center bg-medical-50 rounded px-1.5 py-0.5 border border-medical-100/60">
                     <span className="text-medical-700 font-bold text-[10px]">Cap:</span>
                     <span className="font-bold text-medical-900 text-[11px]">{capacidadServicio}</span>
                 </div>

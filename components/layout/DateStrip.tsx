@@ -97,8 +97,14 @@ export const DateStrip: React.FC<DateStripProps> = ({
 
     // Navigate days with scroll wheel (independent of page scroll)
     const handleWheel = useCallback((e: React.WheelEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+        // Some browsers dispatch wheel/touchpad events as passive listeners.
+        // Calling preventDefault on non-cancelable events triggers a runtime error
+        // (`Unable to preventDefault inside passive event listener invocation`).
+        // Guarding with `cancelable` keeps day navigation stable and avoids crashes.
+        if (e.cancelable) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         if (e.deltaY > 0) {
             // Scroll down = go forward in days

@@ -1,38 +1,50 @@
 /**
  * Export Password Generator
- * 
+ *
  * Pure function to generate deterministic passwords for census Excel exports.
  * This module has NO Firebase dependencies and can be used in both browser and Node.js.
- * 
+ *
  * For Firestore persistence, use exportPasswordService.ts instead.
  */
 
-// Secret salt for password generation (should match across client and server)
-const PASSWORD_SALT = 'HHR-CENSO-2025';
+/**
+ * Fixed 4-digit PIN per month.
+ *
+ * Business rule:
+ * - Every day in the same month must use exactly the same password.
+ * - PINs should be easy to remember (simple repeated patterns).
+ */
+const MONTHLY_CENSUS_PINS = [
+  '1212', // January
+  '1313', // February
+  '1414', // March
+  '1515', // April
+  '1616', // May
+  '1717', // June
+  '1818', // July
+  '1919', // August
+  '2020', // September
+  '2121', // October
+  '2323', // November
+  '2424', // December
+];
 
 /**
- * Generate a deterministic 6-digit numeric PIN for a census date.
- * Uses a hash-based approach to ensure the same date always produces the same PIN.
- * 
+ * Generate a deterministic 4-digit numeric PIN for a census date.
+ * The PIN is fixed by month and reused for all emails in that month.
+ *
  * @param censusDate - The census date in YYYY-MM-DD format
- * @returns A 6-digit numeric PIN
+ * @returns A 4-digit numeric PIN
  */
 export const generateCensusPassword = (censusDate: string): string => {
-    const input = `${PASSWORD_SALT}-${censusDate}`;
+  const [, monthPart] = censusDate.split('-');
+  const monthIndex = Number.parseInt(monthPart, 10) - 1;
 
-    // Simple hash function (djb2 algorithm variant)
-    let hash = 5381;
-    for (let i = 0; i < input.length; i++) {
-        hash = ((hash << 5) + hash) + input.charCodeAt(i);
-        hash = hash & hash; // Convert to 32-bit integer
-    }
+  if (Number.isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
+    return MONTHLY_CENSUS_PINS[0];
+  }
 
-    // Convert to positive number and ensure we have at least 6 digits
-    // We use modulo 1,000,000 to get a 6-digit number
-    let numericHash = Math.abs(hash);
-    const pin = (numericHash % 1000000).toString().padStart(6, '0');
-
-    return pin;
+  return MONTHLY_CENSUS_PINS[monthIndex];
 };
 
 /**

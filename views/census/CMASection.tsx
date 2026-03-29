@@ -70,15 +70,15 @@ export const CMASection: React.FC = () => {
     };
 
     return (
-        <div className="card mt-6 animate-fade-in print:break-inside-avoid">
+        <div className="card mt-4 animate-fade-in print:break-inside-avoid">
             {/* Header minimalista */}
-            <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-white">
                 <div className="flex items-center gap-2">
-                    <div className="p-2 bg-medical-50 text-medical-600 rounded-lg shadow-sm">
+                    <div className="p-1.5 bg-medical-50 text-medical-600 rounded-lg">
                         <Scissors size={18} />
                     </div>
                     <div>
-                        <h2 className="text-base font-bold text-slate-800 leading-tight">
+                        <h2 className="text-sm font-bold text-slate-800 leading-tight">
                             Hospitalización Diurna
                         </h2>
                         <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">CMA / PMA</p>
@@ -87,7 +87,7 @@ export const CMASection: React.FC = () => {
                 {!isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 text-slate-400 hover:text-medical-600 hover:bg-medical-50/50 px-2.5 py-1.5 rounded-lg transition-all text-xs font-semibold"
+                        className="flex items-center gap-1.5 text-slate-500 hover:text-medical-600 hover:bg-medical-50/70 px-2.5 py-1.5 rounded-lg transition-all text-xs font-semibold"
                     >
                         <Plus size={14} />
                         Agregar Paciente
@@ -96,7 +96,7 @@ export const CMASection: React.FC = () => {
             </div>
 
             {(!cmaList.length && !isAdding) ? (
-                <div className="p-4 text-slate-400 italic text-sm">
+                <div className="p-3 text-slate-400 italic text-sm">
                     No hay registros de Hospitalización Diurna para hoy.
                 </div>
             ) : (

@@ -30,7 +30,7 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
     const safeTensNightShift = record.tensNightShift || [];
 
     return (
-        <div className="flex justify-center items-stretch gap-3 flex-wrap animate-fade-in px-4">
+        <div className="flex justify-center items-stretch gap-2 flex-wrap animate-fade-in px-3 py-2 bg-white rounded-xl border border-slate-200 shadow-sm">
             {/* Staff Selectors and Stats flattened for equal height */}
             <NurseSelector
                 nursesDayShift={safeNursesDayShift}

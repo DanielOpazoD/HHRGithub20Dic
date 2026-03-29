@@ -20,9 +20,9 @@ export const NurseSelector: React.FC<NurseSelectorProps> = ({
     const { setShowNurseManager } = useStaffContext();
 
     return (
-        <div className={`card px-3 py-2 flex flex-col justify-between gap-2 hover:border-slate-300 transition-colors w-fit min-h-[88px] !overflow-visible ${className || ''}`}>
+        <div className={`card px-2.5 py-2 flex flex-col justify-between gap-1.5 hover:border-slate-300 transition-colors w-fit min-h-[78px] !overflow-visible shadow-sm ${className || ''}`}>
             <div className="flex justify-between items-center pb-1 border-b border-slate-100">
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                     <Users size={12} /> Enfermería
                 </label>
                 <button
@@ -35,13 +35,13 @@ export const NurseSelector: React.FC<NurseSelectorProps> = ({
 
             {/* Day Shift */}
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 uppercase">
+                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase">
                     <Sun size={11} className="text-amber-500" />
                     <span>Largo</span>
                 </div>
                 <div className="flex gap-1">
                     <select
-                        className="py-0.5 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-indigo-500 focus:outline-none w-[85px] bg-indigo-50/50 text-slate-700 h-6"
+                        className="py-0.5 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-indigo-500 focus:outline-none w-[82px] bg-indigo-50/40 text-slate-700 h-6"
                         value={nursesDayShift[0] || ''}
                         onChange={(e) => onUpdateNurse('day', 0, e.target.value)}
                     >
@@ -49,7 +49,7 @@ export const NurseSelector: React.FC<NurseSelectorProps> = ({
                         {nursesList.map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
                     <select
-                        className="py-0.5 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-indigo-500 focus:outline-none w-[85px] bg-indigo-50/50 text-slate-700 h-6"
+                        className="py-0.5 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-indigo-500 focus:outline-none w-[82px] bg-indigo-50/40 text-slate-700 h-6"
                         value={nursesDayShift[1] || ''}
                         onChange={(e) => onUpdateNurse('day', 1, e.target.value)}
                     >
@@ -61,13 +61,13 @@ export const NurseSelector: React.FC<NurseSelectorProps> = ({
 
             {/* Night Shift */}
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 uppercase">
+                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase">
                     <Moon size={11} className="text-slate-500" />
                     <span>Noche</span>
                 </div>
                 <div className="flex gap-1">
                     <select
-                        className="py-0.5 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-slate-500 focus:outline-none w-[85px] bg-slate-100/50 text-slate-700 h-6"
+                        className="py-0.5 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-slate-500 focus:outline-none w-[82px] bg-slate-100/50 text-slate-700 h-6"
                         value={nursesNightShift[0] || ''}
                         onChange={(e) => onUpdateNurse('night', 0, e.target.value)}
                     >
@@ -75,7 +75,7 @@ export const NurseSelector: React.FC<NurseSelectorProps> = ({
                         {nursesList.map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
                     <select
-                        className="py-0.5 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-slate-500 focus:outline-none w-[85px] bg-slate-100/50 text-slate-700 h-6"
+                        className="py-0.5 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-slate-500 focus:outline-none w-[82px] bg-slate-100/50 text-slate-700 h-6"
                         value={nursesNightShift[1] || ''}
                         onChange={(e) => onUpdateNurse('night', 1, e.target.value)}
                     >
